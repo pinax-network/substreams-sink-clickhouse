@@ -1,0 +1,51 @@
+{
+  "name": "substreams-sink-clickhouse",
+  "version": "0.0.1",
+  "description": "Substreams Clickhouse sink module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "bin": {
+    "substreams-sink-clickhouse": "dist/bin/cli.js"
+  },
+  "scripts": {
+    "start": "tsc && node --no-warnings ./dist/bin/cli.js run",
+    "build": "tsc",
+    "rollup": "rollup --config rollup.config.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinax-network/substreams-sink-clickhouse.git"
+  },
+  "keywords": [
+    "substreams",
+    "streamingfast",
+    "firehose",
+    "thegraph",
+    "pinax"
+  ],
+  "author": {
+    "name": "Julien",
+    "email": "julien.rousseau@pinax.network"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pinax-network/substreams-sink-clickhouse/issues"
+  },
+  "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.4",
+    "@rollup/plugin-json": "^6.0.0",
+    "@rollup/plugin-node-resolve": "^15.2.1",
+    "@tsconfig/recommended": "^1.0.3",
+    "@types/node": "^20.7.0",
+    "rollup": "^3.29.3",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "substreams-sink": "^0.9.7"
+  }
+}
