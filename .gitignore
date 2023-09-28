@@ -1,3 +1,4 @@
 node_modules/
 *.spkg
 dist/
+substreams-sink-clickhouse

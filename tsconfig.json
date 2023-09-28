@@ -1,5 +1,4 @@
 {
-  "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
@@ -11,12 +10,12 @@
     "outDir": "./dist/",
     "verbatimModuleSyntax": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "alwaysStrict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["bun-types"]
   },
   "include": ["index.ts", "src/**/*", "bin/**/*"]
 }

@@ -1,17 +1,15 @@
 {
   "name": "substreams-sink-clickhouse",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Substreams Clickhouse sink module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "bin": {
-    "substreams-sink-clickhouse": "dist/bin/cli.js"
-  },
   "scripts": {
-    "start": "tsc && node --no-warnings ./dist/bin/cli.js run",
-    "build": "tsc",
-    "rollup": "rollup --config rollup.config.mjs"
+    "start": "bun index.ts",
+    "dev": "bun index.ts --watch",
+    "test": "bun test",
+    "build": "bun build --compile ./index.ts --outfile substreams-sink-clickhouse"
   },
   "repository": {
     "type": "git",
@@ -37,15 +35,14 @@
   },
   "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse#readme",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.4",
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.2.1",
     "@tsconfig/recommended": "^1.0.3",
-    "@types/node": "^20.7.0",
-    "rollup": "^3.29.3",
+    "bun-types": "^1.0.3",
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "substreams-sink": "^0.9.7"
+    "@sinclair/typebox": "^0.31.17",
+    "dotenv": "^16.3.1",
+    "prom-client": "^14.2.0",
+    "tweetnacl": "^1.0.3"
   }
 }
