@@ -8,14 +8,11 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist/",
-    "verbatimModuleSyntax": true,
-    "esModuleInterop": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "alwaysStrict": true,
     "skipLibCheck": true,
     "types": ["bun-types"]
-  },
-  "include": ["index.ts", "src/**/*", "bin/**/*"]
+  }
 }

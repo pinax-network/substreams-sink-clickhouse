@@ -43,6 +43,7 @@
     "@sinclair/typebox": "^0.31.17",
     "dotenv": "^16.3.1",
     "prom-client": "^14.2.0",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "yaml": "^2.3.2"
   }
 }

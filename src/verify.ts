@@ -2,10 +2,11 @@ import type { Static, TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import nacl from "tweetnacl";
 import { PUBLIC_KEY } from "./config.js";
+import type { Awaitable } from "./types.js";
 
 export function withValidatedRequest<S extends TSchema>(
   schema: S,
-  handler: (body: Static<S>) => Response
+  handler: (body: Static<S>) => Awaitable<Response>
 ) {
   return async (req: Request) => {
     const timestamp = req.headers.get("x-signature-timestamp");
