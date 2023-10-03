@@ -1,57 +1,36 @@
-import { Type } from "@sinclair/typebox";
-import yaml from "yaml";
-import { banner } from "./src/banner.js";
-import { client } from "./src/clickhouse.js";
+import { Command } from "commander";
+import {
+  description,
+  name,
+  version,
+} from "./package.json" assert { type: "json" };
 import config from "./src/config.js";
-import * as prometheus from "./src/prometheus.js";
-import type { Handler } from "./src/types.js";
-import { withValidatedRequest } from "./src/verify.js";
+import { executeInitialSchema } from "./src/schema.js";
+import { serveSink } from "./src/server.js";
 
-const BodySchema = Type.Union([Type.Object({ message: Type.Literal("PING") })]);
-const InitSchema = Type.Object({});
+const program = new Command();
+program.name(name).description(description).version(version);
 
-const handlers: Record<string, Record<string, Handler>> = {
-  GET: {
-    "/": () => new Response(banner()),
-    "/health": () => new Response("OK"),
-    "/metrics": () => new Response(prometheus.registry),
-  },
-  POST: {
-    "/": withValidatedRequest(BodySchema, (body) => {
-      if (body.message === "PING") {
-        return new Response("OK");
-      }
+program
+  .command("run")
+  .description(
+    "serves the sink on http to receive substreams data from substreams-sink-webhook"
+  )
+  .option("-s, --schema [schema]")
+  .action(async (options) => {
+    if ("schema" in options) {
+      const schemaPath =
+        typeof options.schema === "string" ? options.schema : config.SCHEMA;
+      await executeInitialSchema(schemaPath);
+    }
 
-      return new Response("?");
-    }),
-    "/init": withValidatedRequest(InitSchema, async (body) => {
-      try {
-        const manifestFile = Bun.file("./substreams.yaml");
-        const manifestStr = await manifestFile.text();
-        const manifest = yaml.parse(manifestStr);
+    serveSink();
+  });
 
-        const schemaFilename = manifest.sink.config.schema;
-        const schemaFile = Bun.file(schemaFilename);
-        const schema = await schemaFile.text();
+program
+  .command("schema")
+  .description("execute a provided SQL schema to initialize the database")
+  .argument("[schema]", "the SQL schema file to execute", config.SCHEMA)
+  .action(executeInitialSchema);
 
-        const result = await client.exec({ query: schema });
-        console.log(result);
-      } catch (err) {
-        return new Response(JSON.stringify(err), { status: 400 });
-      }
-
-      return new Response("OK");
-    }),
-  },
-};
-
-const app = Bun.serve({
-  port: config.PORT,
-  async fetch(request) {
-    const { pathname } = new URL(request.url);
-    const response = await handlers[request.method]?.[pathname]?.(request);
-    return response ?? new Response("Invalid request", { status: 400 });
-  },
-});
-
-console.log(`Sink listening on port ${app.port}`);
+program.parse();
