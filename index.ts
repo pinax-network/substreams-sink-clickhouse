@@ -6,6 +6,7 @@ import {
 } from "./package.json" assert { type: "json" };
 import config from "./src/config.js";
 import { logger } from "./src/logger.js";
+import { ping } from "./src/ping.js";
 import { executeInitialSchema } from "./src/schema.js";
 import { serveSink } from "./src/server.js";
 
@@ -35,5 +36,10 @@ program
   .description("execute a provided SQL schema to initialize the database")
   .argument("[schema]", "the SQL schema file to execute", config.SCHEMA)
   .action(executeInitialSchema);
+
+program
+  .command("ping")
+  .description("validate the connection with the database")
+  .action(ping);
 
 program.parse();
