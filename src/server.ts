@@ -1,14 +1,19 @@
 import { Type } from "@sinclair/typebox";
-import yaml from "yaml";
 import { banner } from "./banner.js";
-import { client } from "./clickhouse.js";
 import config from "./config.js";
+import { logger } from "./logger.js";
 import * as prometheus from "./prometheus.js";
 import type { Handler } from "./types.js";
 import { withValidatedRequest } from "./verify.js";
 
-const BodySchema = Type.Union([Type.Object({ message: Type.Literal("PING") })]);
-const InitSchema = Type.Object({});
+const BodySchema = Type.Union([
+  Type.Object({ message: Type.Literal("PING") }),
+  Type.Object({
+    timestamp: Type.Date(),
+    signature: Type.String(),
+    body: Type.Unknown(),
+  }),
+]);
 
 const handlers: Record<string, Record<string, Handler>> = {
   GET: {
@@ -18,29 +23,15 @@ const handlers: Record<string, Record<string, Handler>> = {
   },
   POST: {
     "/": withValidatedRequest(BodySchema, (body) => {
-      if (body.message === "PING") {
-        return new Response("OK");
+      if ("message" in body) {
+        if (body.message === "PING") {
+          return new Response("OK");
+        }
+        return new Response("invalid body", { status: 400 });
       }
 
-      return new Response("?");
-    }),
-    "/init": withValidatedRequest(InitSchema, async (body) => {
-      try {
-        const manifestFile = Bun.file("./substreams.yaml");
-        const manifestStr = await manifestFile.text();
-        const manifest = yaml.parse(manifestStr);
-
-        const schemaFilename = manifest.sink.config.schema;
-        const schemaFile = Bun.file(schemaFilename);
-        const schema = await schemaFile.text();
-
-        const result = await client.exec({ query: schema });
-        console.log(result);
-      } catch (err) {
-        return new Response(JSON.stringify(err), { status: 400 });
-      }
-
-      return new Response("OK");
+      //   body.
+      return new Response();
     }),
   },
 };
@@ -55,5 +46,5 @@ export function serveSink() {
     },
   });
 
-  console.log(`Sink listening on port ${app.port}`);
+  logger.info(`Sink listening on port ${app.port}`);
 }

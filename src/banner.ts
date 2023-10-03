@@ -20,7 +20,6 @@ HTTP GET
 HTTP POST (Ed25519 signature)
     / { timestamp, signature, body }
     / { "message": "PING" }
-    /init {}
 `;
 
   return text;

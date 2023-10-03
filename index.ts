@@ -5,8 +5,11 @@ import {
   version,
 } from "./package.json" assert { type: "json" };
 import config from "./src/config.js";
+import { logger } from "./src/logger.js";
 import { executeInitialSchema } from "./src/schema.js";
 import { serveSink } from "./src/server.js";
+
+logger.enable();
 
 const program = new Command();
 program.name(name).description(description).version(version);
