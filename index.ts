@@ -1,7 +1,8 @@
 import { Type } from "@sinclair/typebox";
 import yaml from "yaml";
 import { banner } from "./src/banner.js";
-import { PORT } from "./src/config.js";
+import { client } from "./src/clickhouse.js";
+import config from "./src/config.js";
 import * as prometheus from "./src/prometheus.js";
 import type { Handler } from "./src/types.js";
 import { withValidatedRequest } from "./src/verify.js";
@@ -33,9 +34,10 @@ const handlers: Record<string, Record<string, Handler>> = {
         const schemaFile = Bun.file(schemaFilename);
         const schema = await schemaFile.text();
 
-        console.log(schema);
+        const result = await client.exec({ query: schema });
+        console.log(result);
       } catch (err) {
-        return new Response(JSON.stringify(err), { status: 401 });
+        return new Response(JSON.stringify(err), { status: 400 });
       }
 
       return new Response("OK");
@@ -43,12 +45,13 @@ const handlers: Record<string, Record<string, Handler>> = {
   },
 };
 
-Bun.serve({
-  port: PORT,
+const app = Bun.serve({
+  port: config.PORT,
   async fetch(request) {
     const { pathname } = new URL(request.url);
     const response = await handlers[request.method]?.[pathname]?.(request);
-
     return response ?? new Response("Invalid request", { status: 400 });
   },
 });
+
+console.log(`Sink listening on port ${app.port}`);

@@ -40,6 +40,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@clickhouse/client-web": "^0.2.2",
     "@sinclair/typebox": "^0.31.17",
     "dotenv": "^16.3.1",
     "prom-client": "^14.2.0",

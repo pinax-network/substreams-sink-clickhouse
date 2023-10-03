@@ -1,7 +1,7 @@
 import type { Static, TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import nacl from "tweetnacl";
-import { PUBLIC_KEY } from "./config.js";
+import config from "./config.js";
 import type { Awaitable } from "./types.js";
 
 export function withValidatedRequest<S extends TSchema>(
@@ -28,7 +28,7 @@ export function withValidatedRequest<S extends TSchema>(
     }
 
     const msg = Buffer.from(timestamp + body);
-    const isVerified = verify(msg, signature, PUBLIC_KEY);
+    const isVerified = verify(msg, signature, config.PUBLIC_KEY);
     if (!isVerified) {
       return new Response("invalid request signature", { status: 400 });
     }

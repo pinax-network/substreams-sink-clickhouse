@@ -1,8 +1,19 @@
+import { Type } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 import "dotenv/config";
 
-if (!process.env.PUBLIC_KEY) {
-  throw new Error("PUBLIC_KEY is required.");
-}
+const EnvSchema = Type.Object({
+  PUBLIC_KEY: Type.String(),
+  PORT: Type.Optional(
+    Type.Transform(Type.String({ default: "3000" }))
+      .Decode((str) => parseInt(str))
+      .Encode((num) => num.toString())
+  ),
+  DB_HOST: Type.String(),
+  DB_NAME: Type.String(),
+  DB_USERNAME: Type.String(),
+  DB_PASSWORD: Type.String({ default: "" }),
+});
 
-export const PUBLIC_KEY = process.env.PUBLIC_KEY;
-export const PORT = parseInt(process.env.PORT || "3000");
+const config = Value.Decode(EnvSchema, process.env);
+export default config;
