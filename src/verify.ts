@@ -1,15 +1,13 @@
 import type { Static, TSchema } from "@sinclair/typebox";
+import { ValueError } from "@sinclair/typebox/errors";
 import { Value } from "@sinclair/typebox/value";
 import nacl from "tweetnacl";
 import config from "./config.js";
 import type { Awaitable } from "./types.js";
 
 type ValidatedBody<S extends TSchema> =
-  | { success: false }
-  | {
-      success: true;
-      body: Static<S>;
-    };
+  | { success: false; errors: ValueError[] }
+  | { success: true; body: Static<S> };
 
 export function withValidatedRequest<S extends TSchema>(
   schema: S,
@@ -42,10 +40,17 @@ export function withValidatedRequest<S extends TSchema>(
 
     const parsedBody = JSON.parse(body);
     const isValid = Value.Check(schema, parsedBody);
-    const payload: ValidatedBody<S> = isValid
-      ? { success: true, body: parsedBody }
-      : { success: false };
-    return handler(payload);
+    if (isValid) {
+      return handler({ success: true, body: parsedBody });
+    }
+
+    const errors: ValueError[] = [];
+    const errorsIterator = Value.Errors(schema, parsedBody);
+    for (const err of errorsIterator) {
+      errors.push(err);
+    }
+
+    return handler({ success: false, errors });
   };
 }
 

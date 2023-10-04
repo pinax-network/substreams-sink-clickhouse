@@ -1,10 +1,19 @@
 import { Type } from "@sinclair/typebox";
 import { banner } from "./banner.js";
+import { client } from "./clickhouse.js";
 import config from "./config.js";
 import { logger } from "./logger.js";
 import * as prometheus from "./prometheus.js";
 import type { Handler } from "./types.js";
 import { withValidatedRequest } from "./verify.js";
+
+enum EntityChange_Operation {
+  UNSPECIFIED = "OPERATION_UNSPECIFIED",
+  CREATE = "OPERATION_CREATE",
+  UPDATE = "OPERATION_UPDATE",
+  DELETE = "OPERATION_DELETE",
+  FINAL = "OPERATION_FINAL",
+}
 
 const BodySchema = Type.Union([
   Type.Object({ message: Type.Literal("PING") }),
@@ -26,9 +35,7 @@ const BodySchema = Type.Union([
       moduleHash: Type.String(),
       chain: Type.String(),
     }),
-    data: Type.Object({
-      items: Type.Array(Type.Unknown()),
-    }),
+    data: Type.Object({ entityChanges: Type.Array(Type.Unknown()) }),
   }),
 ]);
 
@@ -39,10 +46,11 @@ const handlers: Record<string, Record<string, Handler>> = {
     "/metrics": () => new Response(prometheus.registry),
   },
   POST: {
-    "/": withValidatedRequest(BodySchema, (payload) => {
+    "/": withValidatedRequest(BodySchema, async (payload) => {
       if (!payload.success) {
         logger.error(
-          "The received payload did not have the planned structure."
+          "The received payload did not have the planned structure.",
+          payload.errors
         );
         return new Response();
       }
@@ -53,6 +61,46 @@ const handlers: Record<string, Record<string, Handler>> = {
           return new Response("OK");
         }
         return new Response("invalid body", { status: 400 });
+      }
+
+      const changes = body.data.entityChanges as any[]; // EntityChange[];
+      if (changes.length === 0) {
+        // Skip this data since it is does not contain any useful information
+        return new Response();
+      }
+
+      for (const change of changes) {
+        switch (change.operation) {
+          case EntityChange_Operation.CREATE: {
+            const values = change.fields.reduce(
+              (previous: any, field: any) => ({
+                ...previous,
+                [field.name]: Object.values(field.newValue)[0],
+              }),
+              {}
+            );
+
+            await client.insert({
+              table: change.entity,
+              values,
+              format: "JSONEachRow",
+            });
+
+            break;
+          }
+          case EntityChange_Operation.UPDATE:
+            logger.warn("operation not implemented");
+            break;
+          case EntityChange_Operation.DELETE:
+            logger.warn("operation not implemented");
+            break;
+          default:
+            logger.error(
+              "unsupported operation found in entityChanges: " +
+                change.operation.toString()
+            );
+            break;
+        }
       }
 
       return new Response();
