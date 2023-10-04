@@ -9,9 +9,26 @@ import { withValidatedRequest } from "./verify.js";
 const BodySchema = Type.Union([
   Type.Object({ message: Type.Literal("PING") }),
   Type.Object({
-    timestamp: Type.Date(),
-    signature: Type.String(),
-    body: Type.Unknown(),
+    cursor: Type.String(),
+    session: Type.Object({
+      traceId: Type.String(),
+      resolvedStartBlock: Type.Number(),
+    }),
+    clock: Type.Object({
+      timestamp: Type.String(),
+      number: Type.Number(),
+      id: Type.String(),
+    }),
+    manifest: Type.Object({
+      substreamsEndpoint: Type.String(),
+      moduleName: Type.String(),
+      type: Type.String(),
+      moduleHash: Type.String(),
+      chain: Type.String(),
+    }),
+    data: Type.Object({
+      items: Type.Array(Type.Unknown()),
+    }),
   }),
 ]);
 
@@ -22,7 +39,15 @@ const handlers: Record<string, Record<string, Handler>> = {
     "/metrics": () => new Response(prometheus.registry),
   },
   POST: {
-    "/": withValidatedRequest(BodySchema, (body) => {
+    "/": withValidatedRequest(BodySchema, (payload) => {
+      if (!payload.success) {
+        logger.error(
+          "The received payload did not have the planned structure."
+        );
+        return new Response();
+      }
+
+      const { body } = payload;
       if ("message" in body) {
         if (body.message === "PING") {
           return new Response("OK");
@@ -30,7 +55,6 @@ const handlers: Record<string, Record<string, Handler>> = {
         return new Response("invalid body", { status: 400 });
       }
 
-      //   body.
       return new Response();
     }),
   },

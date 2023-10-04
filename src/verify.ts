@@ -4,9 +4,16 @@ import nacl from "tweetnacl";
 import config from "./config.js";
 import type { Awaitable } from "./types.js";
 
+type ValidatedBody<S extends TSchema> =
+  | { success: false }
+  | {
+      success: true;
+      body: Static<S>;
+    };
+
 export function withValidatedRequest<S extends TSchema>(
   schema: S,
-  handler: (body: Static<S>) => Awaitable<Response>
+  handler: (payload: ValidatedBody<S>) => Awaitable<Response>
 ) {
   return async (req: Request) => {
     const timestamp = req.headers.get("x-signature-timestamp");
@@ -35,11 +42,10 @@ export function withValidatedRequest<S extends TSchema>(
 
     const parsedBody = JSON.parse(body);
     const isValid = Value.Check(schema, parsedBody);
-    if (!isValid) {
-      return new Response("invalid body", { status: 400 });
-    }
-
-    return handler(JSON.parse(body));
+    const payload: ValidatedBody<S> = isValid
+      ? { success: true, body: parsedBody }
+      : { success: false };
+    return handler(payload);
   };
 }
 
