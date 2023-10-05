@@ -1,7 +1,6 @@
 import { Type } from "@sinclair/typebox";
 import { banner } from "../banner.js";
 import { client } from "../clickhouse.js";
-import config from "../config.js";
 import { EntityChanges } from "../entity-changes.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
@@ -101,9 +100,9 @@ const handlers: Record<string, Record<string, Handler>> = {
   },
 };
 
-export function serveSink() {
+export function serveSink(port: number) {
   const app = Bun.serve({
-    port: config.PORT,
+    port,
     async fetch(request) {
       const { pathname } = new URL(request.url);
       const response = await handlers[request.method]?.[pathname]?.(request);

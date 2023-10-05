@@ -34,6 +34,7 @@ program
   )
   .addOption(verboseOption)
   .option("-s, --schema [schema]")
+  .option("-p, --port <port>")
   .action(async (options) => {
     if ("schema" in options) {
       await executeInitialSchema(
@@ -41,7 +42,8 @@ program
       );
     }
 
-    serveSink();
+    const port = parseInt(options?.port) || config.PORT || 3000;
+    serveSink(port);
   });
 
 program
