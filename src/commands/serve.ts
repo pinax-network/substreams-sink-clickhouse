@@ -1,7 +1,7 @@
 import { Type } from "@sinclair/typebox";
+import { EntityChanges } from "@substreams/sink-entity-changes/typebox";
 import { banner } from "../banner.js";
 import { client } from "../clickhouse.js";
-import { EntityChanges } from "../entity-changes.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { withValidatedRequest } from "../verify.js";
