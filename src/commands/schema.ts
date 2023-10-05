@@ -1,5 +1,5 @@
-import { client } from "./clickhouse.js";
-import { logger } from "./logger.js";
+import { client } from "../clickhouse.js";
+import { logger } from "../logger.js";
 
 export async function executeInitialSchema(schemaPath: string) {
   const file = Bun.file(schemaPath || "./schema.sql");

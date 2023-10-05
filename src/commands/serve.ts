@@ -1,12 +1,11 @@
 import { Type } from "@sinclair/typebox";
-import { banner } from "./banner.js";
-import { client } from "./clickhouse.js";
-import config from "./config.js";
-import { EntityChanges } from "./entity-changes.js";
-import { logger } from "./logger.js";
-import * as prometheus from "./prometheus.js";
-import type { Handler } from "./types.js";
-import { withValidatedRequest } from "./verify.js";
+import { banner } from "../banner.js";
+import { client } from "../clickhouse.js";
+import config from "../config.js";
+import { EntityChanges } from "../entity-changes.js";
+import { logger } from "../logger.js";
+import * as prometheus from "../prometheus.js";
+import { withValidatedRequest } from "../verify.js";
 
 const BodySchema = Type.Union([
   Type.Object({ message: Type.Literal("PING") }),
@@ -32,6 +31,7 @@ const BodySchema = Type.Union([
   }),
 ]);
 
+type Handler = (req: Request) => Response | Promise<Response>;
 const handlers: Record<string, Record<string, Handler>> = {
   GET: {
     "/": () => new Response(banner()),

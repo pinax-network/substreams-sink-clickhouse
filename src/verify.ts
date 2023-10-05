@@ -3,7 +3,6 @@ import { ValueError } from "@sinclair/typebox/errors";
 import { Value } from "@sinclair/typebox/value";
 import nacl from "tweetnacl";
 import config from "./config.js";
-import type { Awaitable } from "./types.js";
 
 type ValidatedBody<S extends TSchema> =
   | { success: false; errors: ValueError[] }
@@ -11,7 +10,7 @@ type ValidatedBody<S extends TSchema> =
 
 export function withValidatedRequest<S extends TSchema>(
   schema: S,
-  handler: (payload: ValidatedBody<S>) => Awaitable<Response>
+  handler: (payload: ValidatedBody<S>) => Promise<Response>
 ) {
   return async (req: Request) => {
     const timestamp = req.headers.get("x-signature-timestamp");
@@ -23,11 +22,13 @@ export function withValidatedRequest<S extends TSchema>(
         status: 400,
       });
     }
+
     if (!signature) {
       return new Response("missing required signature in headers", {
         status: 400,
       });
     }
+
     if (!body) {
       return new Response("missing body", { status: 400 });
     }
@@ -38,26 +39,32 @@ export function withValidatedRequest<S extends TSchema>(
       return new Response("invalid request signature", { status: 400 });
     }
 
-    const parsedBody = JSON.parse(body);
-    const isValid = Value.Check(schema, parsedBody);
-    if (isValid) {
-      return handler({ success: true, body: parsedBody });
-    }
-
-    const errors: ValueError[] = [];
-    const errorsIterator = Value.Errors(schema, parsedBody);
-    for (const err of errorsIterator) {
-      errors.push(err);
-    }
-
-    return handler({ success: false, errors });
+    return handler(parseBody(schema, body));
   };
 }
 
-function verify(msg: Buffer, sig: string, publicKey: string) {
+function verify(message: Buffer, signature: string, publicKey: string) {
   return nacl.sign.detached.verify(
-    msg,
-    Buffer.from(sig, "hex"),
+    message,
+    Buffer.from(signature, "hex"),
     Buffer.from(publicKey, "hex")
   );
+}
+
+function parseBody<S extends TSchema>(
+  schema: S,
+  bodyStr: string
+): ValidatedBody<S> {
+  const parsedBody = JSON.parse(bodyStr);
+  if (Value.Check(schema, parsedBody)) {
+    return { success: true, body: parsedBody };
+  }
+
+  const errors: ValueError[] = [];
+  const errorsIterator = Value.Errors(schema, parsedBody);
+  for (const err of errorsIterator) {
+    errors.push(err);
+  }
+
+  return { success: false, errors };
 }

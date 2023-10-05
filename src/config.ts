@@ -5,7 +5,7 @@ import "dotenv/config";
 const EnvSchema = Type.Object({
   PUBLIC_KEY: Type.String(),
   PORT: Type.Optional(
-    Type.Transform(Type.String({ default: "3000" }))
+    Type.Transform(Type.String())
       .Decode((str) => parseInt(str))
       .Encode((num) => num.toString())
   ),
