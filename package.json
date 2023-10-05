@@ -47,7 +47,6 @@
     "dotenv": "^16.3.1",
     "prom-client": "^14.2.0",
     "tslog": "^4.9.2",
-    "tweetnacl": "^1.0.3",
-    "yaml": "^2.3.2"
+    "tweetnacl": "^1.0.3"
   }
 }
