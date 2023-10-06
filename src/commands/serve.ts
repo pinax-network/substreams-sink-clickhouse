@@ -4,7 +4,8 @@ import { banner } from "../banner.js";
 import { client } from "../clickhouse.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
-import { withValidatedRequest } from "../verify.js";
+import { authProvider } from "../verify.js";
+import config from "../config.js";
 
 const BodySchema = Type.Union([
   Type.Object({ message: Type.Literal("PING") }),
@@ -30,6 +31,8 @@ const BodySchema = Type.Union([
   }),
 ]);
 
+const { validated } = authProvider(config.PUBLIC_KEY);
+
 type Handler = (req: Request) => Response | Promise<Response>;
 const handlers: Record<string, Record<string, Handler>> = {
   GET: {
@@ -38,12 +41,9 @@ const handlers: Record<string, Record<string, Handler>> = {
     "/metrics": () => new Response(prometheus.registry),
   },
   POST: {
-    "/": withValidatedRequest(BodySchema, async (payload) => {
+    "/": validated(BodySchema, async (payload) => {
       if (!payload.success) {
-        logger.error(
-          "The received payload did not have the planned structure.",
-          payload.errors
-        );
+        logger.error("The received payload did not have the planned structure.", payload.errors);
         return new Response();
       }
 
@@ -87,10 +87,7 @@ const handlers: Record<string, Record<string, Handler>> = {
             logger.warn("operation not implemented");
             break;
           default:
-            logger.error(
-              "unsupported operation found in entityChanges: " +
-                change.operation.toString()
-            );
+            logger.error("unsupported operation found in entityChanges: " + change.operation.toString());
             break;
         }
       }
