@@ -1,11 +1,15 @@
 import { Type } from "@sinclair/typebox";
-import { EntityChanges } from "@substreams/sink-entity-changes/typebox";
+import {
+  EntityChange,
+  EntityChanges,
+} from "@substreams/sink-entity-changes/typebox";
 import { banner } from "../banner.js";
 import { client } from "../clickhouse.js";
+import config from "../config.js";
+import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { authProvider } from "../verify.js";
-import config from "../config.js";
 
 const BodySchema = Type.Union([
   Type.Object({ message: Type.Literal("PING") }),
@@ -43,59 +47,48 @@ const handlers: Record<string, Record<string, Handler>> = {
   POST: {
     "/": validated(BodySchema, async (payload) => {
       if (!payload.success) {
-        logger.error("The received payload did not have the planned structure.", payload.errors);
+        logger.error(
+          "The received payload did not have the planned structure.",
+          payload.errors
+        );
         return new Response();
       }
 
-      const { body } = payload;
-      if ("message" in body) {
-        if (body.message === "PING") {
+      if ("message" in payload.body) {
+        if (payload.body.message === "PING") {
           return new Response("OK");
         }
         return new Response("invalid body", { status: 400 });
       }
 
-      const changes = body.data.entityChanges;
-      if (changes.length === 0) {
-        // Skip this data since it is does not contain any useful information
-        return new Response();
-      }
-
-      for (const change of changes) {
-        switch (change.operation) {
-          case "OPERATION_CREATE": {
-            const values = change.fields.reduce(
-              (previous: any, field: any) => ({
-                ...previous,
-                [field.name]: Object.values(field.newValue)[0],
-              }),
-              {}
-            );
-
-            await client.insert({
-              table: change.entity,
-              values,
-              format: "JSONEachRow",
-            });
-
-            break;
-          }
-          case "OPERATION_UPDATE":
-            logger.warn("operation not implemented");
-            break;
-          case "OPERATION_DELETE":
-            logger.warn("operation not implemented");
-            break;
-          default:
-            logger.error("unsupported operation found in entityChanges: " + change.operation.toString());
-            break;
-        }
-      }
+      const changes = payload.body.data.entityChanges;
+      const promises = changes.map(handleEntityChange);
+      await Promise.allSettled(promises);
 
       return new Response();
     }),
   },
 };
+
+function handleEntityChange(change: EntityChange): Promise<unknown> {
+  const values = getValuesInEntityChange(change);
+
+  switch (change.operation) {
+    case "OPERATION_CREATE":
+      return client.insert({
+        values,
+        table: change.entity,
+        format: "JSONEachRow",
+      });
+
+    default:
+      logger.error(
+        "unsupported operation found in entityChanges: " +
+          change.operation.toString()
+      );
+      return Promise.resolve();
+  }
+}
 
 export function serveSink(port: number) {
   const app = Bun.serve({

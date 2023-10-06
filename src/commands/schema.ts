@@ -10,6 +10,6 @@ export async function executeInitialSchema(schemaPath: string) {
 
   logger.info("Executing schema.");
   const schema = await file.text();
-  await client.exec({ query: schema });
+  await client.command({ query: schema });
   logger.info("Complete.");
 }

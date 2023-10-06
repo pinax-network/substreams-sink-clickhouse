@@ -3,11 +3,16 @@ import { ValueError } from "@sinclair/typebox/errors";
 import { Value } from "@sinclair/typebox/value";
 import nacl from "tweetnacl";
 
-type ValidatedBody<S extends TSchema> = { success: false; errors: ValueError[] } | { success: true; body: Static<S> };
+type ValidatedBody<S extends TSchema> =
+  | { success: false; errors: ValueError[] }
+  | { success: true; body: Static<S> };
 
 export function authProvider(publicKey: string) {
   return {
-    validated: function withValidatedRequest<S extends TSchema>(schema: S, handler: (payload: ValidatedBody<S>) => Promise<Response>) {
+    validated: function withValidatedRequest<S extends TSchema>(
+      schema: S,
+      handler: (payload: ValidatedBody<S>) => Promise<Response>
+    ) {
       return async (req: Request) => {
         const timestamp = req.headers.get("x-signature-timestamp");
         const signature = req.headers.get("x-signature-ed25519");
@@ -46,10 +51,17 @@ export function authProvider(publicKey: string) {
 }
 
 function verify(message: Buffer, signature: string, publicKey: string) {
-  return nacl.sign.detached.verify(message, Buffer.from(signature, "hex"), Buffer.from(publicKey, "hex"));
+  return nacl.sign.detached.verify(
+    message,
+    Buffer.from(signature, "hex"),
+    Buffer.from(publicKey, "hex")
+  );
 }
 
-function parseBody<S extends TSchema>(schema: S, bodyStr: string): ValidatedBody<S> {
+function parseBody<S extends TSchema>(
+  schema: S,
+  bodyStr: string
+): ValidatedBody<S> {
   const parsedBody = JSON.parse(bodyStr);
   if (Value.Check(schema, parsedBody)) {
     return { success: true, body: parsedBody };

@@ -2,14 +2,10 @@ import { client } from "../clickhouse.js";
 import { logger } from "../logger.js";
 
 export async function ping() {
-  try {
-    await client.exec({ query: "SELECT 1" });
+  const result = await client.ping();
+  if (result.success) {
     logger.info("OK");
-  } catch (err) {
-    if (typeof err === "string") {
-      logger.error(err);
-    } else {
-      logger.error(JSON.stringify(err));
-    }
+  } else {
+    logger.error(result.error);
   }
 }
