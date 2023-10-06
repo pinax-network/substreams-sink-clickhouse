@@ -3,3 +3,5 @@ node_modules/
 dist/
 substreams-sink-clickhouse
 .env
+replay.log
+*.sql

@@ -48,12 +48,14 @@ program
 
 program
   .command("schema")
+  .addOption(verboseOption)
   .description("execute a provided SQL schema to initialize the database")
   .argument("[schema]", "the SQL schema file to execute", config.SCHEMA)
   .action(executeInitialSchema);
 
 program
   .command("ping")
+  .addOption(verboseOption)
   .description("validate the connection with the database")
   .action(ping);
 
