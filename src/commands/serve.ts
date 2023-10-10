@@ -1,4 +1,4 @@
-import { Type } from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 import {
   EntityChange,
   EntityChanges,
@@ -11,6 +11,22 @@ import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { authProvider } from "../verify.js";
 
+const ClockSchema = Type.Object({
+  timestamp: Type.String(),
+  number: Type.Number(),
+  id: Type.String(),
+});
+type Clock = Static<typeof ClockSchema>;
+
+const ManifestSchema = Type.Object({
+  substreamsEndpoint: Type.String(),
+  moduleName: Type.String(),
+  type: Type.String(),
+  moduleHash: Type.String(),
+  chain: Type.String(),
+});
+type Manifest = Static<typeof ManifestSchema>;
+
 const BodySchema = Type.Union([
   Type.Object({ message: Type.Literal("PING") }),
   Type.Object({
@@ -19,18 +35,8 @@ const BodySchema = Type.Union([
       traceId: Type.String(),
       resolvedStartBlock: Type.Number(),
     }),
-    clock: Type.Object({
-      timestamp: Type.String(),
-      number: Type.Number(),
-      id: Type.String(),
-    }),
-    manifest: Type.Object({
-      substreamsEndpoint: Type.String(),
-      moduleName: Type.String(),
-      type: Type.String(),
-      moduleHash: Type.String(),
-      chain: Type.String(),
-    }),
+    clock: ClockSchema,
+    manifest: ManifestSchema,
     data: EntityChanges,
   }),
 ]);
@@ -61,8 +67,13 @@ const handlers: Record<string, Record<string, Handler>> = {
         return new Response("invalid body", { status: 400 });
       }
 
+      const clock = payload.body.clock;
+      const manifest = payload.body.manifest;
+
       const changes = payload.body.data.entityChanges;
-      const promises = changes.map(handleEntityChange);
+      const promises = changes.map((change) =>
+        handleEntityChange(change, { clock, manifest })
+      );
       await Promise.allSettled(promises);
 
       return new Response();
@@ -70,8 +81,19 @@ const handlers: Record<string, Record<string, Handler>> = {
   },
 };
 
-function handleEntityChange(change: EntityChange): Promise<unknown> {
+function handleEntityChange(
+  change: EntityChange,
+  metadata: { clock: Clock; manifest: Manifest }
+): Promise<unknown> {
   const values = getValuesInEntityChange(change);
+
+  values["block_id"] = metadata.clock.id;
+  values["block_number"] = metadata.clock.number;
+  values["timestamp"] = new Date(metadata.clock.timestamp)
+    .toISOString()
+    .slice(0, 19);
+
+  console.log(values);
 
   switch (change.operation) {
     case "OPERATION_CREATE":
