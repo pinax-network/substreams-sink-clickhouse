@@ -1,14 +1,8 @@
-import {
-  BaseQueryParams,
-  ExecParams,
-  PingResult,
-  createClient,
-} from "@clickhouse/client-web";
+import { ExecParams, PingResult, createClient } from "@clickhouse/client-web";
 import config from "./config.js";
 
 type Client = ReturnType<typeof createClient>;
 type InputParams = Parameters<Client["insert"]>[0];
-};
 
 export class BunClickHouseClient {
   private client: Client;
