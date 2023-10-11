@@ -71,10 +71,9 @@ const handlers: Record<string, Record<string, Handler>> = {
       const manifest = payload.body.manifest;
 
       const changes = payload.body.data.entityChanges;
-      const promises = changes.map((change) =>
-        handleEntityChange(change, { clock, manifest })
+      await Promise.allSettled(
+        changes.map((change) => handleEntityChange(change, { clock, manifest }))
       );
-      await Promise.allSettled(promises);
 
       return new Response();
     }),
@@ -87,13 +86,12 @@ function handleEntityChange(
 ): Promise<unknown> {
   const values = getValuesInEntityChange(change);
 
+  values["chain"] = metadata.manifest.chain;
   values["block_id"] = metadata.clock.id;
   values["block_number"] = metadata.clock.number;
   values["timestamp"] = new Date(metadata.clock.timestamp)
     .toISOString()
     .slice(0, 19);
-
-  console.log(values);
 
   switch (change.operation) {
     case "OPERATION_CREATE":
