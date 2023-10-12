@@ -1,4 +1,4 @@
-import { Type } from "@sinclair/typebox";
+import { StaticDecode, Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import "dotenv/config";
 
@@ -16,5 +16,16 @@ const EnvSchema = Type.Object({
   SCHEMA: Type.Optional(Type.String()),
 });
 
-const config = Value.Decode(EnvSchema, process.env);
-export default config;
+let config: StaticDecode<typeof EnvSchema>;
+try {
+  config = Value.Decode(EnvSchema, process.env);
+} catch {
+  console.error("Could not load config: ");
+  for (const err of Value.Errors(EnvSchema, process.env)) {
+    console.error(err);
+  }
+
+  process.exit(1);
+}
+
+export default config!;

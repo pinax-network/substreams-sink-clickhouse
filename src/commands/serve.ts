@@ -92,17 +92,14 @@ function handleEntityChange(
     case "OPERATION_CREATE":
       return handleCreate(change.entity, values, metadata);
 
-    case "OPERATION_UPDATE":
-      return client.update();
+    // case "OPERATION_UPDATE":
+    //   return client.update();
 
-    case "OPERATION_DELETE":
-      return client.delete({ values, table: change.entity });
+    // case "OPERATION_DELETE":
+    //   return client.delete({ values, table: change.entity });
 
     default:
-      logger.error(
-        "unsupported operation found in entityChanges: " +
-          change.operation.toString()
-      );
+      logger.error("unsupported operation found in entityChanges: " + change.operation.toString());
       return Promise.resolve();
   }
 }
