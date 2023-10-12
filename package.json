@@ -9,7 +9,7 @@
     "start": "bun index.ts",
     "dev": "bun index.ts --watch",
     "test": "bun test",
-    "lint": "bunx tsc",
+    "lint": "bunx tsc --noEmit",
     "build": "bun build --compile ./index.ts --outfile substreams-sink-clickhouse"
   },
   "repository": {

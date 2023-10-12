@@ -8,7 +8,7 @@ import { handleSinkRequest } from "./sink.js";
 import { handleTableInitialization } from "./table-initialization.js";
 import { authProvider } from "./verify.js";
 
-const { signed, authenticated } = authProvider(config.PUBLIC_KEY);
+const { signed, authenticated } = authProvider(config.PUBLIC_KEY, config.AUTH_KEY);
 
 type Handler = (req: Request) => Response | Promise<Response>;
 const handlers: Record<string, Record<string, Handler>> = {

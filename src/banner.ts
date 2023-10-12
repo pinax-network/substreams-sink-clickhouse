@@ -14,6 +14,7 @@ export function banner() {
 Documentation: ${pkg.homepage}
 
 HTTP GET
+    /ping
     /health
     /metrics
 

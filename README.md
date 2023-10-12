@@ -26,20 +26,25 @@ DB_NAME=clickhouse_sink
 DB_USERNAME=default
 DB_PASSWORD=
 
-SCHEMA=./schema.sql
+AUTH_KEY=... # Generate in Node via `require(crypto).randomBytes(64).toString('base64')`
 ```
 
 ## Usage
 
-`substreams-clickhouse-sink --help`
+Endpoint summary available at [http://localhost:3000](http://localhost:3000).
+
+```bash
+substreams-clickhouse-sink --help
+```
 
 ### Schema initialization
 
-Initializes the database according to a SQL file. See [example file](#example-sql-file)
+Initializes the database according to a SQL file. See [example file](#example-sql-file).
+
+It can also be done by uploading a `.sql` file on [http://localhost:3000](http://localhost:3000).
 
 ```bash
-substreams-clickhouse-sink schema "./schema.sql"    # executes the schema against the DB
-substreams-clickhouse-sink schema                   # selects and executes schema in .env
+curl --location --request POST 'http://localhost:3000/schema' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '{"schema": "<SQL_INSTRUCTIONS>"}'
 ```
 
 ### Sink
@@ -49,16 +54,17 @@ Serves an endpoint to receive Substreams data from [substreams-sink-webhook](htt
 Endpoints are detailed on [http://localhost:3000](http://localhost:3000).
 
 ```bash
-substreams-clickhouse-sink run
+substreams-clickhouse-sink
+# or
+bun start
 ```
 
 #### Optional flags
 
-| Flags                          | Description                                            |
-| ------------------------------ | ------------------------------------------------------ |
-| `-v`, `--verbose`              | Enables logs. Add `"json"` to change the output format |
-| `-p`, `--port`                 | Selects the port to serve the sink                     |
-| `-s [file]`, `--schema [file]` | Executes [schema](#schema-initialization) beforehand   |
+| Flags             | Description                                            |
+| ----------------- | ------------------------------------------------------ |
+| `-v`, `--verbose` | Enables logs. Add `"json"` to change the output format |
+| `-p`, `--port`    | Selects the port to serve the sink                     |
 
 #### Example SQL file
 
@@ -74,7 +80,7 @@ CREATE TABLE IF NOT EXISTS contracts (
     symbol Nullable(String),
     decimals Nullable(UInt8)
 )
-ENGINE = ReplacingdMergeTree()
+ENGINE = ReplacingMergeTree()
 ORDER BY (address)
 ```
 
