@@ -130,16 +130,3 @@ async function handleCreate(
 
   return client.insert({ values, table: tableName, format: "JSONEachRow" });
 }
-
-export async function serveSink(port: number) {
-  const app = Bun.serve({
-    port,
-    async fetch(request) {
-      const { pathname } = new URL(request.url);
-      const response = await handlers[request.method]?.[pathname]?.(request);
-      return response ?? new Response("Invalid request", { status: 400 });
-    },
-  });
-
-  logger.info(`Sink listening on port ${app.port}`);
-}
