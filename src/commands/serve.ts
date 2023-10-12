@@ -8,6 +8,7 @@ import { client } from "../clickhouse.js";
 import config from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
+import { initializeManifest } from "../manifest.js";
 import * as prometheus from "../prometheus.js";
 import { authProvider } from "../verify.js";
 
@@ -42,6 +43,7 @@ const BodySchema = Type.Union([
 ]);
 
 const { validated } = authProvider(config.PUBLIC_KEY);
+const knownModuleHashes: string[] = [];
 
 type Handler = (req: Request) => Response | Promise<Response>;
 const handlers: Record<string, Record<string, Handler>> = {
@@ -86,20 +88,15 @@ function handleEntityChange(
 ): Promise<unknown> {
   const values = getValuesInEntityChange(change);
 
-  values["chain"] = metadata.manifest.chain;
-  values["block_id"] = metadata.clock.id;
-  values["block_number"] = metadata.clock.number;
-  values["timestamp"] = new Date(metadata.clock.timestamp)
-    .toISOString()
-    .slice(0, 19);
-
   switch (change.operation) {
     case "OPERATION_CREATE":
-      return client.insert({
-        values,
-        table: change.entity,
-        format: "JSONEachRow",
-      });
+      return handleCreate(change.entity, values, metadata);
+
+    case "OPERATION_UPDATE":
+      return client.update();
+
+    case "OPERATION_DELETE":
+      return client.delete({ values, table: change.entity });
 
     default:
       logger.error(
@@ -110,7 +107,34 @@ function handleEntityChange(
   }
 }
 
-export function serveSink(port: number) {
+async function handleCreate(
+  tableName: string,
+  values: Record<string, unknown>,
+  metadata: { clock: Clock; manifest: Manifest }
+) {
+  if (!knownModuleHashes.includes(metadata.manifest.moduleHash)) {
+    await client.command({
+      query: `
+      INSERT INTO manifest (module_hash, type, module_name)
+      VALUES ('${metadata.manifest.moduleHash}', '${metadata.manifest.type}', '${metadata.manifest.moduleName}')`,
+    });
+    knownModuleHashes.push(metadata.manifest.moduleHash);
+  }
+
+  values["chain"] = metadata.manifest.chain;
+  values["block_id"] = metadata.clock.id;
+  values["block_number"] = metadata.clock.number;
+  values["module_hash"] = metadata.manifest.moduleHash;
+  values["timestamp"] = new Date(metadata.clock.timestamp)
+    .toISOString()
+    .slice(0, 19);
+
+  return client.insert({ values, table: tableName, format: "JSONEachRow" });
+}
+
+export async function serveSink(port: number) {
+  await initializeManifest();
+
   const app = Bun.serve({
     port,
     async fetch(request) {

@@ -3,10 +3,11 @@ import { logger } from "../logger.js";
 import { splitSchemaByTableCreation } from "../table-utils.js";
 
 const metadataQueries = (tableName: string) => [
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS timestamp DateTime('UTC');`,
+  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS timestamp    DateTime('UTC');`,
   `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS block_number UInt32;`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS block_id String(64);`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS chain String;`,
+  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS block_id     FixedString(64);`,
+  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS chain        LowCardinality(String);`,
+  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS module_hash  FixedString(40);`,
 ];
 
 export async function executeInitialSchema(schemaPath: string) {
