@@ -20,6 +20,9 @@ HTTP GET
 HTTP POST (Ed25519 signature)
     / { timestamp, signature, body }
     / { "message": "PING" }
+
+HTTP POST (Authentication key)
+    /schema { "schema": <SQL> }
 `;
 
   return text;

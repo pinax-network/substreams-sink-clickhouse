@@ -1,17 +1,19 @@
 import type { Static, TSchema } from "@sinclair/typebox";
 import { ValueError } from "@sinclair/typebox/errors";
 import { Value } from "@sinclair/typebox/value";
+import { timingSafeEqual } from "crypto";
 import nacl from "tweetnacl";
+import { logger } from "./logger.js";
 
-type ValidatedBody<S extends TSchema> =
-  | { success: false; errors: ValueError[] }
-  | { success: true; body: Static<S> };
+type ValidatedBody<S extends TSchema> = { success: false } | { success: true; body: Static<S> };
 
-export function authProvider(publicKey: string) {
+export function authProvider(publicKey: string, authKey: string) {
+  const authKeyBuffer = Buffer.from(authKey, "base64");
+
   return {
-    validated: function withValidatedRequest<S extends TSchema>(
+    signed: function withSignedRequest<S extends TSchema>(
       schema: S,
-      handler: (payload: ValidatedBody<S>) => Promise<Response>
+      handler: (payload: Static<S>) => Promise<Response>
     ) {
       return async (req: Request) => {
         const timestamp = req.headers.get("x-signature-timestamp");
@@ -44,7 +46,45 @@ export function authProvider(publicKey: string) {
           return new Response("invalid request signature", { status: 400 });
         }
 
-        return handler(parseBody(schema, body));
+        const result = parseBody(schema, body);
+        if (!result.success) {
+          return new Response();
+        }
+
+        return handler(result.body);
+      };
+    },
+
+    authenticated: function withAuthenticatedRequest<S extends TSchema>(
+      schema: S,
+      handler: (payload: Static<S>) => Promise<Response>
+    ) {
+      return async (req: Request) => {
+        const authorization = req.headers.get("Authorization");
+        if (!authorization) {
+          return new Response("missing authorization header", { status: 400 });
+        }
+
+        try {
+          const key = authorization?.replace("Bearer", "").trim();
+          if (!timingSafeEqual(Buffer.from(key, "base64"), authKeyBuffer)) {
+            return new Response("invalid authorization key", { status: 400 });
+          }
+        } catch {
+          return new Response("invalid authorization key", { status: 400 });
+        }
+
+        const body = await req.text();
+        if (!body) {
+          return new Response("missing body", { status: 400 });
+        }
+
+        const result = parseBody(schema, body);
+        if (!result.success) {
+          return new Response();
+        }
+
+        return handler(result.body);
       };
     },
   };
@@ -58,10 +98,7 @@ function verify(message: Buffer, signature: string, publicKey: string) {
   );
 }
 
-function parseBody<S extends TSchema>(
-  schema: S,
-  bodyStr: string
-): ValidatedBody<S> {
+function parseBody<S extends TSchema>(schema: S, bodyStr: string): ValidatedBody<S> {
   const parsedBody = JSON.parse(bodyStr);
   if (Value.Check(schema, parsedBody)) {
     return { success: true, body: parsedBody };
@@ -73,5 +110,6 @@ function parseBody<S extends TSchema>(
     errors.push(err);
   }
 
-  return { success: false, errors };
+  logger.error("The payload did not have the planned structure: ", errors);
+  return { success: false };
 }

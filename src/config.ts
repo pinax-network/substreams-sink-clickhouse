@@ -13,7 +13,7 @@ const EnvSchema = Type.Object({
   DB_NAME: Type.String(),
   DB_USERNAME: Type.String(),
   DB_PASSWORD: Type.String({ default: "" }),
-  SCHEMA: Type.Optional(Type.String()),
+  AUTH_KEY: Type.String(),
 });
 
 const config = Value.Decode(EnvSchema, process.env);

@@ -17,16 +17,21 @@ export const ManifestSchema = Type.Object({
 });
 export type Manifest = Static<typeof ManifestSchema>;
 
-export const BodySchema = Type.Union([
-  Type.Object({ message: Type.Literal("PING") }),
-  Type.Object({
-    cursor: Type.String(),
-    session: Type.Object({
-      traceId: Type.String(),
-      resolvedStartBlock: Type.Number(),
-    }),
-    clock: ClockSchema,
-    manifest: ManifestSchema,
-    data: EntityChanges,
+export const PingBody = Type.Object({ message: Type.Literal("PING") });
+export const PayloadBody = Type.Object({
+  cursor: Type.String(),
+  session: Type.Object({
+    traceId: Type.String(),
+    resolvedStartBlock: Type.Number(),
   }),
-]);
+  clock: ClockSchema,
+  manifest: ManifestSchema,
+  data: EntityChanges,
+});
+export type PayloadBody = Static<typeof PayloadBody>;
+
+export const BodySchema = Type.Union([PingBody, PayloadBody]);
+export type BodySchema = Static<typeof BodySchema>;
+
+export const TableInitSchema = Type.Object({ schema: Type.String() });
+export type TableInitSchema = Static<typeof TableInitSchema>;
