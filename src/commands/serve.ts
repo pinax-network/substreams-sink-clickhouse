@@ -8,7 +8,6 @@ import { client } from "../clickhouse.js";
 import config from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
-import { initializeManifest } from "../manifest.js";
 import * as prometheus from "../prometheus.js";
 import { authProvider } from "../verify.js";
 
@@ -92,11 +91,11 @@ function handleEntityChange(
     case "OPERATION_CREATE":
       return handleCreate(change.entity, values, metadata);
 
-    case "OPERATION_UPDATE":
-      return client.update();
+    // case "OPERATION_UPDATE":
+    //   return client.update();
 
-    case "OPERATION_DELETE":
-      return client.delete({ values, table: change.entity });
+    // case "OPERATION_DELETE":
+    //   return client.delete({ values, table: change.entity });
 
     default:
       logger.error(
@@ -133,8 +132,6 @@ async function handleCreate(
 }
 
 export async function serveSink(port: number) {
-  await initializeManifest();
-
   const app = Bun.serve({
     port,
     async fetch(request) {
