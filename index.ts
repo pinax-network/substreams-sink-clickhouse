@@ -24,15 +24,19 @@ if (options?.verbose) {
 await ping();
 await initializeManifest();
 
-const schemaUrl = getSchemaUrl(options);
-if (schemaUrl) {
-  await initializeSchema(schemaUrl);
+const schema = await getSchema(options);
+if (schema) {
+  try {
+    await initializeTables(schema);
+  } catch {
+    process.exit(1);
+  }
 }
 
 serve(options.port || config.PORT || 3000);
 
-function getSchemaUrl(options: OptionValues) {
-  if (typeof options.schemaUrl === "boolean" && !options.schemaUrl) {
+async function getSchema(options: OptionValues) {
+  if (!options.schemaUrl) {
     return null;
   }
 
@@ -44,20 +48,16 @@ function getSchemaUrl(options: OptionValues) {
   }
 
   try {
-    return new URL(inputSchemaUrl);
-  } catch {
-    logger.error("could not resolve the url. Is it valid?");
-    process.exit(1);
-  }
-}
+    const file = Bun.file(inputSchemaUrl);
+    if (await file.exists()) {
+      return file.text();
+    }
 
-async function initializeSchema(schemaUrl: URL) {
-  try {
-    const schema = await fetch(schemaUrl);
-    const schemaStr = await schema.text();
-    await initializeTables(schemaStr);
-  } catch (err) {
-    logger.error("could not execute the specified schema: ");
+    const url = new URL(inputSchemaUrl);
+    const response = await fetch(url);
+    return response.text();
+  } catch {
+    logger.error("could not find the requested schema. Is it valid?");
     process.exit(1);
   }
 }
