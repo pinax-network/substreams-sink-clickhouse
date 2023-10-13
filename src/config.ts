@@ -9,10 +9,14 @@ const EnvSchema = Type.Object({
       .Decode((str) => parseInt(str))
       .Encode((num) => num.toString())
   ),
+
   DB_HOST: Type.String(),
   DB_NAME: Type.String(),
   DB_USERNAME: Type.String(),
   DB_PASSWORD: Type.String({ default: "" }),
+
+  SCHEMA_URL: Type.Optional(Type.String()),
+
   AUTH_KEY: Type.String(),
 });
 

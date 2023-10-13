@@ -27,6 +27,8 @@ DB_USERNAME=default
 DB_PASSWORD=
 
 AUTH_KEY=... # Generate in Node via `require(crypto).randomBytes(64).toString('base64')`
+
+SCHEMA_URL=... # Optional
 ```
 
 ## Usage
@@ -61,10 +63,11 @@ bun start
 
 #### Optional flags
 
-| Flags             | Description                                            |
-| ----------------- | ------------------------------------------------------ |
-| `-v`, `--verbose` | Enables logs. Add `"json"` to change the output format |
-| `-p`, `--port`    | Selects the port to serve the sink                     |
+| Flags             | Arguments      | Default                | Description                                              |
+| ----------------- | -------------- | ---------------------- | -------------------------------------------------------- |
+| `-v`, `--verbose` | -              | `"pretty"`             | Enables logs. Add `"json"` to change the output format   |
+| `-p`, `--port`    | `<port>`       | `3000`                 | Selects the port to serve the sink                       |
+| `-s`, `--schema`  | `[schema-url]` | `SCHEMA_URL` in `.env` | URL to a `.sql` file to execute before starting the sink |
 
 #### Example SQL file
 
@@ -72,8 +75,6 @@ bun start
 <summary>Click to expand</summary>
 
 ```sql
--- ./schema.sql
-
 CREATE TABLE IF NOT EXISTS contracts (
     address FixedString(40),
     name Nullable(String),
