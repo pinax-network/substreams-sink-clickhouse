@@ -1,8 +1,6 @@
-import { EntityChange } from "@substreams/sink-entity-changes/typebox";
+import { EntityChange } from "@substreams/sink-entity-changes/zod";
 
-export function getValuesInEntityChange(
-  change: EntityChange
-): Record<string, unknown> {
+export function getValuesInEntityChange(change: EntityChange): Record<string, unknown> {
   const values: Record<string, unknown> = {};
 
   for (const field of change.fields) {

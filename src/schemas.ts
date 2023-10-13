@@ -1,37 +1,37 @@
-import { Static, Type } from "@sinclair/typebox";
-import { EntityChanges } from "@substreams/sink-entity-changes/typebox";
+import { EntityChanges } from "@substreams/sink-entity-changes/zod";
+import z from "zod";
 
-export const ClockSchema = Type.Object({
-  timestamp: Type.String(),
-  number: Type.Number(),
-  id: Type.String(),
+export const ClockSchema = z.object({
+  timestamp: z.string(),
+  number: z.number(),
+  id: z.string(),
 });
-export type Clock = Static<typeof ClockSchema>;
+export type Clock = z.infer<typeof ClockSchema>;
 
-export const ManifestSchema = Type.Object({
-  substreamsEndpoint: Type.String(),
-  moduleName: Type.String(),
-  type: Type.String(),
-  moduleHash: Type.String(),
-  chain: Type.String(),
+export const ManifestSchema = z.object({
+  substreamsEndpoint: z.string(),
+  moduleName: z.string(),
+  type: z.string(),
+  moduleHash: z.string(),
+  chain: z.string(),
 });
-export type Manifest = Static<typeof ManifestSchema>;
+export type Manifest = z.infer<typeof ManifestSchema>;
 
-export const PingBody = Type.Object({ message: Type.Literal("PING") });
-export const PayloadBody = Type.Object({
-  cursor: Type.String(),
-  session: Type.Object({
-    traceId: Type.String(),
-    resolvedStartBlock: Type.Number(),
+export const PingBody = z.object({ message: z.literal("PING") });
+export const PayloadBody = z.object({
+  cursor: z.string(),
+  session: z.object({
+    traceId: z.string(),
+    resolvedStartBlock: z.number(),
   }),
   clock: ClockSchema,
   manifest: ManifestSchema,
   data: EntityChanges,
 });
-export type PayloadBody = Static<typeof PayloadBody>;
+export type PayloadBody = z.infer<typeof PayloadBody>;
 
-export const BodySchema = Type.Union([PingBody, PayloadBody]);
-export type BodySchema = Static<typeof BodySchema>;
+export const BodySchema = z.union([PingBody, PayloadBody]);
+export type BodySchema = z.infer<typeof BodySchema>;
 
-export const TableInitSchema = Type.Object({ schema: Type.String() });
-export type TableInitSchema = Static<typeof TableInitSchema>;
+export const TableInitSchema = z.object({ schema: z.string() });
+export type TableInitSchema = z.infer<typeof TableInitSchema>;

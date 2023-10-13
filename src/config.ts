@@ -1,34 +1,26 @@
-import { StaticDecode, Type } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
 import "dotenv/config";
+import z from "zod";
 
-const EnvSchema = Type.Object({
-  PUBLIC_KEY: Type.String(),
-  PORT: Type.Optional(
-    Type.Transform(Type.String())
-      .Decode((str) => parseInt(str))
-      .Encode((num) => num.toString())
-  ),
+const EnvSchema = z.object({
+  PUBLIC_KEY: z.string(),
+  PORT: z.optional(z.string().transform((str) => parseInt(str))),
 
-  DB_HOST: Type.String(),
-  DB_NAME: Type.String(),
-  DB_USERNAME: Type.String(),
-  DB_PASSWORD: Type.String({ default: "" }),
+  DB_HOST: z.string(),
+  DB_NAME: z.string(),
+  DB_USERNAME: z.string(),
+  DB_PASSWORD: z.string(),
 
-  SCHEMA_URL: Type.Optional(Type.String()),
+  SCHEMA_URL: z.optional(z.string()),
 
-  AUTH_KEY: Type.String(),
+  AUTH_KEY: z.string(),
 });
 
-let config: StaticDecode<typeof EnvSchema>;
+let config: z.infer<typeof EnvSchema>;
 try {
-  config = Value.Decode(EnvSchema, process.env);
-} catch {
+  config = EnvSchema.parse(process.env);
+} catch (err) {
   console.error("Could not load config: ");
-  for (const err of Value.Errors(EnvSchema, process.env)) {
-    console.error(err);
-  }
-
+  console.error(err);
   process.exit(1);
 }
 

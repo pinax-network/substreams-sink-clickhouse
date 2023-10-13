@@ -1,4 +1,4 @@
-import { EntityChange } from "@substreams/sink-entity-changes/typebox";
+import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import { describe, expect, test } from "bun:test";
 import { getValuesInEntityChange } from "../entity-changes.js";
 

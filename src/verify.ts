@@ -1,19 +1,17 @@
-import type { Static, TSchema } from "@sinclair/typebox";
-import { ValueError } from "@sinclair/typebox/errors";
-import { Value } from "@sinclair/typebox/value";
 import { timingSafeEqual } from "crypto";
 import nacl from "tweetnacl";
+import z from "zod";
 import { logger } from "./logger.js";
 
-type ValidatedBody<S extends TSchema> = { success: false } | { success: true; body: Static<S> };
+type ValidatedBody<S extends z.Schema> = { success: false } | { success: true; body: z.infer<S> };
 
 export function authProvider(publicKey: string, authKey: string) {
   const authKeyBuffer = Buffer.from(authKey, "base64");
 
   return {
-    signed: function withSignedRequest<S extends TSchema>(
+    signed: function withSignedRequest<S extends z.Schema>(
       schema: S,
-      handler: (payload: Static<S>) => Promise<Response>
+      handler: (payload: z.infer<S>) => Promise<Response>
     ) {
       return async (req: Request) => {
         const timestamp = req.headers.get("x-signature-timestamp");
@@ -55,9 +53,9 @@ export function authProvider(publicKey: string, authKey: string) {
       };
     },
 
-    authenticated: function withAuthenticatedRequest<S extends TSchema>(
+    authenticated: function withAuthenticatedRequest<S extends z.Schema>(
       schema: S,
-      handler: (payload: Static<S>) => Promise<Response>
+      handler: (payload: z.infer<S>) => Promise<Response>
     ) {
       return async (req: Request) => {
         const authorization = req.headers.get("Authorization");
@@ -98,18 +96,14 @@ function verify(message: Buffer, signature: string, publicKey: string) {
   );
 }
 
-function parseBody<S extends TSchema>(schema: S, bodyStr: string): ValidatedBody<S> {
+function parseBody<S extends z.Schema>(schema: S, bodyStr: string): ValidatedBody<S> {
   const parsedBody = JSON.parse(bodyStr);
-  if (Value.Check(schema, parsedBody)) {
+  const validationResult = schema.safeParse(parsedBody);
+
+  if (validationResult.success) {
     return { success: true, body: parsedBody };
   }
 
-  const errors: ValueError[] = [];
-  const errorsIterator = Value.Errors(schema, parsedBody);
-  for (const err of errorsIterator) {
-    errors.push(err);
-  }
-
-  logger.error("The payload did not have the planned structure: ", errors);
+  logger.error("The payload did not have the planned structure: ", validationResult.error);
   return { success: false };
 }

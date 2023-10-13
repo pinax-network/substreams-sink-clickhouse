@@ -1,4 +1,4 @@
-import { EntityChange } from "@substreams/sink-entity-changes/typebox";
+import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import { client } from "./clickhouse.js";
 import { getValuesInEntityChange } from "./entity-changes.js";
 import { logger } from "./logger.js";
