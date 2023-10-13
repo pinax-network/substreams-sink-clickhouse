@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>substreams-sink-clickhouse</title>
+  </head>
+  <body>
+    <main>
+      <pre>{BANNER}</pre>
+    </main>
+    <aside>
+      <h3>Execute SQL schema</h3>
+      <input id="auth-key" type="text" placeholder="AUTH_KEY" />
+      <input id="sql-input" type="file" accept=".sql" />
+      <button id="sql-button" type="button">Execute SQL file</button>
+    </aside>
+  </body>
+
+  <script>
+    const authKeyInput = document.getElementById("auth-key");
+    const fileInput = document.getElementById("sql-input");
+    const fileButton = document.getElementById("sql-button");
+
+    authKeyInput.addEventListener("change", onAuthChange);
+
+    let processingSql = false;
+    fileButton.addEventListener("click", onSqlSubmit);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      authKeyInput.value = localStorage.getItem("auth-key") ?? "";
+    });
+
+    function onAuthChange() {
+      const authKey = authKeyInput.value;
+      localStorage.setItem("auth-key", authKey);
+    }
+
+    async function onSqlSubmit() {
+      if (fileInput.files.length === 0 || processingSql) {
+        return;
+      }
+
+      /** @type {File} */
+      const file = fileInput.files[0];
+      try {
+        processingSql = true;
+        const sql = await file.text();
+        const key = localStorage.getItem("auth-key");
+
+        await fetch("/schema", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + key },
+          body: JSON.stringify({ schema: sql }),
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        processingSql = false;
+      }
+    }
+  </script>
+</html>

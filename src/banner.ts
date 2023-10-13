@@ -1,7 +1,13 @@
+import { file } from "bun";
 import pkg from "../package.json" assert { type: "json" };
 
-export function banner() {
-  const text = `
+/** @ts-expect-error */
+import template from "./templates/index.html";
+
+export async function banner() {
+  const templateStr = await file(template).text();
+
+  const bannerText = `
 
 ░█████╗░██╗░░░░░██╗░█████╗░██╗░░██╗██╗░░██╗░█████╗░██╗░░░██╗░██████╗███████╗
 ██╔══██╗██║░░░░░██║██╔══██╗██║░██╔╝██║░░██║██╔══██╗██║░░░██║██╔════╝██╔════╝
@@ -26,5 +32,5 @@ HTTP POST (Authentication key)
     /schema { "schema": <SQL> }
 `;
 
-  return text;
+  return templateStr.replace("{BANNER}", bannerText);
 }

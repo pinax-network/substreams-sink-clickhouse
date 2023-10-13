@@ -13,7 +13,8 @@ const { signed, authenticated } = authProvider(config.PUBLIC_KEY, config.AUTH_KE
 type Handler = (req: Request) => Response | Promise<Response>;
 const handlers: Record<string, Record<string, Handler>> = {
   GET: {
-    "/": () => new Response(banner()),
+    "/": async () =>
+      new Response(await banner(), { headers: { "Content-Type": "text/html; charset=utf-8" } }),
     "/ping": () => handlePingRequest({ message: "PING" }),
     "/health": () => new Response("OK"),
     "/metrics": () => new Response(prometheus.registry),
