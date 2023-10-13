@@ -27,6 +27,15 @@ const metadataQueries = (tableName: string) => [
 ];
 
 export async function handleTableInitialization({ schema }: TableInitSchema): Promise<Response> {
+  try {
+    await initializeTables(schema);
+    return new Response();
+  } catch (err) {
+    return new Response("Could not create the tables: " + err, { status: 500 });
+  }
+}
+
+export async function initializeTables(schema: string): Promise<void> {
   logger.info("Executing schema.");
   const tables = splitSchemaByTableCreation(schema);
   logger.info(
@@ -46,9 +55,8 @@ export async function handleTableInitialization({ schema }: TableInitSchema): Pr
     logger.error("Could not initialize the tables.");
     logger.error("Request: " + schema);
     logger.error(err);
-    return new Response("Could not create the tables: " + err, { status: 500 });
+    throw err;
   }
 
   logger.info("Complete.");
-  return new Response();
 }

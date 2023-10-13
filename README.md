@@ -63,11 +63,11 @@ bun start
 
 #### Optional flags
 
-| Flags             | Arguments      | Default                | Description                                              |
-| ----------------- | -------------- | ---------------------- | -------------------------------------------------------- |
-| `-v`, `--verbose` | -              | `"pretty"`             | Enables logs. Add `"json"` to change the output format   |
-| `-p`, `--port`    | `<port>`       | `3000`                 | Selects the port to serve the sink                       |
-| `-s`, `--schema`  | `[schema-url]` | `SCHEMA_URL` in `.env` | URL to a `.sql` file to execute before starting the sink |
+| Flags                | Arguments      | Default                | Description                                              |
+| -------------------- | -------------- | ---------------------- | -------------------------------------------------------- |
+| `-v`, `--verbose`    | -              | `"pretty"`             | Enables logs. Add `"json"` to change the output format   |
+| `-p`, `--port`       | `<port>`       | `3000`                 | Selects the port to serve the sink                       |
+| `-s`, `--schema-url` | `[schema-url]` | `SCHEMA_URL` in `.env` | URL to a `.sql` file to execute before starting the sink |
 
 #### Example SQL file
 
