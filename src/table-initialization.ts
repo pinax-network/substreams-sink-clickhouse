@@ -24,9 +24,12 @@ const metadataQueries = (tableName: string) => [
   `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS block_id     FixedString(64);`,
   `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS chain        LowCardinality(String);`,
   `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS module_hash  FixedString(40);`,
+  `ALTER TABLE ${tableName} ADD INDEX  IF NOT EXISTS metadata_index (chain, module_hash) TYPE minmax`,
 ];
 
-export async function handleTableInitialization({ schema }: TableInitSchema): Promise<Response> {
+export async function handleTableInitialization({
+  schema,
+}: TableInitSchema): Promise<Response> {
   try {
     await initializeTables(schema);
     return new Response();
@@ -39,7 +42,9 @@ export async function initializeTables(schema: string): Promise<void> {
   logger.info("Executing schema.");
   const tables = splitSchemaByTableCreation(schema);
   logger.info(
-    `Found ${tables.length} table(s): ${tables.map(({ tableName }) => `'${tableName}'`).join(", ")}`
+    `Found ${tables.length} table(s): ${tables
+      .map(({ tableName }) => `'${tableName}'`)
+      .join(", ")}`
   );
 
   try {
