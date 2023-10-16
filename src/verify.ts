@@ -1,9 +1,11 @@
 import { timingSafeEqual } from "crypto";
 import nacl from "tweetnacl";
-import z from "zod";
+import z, { ZodString } from "zod";
 import { logger } from "./logger.js";
 
-type ValidatedBody<S extends z.Schema> = { success: false } | { success: true; body: z.infer<S> };
+type ValidatedBody<S extends z.Schema> =
+  | { success: false }
+  | { success: true; body: z.infer<S> };
 
 export function authProvider(publicKey: string, authKey: string) {
   const authKeyBuffer = Buffer.from(authKey, "base64");
@@ -96,14 +98,26 @@ function verify(message: Buffer, signature: string, publicKey: string) {
   );
 }
 
-function parseBody<S extends z.Schema>(schema: S, bodyStr: string): ValidatedBody<S> {
-  const parsedBody = JSON.parse(bodyStr);
-  const validationResult = schema.safeParse(parsedBody);
+function parseBody<S extends z.Schema>(
+  schema: S,
+  bodyStr: string
+): ValidatedBody<S> {
+  try {
+    const parsedBody =
+      schema instanceof ZodString ? bodyStr : JSON.parse(bodyStr);
+    const validationResult = schema.safeParse(parsedBody);
 
-  if (validationResult.success) {
-    return { success: true, body: parsedBody };
+    if (validationResult.success) {
+      return { success: true, body: parsedBody };
+    }
+
+    logger.error(
+      "The payload did not have the planned structure: ",
+      validationResult.error
+    );
+    return { success: false };
+  } catch (err) {
+    logger.error("could not parse the body correctly: " + err);
+    return { success: false };
   }
-
-  logger.error("The payload did not have the planned structure: ", validationResult.error);
-  return { success: false };
 }

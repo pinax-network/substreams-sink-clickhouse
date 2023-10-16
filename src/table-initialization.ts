@@ -27,18 +27,18 @@ const metadataQueries = (tableName: string) => [
   `ALTER TABLE ${tableName} ADD INDEX  IF NOT EXISTS metadata_index (chain, module_hash) TYPE minmax`,
 ];
 
-export async function handleTableInitialization({
-  schema,
-}: TableInitSchema): Promise<Response> {
+export async function handleTableInitialization(
+  schema: TableInitSchema
+): Promise<Response> {
   try {
-    await initializeTables(schema);
-    return new Response();
+    const tables = await initializeTables(schema);
+    return new Response("OK\nProcessed tables: " + tables);
   } catch (err) {
     return new Response("Could not create the tables: " + err, { status: 500 });
   }
 }
 
-export async function initializeTables(schema: string): Promise<void> {
+export async function initializeTables(schema: string): Promise<string[]> {
   logger.info("Executing schema.");
   const tables = splitSchemaByTableCreation(schema);
   logger.info(
@@ -64,4 +64,5 @@ export async function initializeTables(schema: string): Promise<void> {
   }
 
   logger.info("Complete.");
+  return tables.map((table) => table.tableName);
 }

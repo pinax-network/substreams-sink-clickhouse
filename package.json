@@ -45,9 +45,11 @@
     "@substreams/sink-entity-changes": "^0.3.1",
     "commander": "^11.0.0",
     "dotenv": "^16.3.1",
+    "openapi3-ts": "^4.1.2",
     "prom-client": "^14.2.0",
     "tslog": "^4.9.2",
     "tweetnacl": "^1.0.3",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.21.4"
   }
 }

@@ -33,5 +33,5 @@ export type PayloadBody = z.infer<typeof PayloadBody>;
 export const BodySchema = z.union([PingBody, PayloadBody]);
 export type BodySchema = z.infer<typeof BodySchema>;
 
-export const TableInitSchema = z.object({ schema: z.string() });
+export const TableInitSchema = z.string();
 export type TableInitSchema = z.infer<typeof TableInitSchema>;
