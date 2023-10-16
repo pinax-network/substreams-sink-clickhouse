@@ -46,7 +46,7 @@ Initializes the database according to a SQL file. See [example file](#example-sq
 It can also be done by uploading a `.sql` file on [http://localhost:3000](http://localhost:3000).
 
 ```bash
-curl --location --request POST 'http://localhost:3000/schema' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '{"schema": "<SQL_INSTRUCTIONS>"}'
+curl --location --request POST 'http://localhost:3000/schema' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '<SQL_INSTRUCTIONS>'
 ```
 
 ### Sink
@@ -86,6 +86,28 @@ ORDER BY (address)
 ```
 
 </details>
+
+## Database structure
+
+Every table created by the user is extended by metadata associated with the received information. The added fields are:
+
+| Field        | Type                     |
+| ------------ | ------------------------ |
+| timestamp    | `DateTime('UTC')`        |
+| block_number | `UInt32`                 |
+| block_id     | `FixedString(64)`        |
+| chain        | `LowCardinality(String)` |
+| module_hash  | `FixedString(40)`        |
+
+An index is added to the tuple `(chain, module_hash)`.
+
+A dimension table also contains the following fields. It has one record per executed substreams.
+
+| Field       | Type              |
+| ----------- | ----------------- |
+| module_hash | `FixedString(40)` |
+| module_name | `String`          |
+| type        | `String`          |
 
 ## Planned features
 
