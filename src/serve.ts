@@ -2,6 +2,7 @@
 import swaggerUI from "../swagger/index.html";
 
 import { file } from "bun";
+import { authProvider } from "./auth-provider.js";
 import config from "./config.js";
 import { logger } from "./logger.js";
 import openapi from "./openapi.js";
@@ -10,7 +11,6 @@ import * as prometheus from "./prometheus.js";
 import { BodySchema, TableInitSchema } from "./schemas.js";
 import { handleSinkRequest } from "./sink.js";
 import { handleTableInitialization } from "./table-initialization.js";
-import { authProvider } from "./verify.js";
 
 const { signed, authenticated } = authProvider(
   config.PUBLIC_KEY,
