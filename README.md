@@ -8,7 +8,7 @@
 
 ## Installation
 
-Globally via npm
+Globally via npm **(Not deployed on NPM yet)**
 
 ```
 $ npm i -g substreams-sink-clickhouse
@@ -33,10 +33,10 @@ SCHEMA_URL=... # Optional
 
 ## Usage
 
-Endpoint summary available at [http://localhost:3000](http://localhost:3000).
+Endpoint summary available on [http://localhost:3000](http://localhost:3000).
 
 ```bash
-substreams-clickhouse-sink --help
+substreams-sink-clickhouse --help
 ```
 
 ### Schema initialization
@@ -56,7 +56,7 @@ Serves an endpoint to receive Substreams data from [substreams-sink-webhook](htt
 Endpoints are detailed on [http://localhost:3000](http://localhost:3000).
 
 ```bash
-substreams-clickhouse-sink
+substreams-sink-clickhouse
 # or
 bun start
 ```
@@ -76,12 +76,12 @@ bun start
 
 ```sql
 CREATE TABLE IF NOT EXISTS contracts (
-    address FixedString(40),
-    name Nullable(String),
-    symbol Nullable(String),
+    address  FixedString(40),
+    name     Nullable(String),
+    symbol   Nullable(String),
     decimals Nullable(UInt8)
 )
-ENGINE = ReplacingMergeTree()
+ENGINE = ReplacingMergeTree
 ORDER BY (address)
 ```
 
