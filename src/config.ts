@@ -2,7 +2,7 @@ import "dotenv/config";
 import z from "zod";
 
 const EnvSchema = z.object({
-  PUBLIC_KEY: z.string(),
+  PUBLIC_KEY: z.optional(z.string()),
   PORT: z
     .string()
     .transform((str) => parseInt(str))
@@ -12,10 +12,10 @@ const EnvSchema = z.object({
     z.enum(["pretty", "json"]).or(z.literal("true").transform(() => "pretty"))
   ),
 
-  DB_HOST: z.string(),
-  DB_NAME: z.string(),
-  DB_USERNAME: z.string(),
-  DB_PASSWORD: z.string(),
+  DB_HOST: z.string().default("http://localhost:8123"),
+  DB_NAME: z.string().default("default"),
+  DB_USERNAME: z.string().default("default"),
+  DB_PASSWORD: z.string().default(""),
 
   SCHEMA_URL: z.string().default("./schema.sql"),
 

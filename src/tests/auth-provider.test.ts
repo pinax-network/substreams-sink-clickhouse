@@ -39,7 +39,7 @@ describe("withSignedRequest", () => {
   };
 
   test("it should send a bad request code if no signature header is present", async () => {
-    const handler = authProvider(publicKey, "").signed(
+    const handler = authProvider({ publicKey }).signed(
       EmptySchema,
       invalidCallback
     );
@@ -54,7 +54,7 @@ describe("withSignedRequest", () => {
   });
 
   test("it should send a bad request code if no timestamp header is present", async () => {
-    const handler = authProvider(publicKey, "").signed(
+    const handler = authProvider({ publicKey }).signed(
       EmptySchema,
       invalidCallback
     );
@@ -69,7 +69,7 @@ describe("withSignedRequest", () => {
   });
 
   test("it should send a bad request code if no body is present", async () => {
-    const handler = authProvider(publicKey, "").signed(
+    const handler = authProvider({ publicKey }).signed(
       EmptySchema,
       invalidCallback
     );
@@ -84,7 +84,7 @@ describe("withSignedRequest", () => {
 
   describe("signatures", () => {
     test("it should deny an invalid body signature", async () => {
-      const handler = authProvider(invalidPublicKey, "").signed(
+      const handler = authProvider({ publicKey: invalidPublicKey }).signed(
         z.object({ message: z.string() }),
         invalidCallback
       );
@@ -99,7 +99,7 @@ describe("withSignedRequest", () => {
 
     test("it should allow a correct body signature", async () => {
       let receivedBody: any;
-      const handler = authProvider(publicKey, "").signed(
+      const handler = authProvider({ publicKey }).signed(
         z.object({ message: z.string() }),
         async (body) => {
           receivedBody = body;
@@ -118,7 +118,7 @@ describe("withSignedRequest", () => {
   test("it should catch invalid body forms", async () => {
     let callbackHasBeenInvoked = false;
 
-    const handler = authProvider(publicKey, "").signed(
+    const handler = authProvider({ publicKey }).signed(
       z.object({ message: z.string() }),
       async () => {
         callbackHasBeenInvoked = true;
@@ -135,10 +135,10 @@ describe("withSignedRequest", () => {
 
 describe("withAuthenticatedRequest", () => {
   test("it should send a bad request code if no authorization header is present", async () => {
-    const handler = authProvider("", "1234").authenticated(
-      z.any(),
-      async () => new Response()
-    );
+    const handler = authProvider({
+      publicKey: "key",
+      authKey: "1234",
+    }).authenticated(z.any(), async () => new Response());
 
     const request = new Request("http://localhost", {
       body: JSON.stringify({ emptyBody: false }),
@@ -151,10 +151,10 @@ describe("withAuthenticatedRequest", () => {
   });
 
   test("it should send a bad request code if the authorization key is invalid", async () => {
-    const handler = authProvider("", "5678").authenticated(
-      z.any(),
-      async () => new Response()
-    );
+    const handler = authProvider({
+      publicKey: "key",
+      authKey: "5678",
+    }).authenticated(z.any(), async () => new Response());
 
     const request = new Request("http://localhost", {
       body: JSON.stringify({ emptyBody: false }),
@@ -168,10 +168,10 @@ describe("withAuthenticatedRequest", () => {
   });
 
   test("it should send a bad request code if no body is present", async () => {
-    const handler = authProvider("", "1234").authenticated(
-      z.any(),
-      async () => new Response()
-    );
+    const handler = authProvider({
+      publicKey: "key",
+      authKey: "1234",
+    }).authenticated(z.any(), async () => new Response());
 
     const request = new Request("http://localhost", {
       headers: { Authorization: "Bearer 1234" },
@@ -185,13 +185,13 @@ describe("withAuthenticatedRequest", () => {
 
   test("it should validated the payload's structure", async () => {
     let callbackHasBeenInvoked = false;
-    const handler = authProvider("", "1234").authenticated(
-      z.object({ content: z.string() }),
-      async () => {
-        callbackHasBeenInvoked = true;
-        return new Response();
-      }
-    );
+    const handler = authProvider({
+      publicKey: "key",
+      authKey: "1234",
+    }).authenticated(z.object({ content: z.string() }), async () => {
+      callbackHasBeenInvoked = true;
+      return new Response();
+    });
 
     const request = new Request("http://localhost", {
       headers: { Authorization: "Bearer 1234" },
@@ -205,13 +205,13 @@ describe("withAuthenticatedRequest", () => {
 
   test("it could call the handler when the authorization key is valid", async () => {
     let callbackHasBeenInvoked = false;
-    const handler = authProvider("", "1234").authenticated(
-      z.any(),
-      async () => {
-        callbackHasBeenInvoked = true;
-        return new Response();
-      }
-    );
+    const handler = authProvider({
+      publicKey: "key",
+      authKey: "1234",
+    }).authenticated(z.any(), async () => {
+      callbackHasBeenInvoked = true;
+      return new Response();
+    });
 
     const request = new Request("http://localhost", {
       headers: { Authorization: "Bearer 1234" },
@@ -225,10 +225,13 @@ describe("withAuthenticatedRequest", () => {
 
   test("it should skip auth when no key is passed in the configuration", async () => {
     let callbackHasBeenInvoked = false;
-    const handler = authProvider("").authenticated(z.any(), async () => {
-      callbackHasBeenInvoked = true;
-      return new Response();
-    });
+    const handler = authProvider({ publicKey }).authenticated(
+      z.any(),
+      async () => {
+        callbackHasBeenInvoked = true;
+        return new Response();
+      }
+    );
 
     const request = new Request("http://localhost", {
       body: JSON.stringify({ emptyBody: false }),

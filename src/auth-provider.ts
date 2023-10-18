@@ -7,8 +7,17 @@ type ValidatedBody<S extends z.Schema> =
   | { success: false }
   | { success: true; body: z.infer<S> };
 
-export function authProvider(publicKey: string, authKey?: string) {
-  const authKeyBuffer = authKey ? Buffer.from(authKey, "base64") : null;
+export function authProvider(config: {
+  publicKey: string | undefined;
+  authKey?: string;
+}) {
+  if (!config.publicKey) {
+    throw new Error("No public key was provided.");
+  }
+
+  const authKeyBuffer = config.authKey
+    ? Buffer.from(config.authKey, "base64")
+    : null;
 
   return {
     signed: function withSignedRequest<S extends z.Schema>(
@@ -39,7 +48,7 @@ export function authProvider(publicKey: string, authKey?: string) {
         let isVerified = false;
         try {
           const msg = Buffer.from(timestamp + body);
-          isVerified = verify(msg, signature, publicKey);
+          isVerified = verify(msg, signature, config.publicKey!);
         } catch {}
 
         if (!isVerified) {

@@ -3,7 +3,6 @@ import swaggerUI from "../swagger/index.html";
 
 import { file } from "bun";
 import { authProvider } from "./auth-provider.js";
-import config from "./config.js";
 import { logger } from "./logger.js";
 import openapi from "./openapi.js";
 import { handlePingRequest } from "./ping.js";
@@ -12,33 +11,41 @@ import { BodySchema, TableInitSchema } from "./schemas.js";
 import { handleSinkRequest } from "./sink.js";
 import { handleTableInitialization } from "./table-initialization.js";
 
-const { signed, authenticated } = authProvider(
-  config.PUBLIC_KEY,
-  config.AUTH_KEY
-);
-
 type Handler = (req: Request) => Response | Promise<Response>;
-const handlers: Record<string, Record<string, Handler>> = {
-  GET: {
-    "/": async () => new Response(await file(swaggerUI)),
-    "/ping": () => handlePingRequest({ message: "PING" }),
-    "/health": () => new Response("OK"),
-    "/metrics": () => new Response(prometheus.registry),
-    "/openapi": () => new Response(openapi),
-  },
-  POST: {
-    "/": signed(BodySchema, async (body) => {
-      if ("message" in body) {
-        return handlePingRequest(body);
-      } else {
-        return handleSinkRequest(body);
-      }
-    }),
-    "/schema": authenticated(TableInitSchema, handleTableInitialization),
-  },
-};
 
-export async function serve(port: number) {
+function makeHandlers(
+  ...authConfig: Parameters<typeof authProvider>
+): Record<string, Record<string, Handler>> {
+  const { signed, authenticated } = authProvider(...authConfig);
+
+  return {
+    GET: {
+      "/": async () => new Response(await file(swaggerUI)),
+      "/ping": () => handlePingRequest({ message: "PING" }),
+      "/health": () => new Response("OK"),
+      "/metrics": () => new Response(prometheus.registry),
+      "/openapi": () => new Response(openapi),
+    },
+    POST: {
+      "/": signed(BodySchema, async (body) => {
+        if ("message" in body) {
+          return handlePingRequest(body);
+        } else {
+          return handleSinkRequest(body);
+        }
+      }),
+      "/schema": authenticated(TableInitSchema, handleTableInitialization),
+    },
+  };
+}
+
+export async function serve(
+  port: number,
+  authKey: string | undefined,
+  publicKey: string | undefined
+) {
+  const handlers = makeHandlers({ authKey, publicKey });
+
   const app = Bun.serve({
     port,
     async fetch(request) {
