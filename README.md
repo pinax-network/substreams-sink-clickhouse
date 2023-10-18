@@ -26,7 +26,7 @@ DB_NAME=clickhouse_sink
 DB_USERNAME=default
 DB_PASSWORD=
 
-AUTH_KEY=... # Generate in Node via `require(crypto).randomBytes(64).toString('base64')`
+AUTH_KEY=... # Generate in Node via `require('crypto').randomBytes(64).toString('base64')`
 
 SCHEMA_URL=... # Optional
 ```
