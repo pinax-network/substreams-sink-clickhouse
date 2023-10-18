@@ -16,19 +16,22 @@ $ npm i -g substreams-sink-clickhouse
 
 ### Environment variables
 
+These can all be set when starting the sink. See [cli structure](#cli-structure).
+
 ```bash
 # ./.env
+# Optional fields
 
 PUBLIC_KEY=... # Provided by substreams-sink-webhook
+AUTH_KEY=... # Generate in Node via `require("crypto").randomBytes(64).toString('base64')` or leave empty if no auth is required
 
 DB_HOST=http://127.0.0.1:8123
 DB_NAME=clickhouse_sink
 DB_USERNAME=default
 DB_PASSWORD=
 
-AUTH_KEY=... # Generate in Node via `require(crypto).randomBytes(64).toString('base64')`
-
-SCHEMA_URL=... # Optional
+SCHEMA_URL=...
+VERBOSE=true
 ```
 
 ## Usage
@@ -37,6 +40,16 @@ Endpoint summary available on [http://localhost:3000](http://localhost:3000).
 
 ```bash
 substreams-sink-clickhouse --help
+```
+
+### Database initialization
+
+Create a database in ClickHouse. (Optionnaly, skip this step and use the `default` database.)
+
+```bash
+$ clickhouse client
+> CREATE DATABASE clickhouse_sink
+> SHOW DATABASES # <--- validate that it is found
 ```
 
 ### Schema initialization
@@ -48,26 +61,6 @@ It can also be done by uploading a `.sql` file on [http://localhost:3000](http:/
 ```bash
 curl --location --request POST 'http://localhost:3000/schema' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '<SQL_INSTRUCTIONS>'
 ```
-
-### Sink
-
-Serves an endpoint to receive Substreams data from [substreams-sink-webhook](https://github.com/pinax-network/substreams-sink-webhook).
-
-Endpoints are detailed on [http://localhost:3000](http://localhost:3000).
-
-```bash
-substreams-sink-clickhouse
-# or
-bun start
-```
-
-#### Optional flags
-
-| Flags                | Arguments      | Default                | Description                                              |
-| -------------------- | -------------- | ---------------------- | -------------------------------------------------------- |
-| `-v`, `--verbose`    | -              | `"pretty"`             | Enables logs. Add `"json"` to change the output format   |
-| `-p`, `--port`       | `<port>`       | `3000`                 | Selects the port to serve the sink                       |
-| `-s`, `--schema-url` | `[schema-url]` | `SCHEMA_URL` in `.env` | URL to a `.sql` file to execute before starting the sink |
 
 #### Example SQL file
 
@@ -86,6 +79,32 @@ ORDER BY (address)
 ```
 
 </details>
+
+### Sink
+
+Serves an endpoint to receive Substreams data from [substreams-sink-webhook](https://github.com/pinax-network/substreams-sink-webhook).
+
+Endpoints are detailed on [http://localhost:3000](http://localhost:3000).
+
+```bash
+substreams-sink-clickhouse
+# or
+bun start
+```
+
+#### CLI structure
+
+| Flags                | Arguments       | Default                 | Description                                              |
+| -------------------- | --------------- | ----------------------- | -------------------------------------------------------- |
+| `-p`, `--port`       | `<port>`        | `3000`                  | HTTP port on which to attach the sink                    |
+| `-v`, `--verbose`    | -               | `"pretty"`              | Enables logs.                                            |
+| `-s`, `--schema-url` | `[schema-url]`  | `SCHEMA_URL` in `.env`  | URL to a `.sql` file to execute before starting the sink |
+| `--key`              | `[public-key]`  | -                       | Public key to validate messages                          |
+| `--auth`             | `[auth-key]`    | `""`                    | Auth key to validate requests                            |
+| `--host`             | `[hostname]`    | `http://localhost:8123` | Database HTTP hostname                                   |
+| `--name`             | `[db-name]`     | `default`               | The database to use inside ClickHouse                    |
+| `--user`             | `[db-user]`     | `default`               | Database user                                            |
+| `--password`         | `[db-password]` | `""`                    | Password associated with the specified username          |
 
 ## Database structure
 
@@ -111,8 +130,4 @@ A dimension table also contains the following fields. It has one record per exec
 
 ## Planned features
 
-TODO
-
-```
-
-```
+See [issues](https://github.com/pinax-network/substreams-sink-clickhouse/issues)
