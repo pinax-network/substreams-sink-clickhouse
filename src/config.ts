@@ -12,7 +12,7 @@ const EnvSchema = z.object({
 
   SCHEMA_URL: z.optional(z.string()),
 
-  AUTH_KEY: z.string(),
+  AUTH_KEY: z.string().optional(),
 });
 
 let config: z.infer<typeof EnvSchema>;

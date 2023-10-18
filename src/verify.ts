@@ -7,8 +7,8 @@ type ValidatedBody<S extends z.Schema> =
   | { success: false }
   | { success: true; body: z.infer<S> };
 
-export function authProvider(publicKey: string, authKey: string) {
-  const authKeyBuffer = Buffer.from(authKey, "base64");
+export function authProvider(publicKey: string, authKey?: string) {
+  const authKeyBuffer = authKey ? Buffer.from(authKey, "base64") : null;
 
   return {
     signed: function withSignedRequest<S extends z.Schema>(
@@ -60,18 +60,22 @@ export function authProvider(publicKey: string, authKey: string) {
       handler: (payload: z.infer<S>) => Promise<Response>
     ) {
       return async (req: Request) => {
-        const authorization = req.headers.get("Authorization");
-        if (!authorization) {
-          return new Response("missing authorization header", { status: 400 });
-        }
+        if (authKeyBuffer !== null) {
+          const authorization = req.headers.get("Authorization");
+          if (!authorization) {
+            return new Response("missing authorization header", {
+              status: 400,
+            });
+          }
 
-        try {
-          const key = authorization?.replace("Bearer", "").trim();
-          if (!timingSafeEqual(Buffer.from(key, "base64"), authKeyBuffer)) {
+          try {
+            const key = authorization?.replace("Bearer", "").trim();
+            if (!timingSafeEqual(Buffer.from(key, "base64"), authKeyBuffer)) {
+              return new Response("invalid authorization key", { status: 400 });
+            }
+          } catch {
             return new Response("invalid authorization key", { status: 400 });
           }
-        } catch {
-          return new Response("invalid authorization key", { status: 400 });
         }
 
         const body = await req.text();
