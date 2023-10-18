@@ -1,63 +1,53 @@
-import { description, name, version } from "./package.json" assert { type: "json" };
+import {
+  description,
+  name,
+  version,
+} from "./package.json" assert { type: "json" };
 
-import { Command, OptionValues } from "commander";
+import { Option, program } from "commander";
 import config from "./src/config.js";
 import { logger } from "./src/logger.js";
 import { ping } from "./src/ping.js";
 import { serve } from "./src/serve.js";
-import { initializeManifest, initializeTables } from "./src/table-initialization.js";
+import {
+  initializeManifest,
+  initializeTables,
+  readSchema,
+} from "./src/table-initialization.js";
 
-const program = new Command();
-program.name(name).description(description).version(version);
-program.option("-v, --verbose", "enable logs. format options: [pretty, json]");
-program.option("-p, --port <port>");
-program.option("-s, --schema-url [schema]", "execute sql instructions before starting the sink");
-program.parse();
+const opts = program
+  .name(name)
+  .version(version)
+  .description(description)
+  .showHelpAfterError()
+  .addOption(
+    new Option("-p, --port <port>", "Listen on HTTP port").default(config.PORT)
+  )
+  .addOption(
+    new Option("-v, --verbose [format]", "Enable logs")
+      .choices(["pretty", "json"])
+      .preset("pretty")
+      .default(config.VERBOSE)
+  )
+  .addOption(
+    new Option(
+      "-s, --schema-url [schema-url]",
+      "Execute SQL instructions before starting the sink"
+    ).preset(config.SCHEMA_URL)
+  )
+  .parse()
+  .opts();
 
-const options = program.opts();
-if (options?.verbose) {
-  logger.enable(options.verbose === "json" ? "json" : "pretty");
-} else {
-  logger.disable();
+if (opts.verbose) {
+  logger.enable(opts.verbose);
 }
 
 await ping();
 await initializeManifest();
 
-const schema = await getSchema(options);
-if (schema) {
-  try {
-    await initializeTables(schema);
-  } catch {
-    process.exit(1);
-  }
+if (opts.schemaUrl) {
+  const schema = await readSchema(opts.schemaUrl);
+  await initializeTables(schema);
 }
 
-serve(options.port || config.PORT || 3000);
-
-async function getSchema(options: OptionValues) {
-  if (!options.schemaUrl) {
-    return null;
-  }
-
-  const inputSchemaUrl =
-    typeof options.schemaUrl === "string" ? options.schemaUrl : config.SCHEMA_URL;
-  if (!inputSchemaUrl) {
-    logger.error("could not find the schema url.");
-    process.exit(1);
-  }
-
-  try {
-    const file = Bun.file(inputSchemaUrl);
-    if (await file.exists()) {
-      return file.text();
-    }
-
-    const url = new URL(inputSchemaUrl);
-    const response = await fetch(url);
-    return response.text();
-  } catch {
-    logger.error("could not find the requested schema. Is it valid?");
-    process.exit(1);
-  }
-}
+serve(opts.port);
