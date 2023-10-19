@@ -3,30 +3,41 @@ import { logger } from "./logger.js";
 import { TableInitSchema } from "./schemas.js";
 import { splitSchemaByTableCreation } from "./table-utils.js";
 
-const query = `
+const queries = [`
 CREATE TABLE IF NOT EXISTS manifest (
-    module_hash FixedString(40),
-    module_name String(),
-    type        String(),
+    module_hash   FixedString(40),
+    module_name   String(),
+    chain         LowCardinality(String),
+    type          String(),
 )
-ENGINE = ReplacingMergeTree 
+ENGINE = ReplacingMergeTree
 ORDER BY (module_hash);
-`;
+`,
+`
+CREATE TABLE IF NOT EXISTS block (
+  block_id      FixedString(64),
+  block_number  UInt32(),
+  chain         LowCardinality(String),
+  timestamp     DateTime64(3, 'UTC'),
+  final_block   Bool,
+)
+ENGINE = ReplacingMergeTree
+ORDER BY (block_id);
+`];
 
 export function initializeManifest(): Promise<unknown> {
   logger.info("Initializing 'manifest' table.");
-  return client.command({ query });
+  logger.info("Initializing 'clock' table.");
+  return Promise.all(queries.map(query => client.command({ query })));
 }
 
 const metadataQueries = (tableName: string) => [
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS entity_id    String;`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS timestamp    DateTime('UTC');`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS block_number UInt32;`,
+  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS id           String;`,
   `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS block_id     FixedString(64);`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS chain        LowCardinality(String);`,
   `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS module_hash  FixedString(40);`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS final_block  Bool;`,
-  `ALTER TABLE ${tableName} ADD INDEX  IF NOT EXISTS metadata_index (chain, module_hash) TYPE minmax`,
+  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS chain        LowCardinality(String);`,
+  `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS manifest_index (chain, module_hash) TYPE minmax`,
+  `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS block_index (chain, block_id) TYPE minmax`,
 ];
 
 export async function handleTableInitialization(schema: TableInitSchema): Promise<Response> {

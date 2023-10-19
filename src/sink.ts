@@ -4,7 +4,8 @@ import { getValuesInEntityChange } from "./entity-changes.js";
 import { logger } from "./logger.js";
 import { Clock, Manifest, PayloadBody } from "./schemas.js";
 
-const knownModuleHashes: string[] = [];
+const knownModuleHashes = new Set<string>();
+const knownBlockId = new Set<string>();
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody): Promise<Response> {
   const promises = data.entityChanges.map((change) => handleEntityChange(change, metadata));
@@ -47,22 +48,44 @@ async function insertEntityChange(
   values: Record<string, unknown>,
   metadata: { id: string; clock: Clock; manifest: Manifest }
 ) {
-  if (!knownModuleHashes.includes(metadata.manifest.moduleHash)) {
-    await client.command({
-      query: `
-      INSERT INTO manifest (module_hash, type, module_name)
-      VALUES ('${metadata.manifest.moduleHash}', '${metadata.manifest.type}', '${metadata.manifest.moduleName}')`,
-    });
-    knownModuleHashes.push(metadata.manifest.moduleHash);
+  const promises = [];
+
+  // Manifest Index
+  const { manifest } = metadata;
+  const { moduleHash, type, moduleName, chain } = manifest;
+  if (!knownModuleHashes.has(moduleHash)) {
+    promises.push(client.insert({ values: {
+      module_hash: moduleHash,
+      chain,
+      type,
+      module_name: moduleName,
+    }, table: "manifest", format: "JSONEachRow" }))
+    knownModuleHashes.add(moduleHash);
   }
 
-  values["entity_id"] = metadata.id;
-  values["chain"] = metadata.manifest.chain;
-  values["block_id"] = metadata.clock.id;
-  values["block_number"] = metadata.clock.number;
-  values["module_hash"] = metadata.manifest.moduleHash;
-  values["final_block"] = metadata.manifest.finalBlockOnly;
-  values["timestamp"] = new Date(metadata.clock.timestamp).toISOString().slice(0, 19);
+  // Block Index
+  const block_id = metadata.clock.id;
+  const block_number = metadata.clock.number;
+  const timestamp = Number(new Date(metadata.clock.timestamp));
+  const finalBlockOnly = manifest.finalBlockOnly === "true";
+  const block_key = `${block_id}-${finalBlockOnly}`
+  if (!knownBlockId.has(block_key)) {
+    promises.push(client.insert({ values: {
+      block_id,
+      block_number,
+      chain,
+      timestamp,
+      final_block: finalBlockOnly
+    }, table: "block", format: "JSONEachRow" }))
+    knownBlockId.add(block_key);
+  }
 
-  return client.insert({ values, table, format: "JSONEachRow" });
+  // Entity
+  values["id"] = metadata.id; // Entity ID
+  values["block_id"] = metadata.clock.id; // Block Index
+  values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
+  values["chain"] = chain;
+
+  promises.push(client.insert({ values, table, format: "JSONEachRow" }));
+  return Promise.all(promises);
 }
