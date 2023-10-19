@@ -121,12 +121,12 @@ function parseBody<S extends z.Schema>(
     const validationResult = schema.safeParse(parsedBody);
 
     if (validationResult.success) {
-      return { success: true, body: parsedBody };
+      return { success: true, body: validationResult.data };
     }
 
     logger.error(
-      "The payload did not have the planned structure: ",
-      validationResult.error
+      "The payload did not have the planned structure:\n" +
+        JSON.stringify(validationResult.error)
     );
     return { success: false };
   } catch (err) {

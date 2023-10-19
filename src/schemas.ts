@@ -14,6 +14,7 @@ export const ManifestSchema = z.object({
   type: z.string(),
   moduleHash: z.string(),
   chain: z.string(),
+  finalBlockOnly: z.coerce.boolean(),
 });
 export type Manifest = z.infer<typeof ManifestSchema>;
 

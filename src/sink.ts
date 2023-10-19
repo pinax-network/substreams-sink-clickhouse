@@ -60,6 +60,7 @@ async function insertEntityChange(
   values["block_id"] = metadata.clock.id;
   values["block_number"] = metadata.clock.number;
   values["module_hash"] = metadata.manifest.moduleHash;
+  values["final_block"] = metadata.manifest.finalBlockOnly;
   values["timestamp"] = new Date(metadata.clock.timestamp).toISOString().slice(0, 19);
 
   return client.insert({ values, table, format: "JSONEachRow" });
