@@ -3,22 +3,71 @@ import { client } from "./clickhouse.js";
 import { getValuesInEntityChange } from "./entity-changes.js";
 import { logger } from "./logger.js";
 import { Clock, Manifest, PayloadBody } from "./schemas.js";
+import PQueue from 'p-queue';
 
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
+const queue = new PQueue({concurrency: 100});
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody): Promise<Response> {
-  const promises = data.entityChanges.map((change) => handleEntityChange(change, metadata));
-  const responses = await Promise.allSettled(promises);
-
-  const errors = (
-    responses.filter((response) => response.status === "rejected") as PromiseRejectedResult[]
-  ).map((response) => response.reason);
-  if (errors.length > 0) {
-    logger.error("Could not sink data: " + errors.toString());
+  const promises = [];
+  promises.push(...handleManifest(metadata.manifest));
+  promises.push(...handleClock(metadata.manifest, metadata.clock));
+  for ( const change of data.entityChanges ) {
+    promises.push(handleEntityChange(change, metadata));
   }
 
-  return new Response();
+  for ( const promise of promises ) {
+    queue.add(async () => {
+      try {
+        const response = await promise as PromiseRejectedResult;
+        if (response.status === "rejected") logger.error("Could not sink data: " + response.reason);
+      } catch (e) {
+        logger.error("Unknown error: " + e);
+      }
+    });
+  }
+
+  return new Response("OK");
+}
+
+// Manifest index
+function handleManifest(manifest: Manifest) {
+  const promises = [];
+  const { moduleHash, type, moduleName, chain } = manifest;
+  if (!knownModuleHashes.has(moduleHash)) {
+    promises.push(client.insert({ values: {
+      module_hash: moduleHash,
+      chain,
+      type,
+      module_name: moduleName,
+    }, table: "manifest", format: "JSONEachRow" }));
+    knownModuleHashes.add(moduleHash);
+  }
+  return promises;
+}
+
+// Block Index
+function handleClock(manifest: Manifest, clock: Clock) {
+  const promises = [];
+  const block_id = clock.id;
+  const block_number = clock.number;
+  const timestamp = Number(new Date(clock.timestamp));
+  const finalBlockOnly = manifest.finalBlockOnly === "true";
+  const chain = manifest.chain;
+  const block_key = `${block_id}-${finalBlockOnly}`
+
+  if (!knownBlockId.has(block_key)) {
+    promises.push(client.insert({ values: {
+      block_id,
+      block_number,
+      chain,
+      timestamp,
+      final_block: finalBlockOnly
+    }, table: "block", format: "JSONEachRow" }))
+    knownBlockId.add(block_key);
+  }
+  return promises;
 }
 
 function handleEntityChange(
@@ -48,44 +97,11 @@ async function insertEntityChange(
   values: Record<string, unknown>,
   metadata: { id: string; clock: Clock; manifest: Manifest }
 ) {
-  const promises = [];
-
-  // Manifest Index
-  const { manifest } = metadata;
-  const { moduleHash, type, moduleName, chain } = manifest;
-  if (!knownModuleHashes.has(moduleHash)) {
-    promises.push(client.insert({ values: {
-      module_hash: moduleHash,
-      chain,
-      type,
-      module_name: moduleName,
-    }, table: "manifest", format: "JSONEachRow" }))
-    knownModuleHashes.add(moduleHash);
-  }
-
-  // Block Index
-  const block_id = metadata.clock.id;
-  const block_number = metadata.clock.number;
-  const timestamp = Number(new Date(metadata.clock.timestamp));
-  const finalBlockOnly = manifest.finalBlockOnly === "true";
-  const block_key = `${block_id}-${finalBlockOnly}`
-  if (!knownBlockId.has(block_key)) {
-    promises.push(client.insert({ values: {
-      block_id,
-      block_number,
-      chain,
-      timestamp,
-      final_block: finalBlockOnly
-    }, table: "block", format: "JSONEachRow" }))
-    knownBlockId.add(block_key);
-  }
-
-  // Entity
+  // EntityChange
   values["id"] = metadata.id; // Entity ID
   values["block_id"] = metadata.clock.id; // Block Index
   values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
-  values["chain"] = chain;
+  values["chain"] = metadata.manifest.chain; // Chain Index
 
-  promises.push(client.insert({ values, table, format: "JSONEachRow" }));
-  return Promise.all(promises);
+  return client.insert({ values, table, format: "JSONEachRow" });
 }
