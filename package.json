@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "start": "bun index.ts",
-    "dev": "bun index.ts --watch",
+    "dev": "bun --watch index.ts",
     "test": "bun test",
     "lint": "bunx tsc --noEmit",
     "build": "bun build --compile ./index.ts --outfile substreams-sink-clickhouse"
