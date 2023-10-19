@@ -7,36 +7,25 @@ import PQueue from 'p-queue';
 
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
-const queue = new PQueue({concurrency: 100});
+const queue = new PQueue({concurrency: 2});
+queue.on('error', logger.error);
+//       const response = await promise as PromiseRejectedResult;
+//       if (response.status === "rejected") logger.error("Could not sink data: " + response.reason);
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody): Promise<Response> {
-  const promises = [];
-  promises.push(...handleManifest(metadata.manifest));
-  promises.push(...handleClock(metadata.manifest, metadata.clock));
+  handleManifest(queue, metadata.manifest);
+  handleClock(queue, metadata.manifest, metadata.clock);
   for ( const change of data.entityChanges ) {
-    promises.push(handleEntityChange(change, metadata));
+    handleEntityChange(queue, change, metadata);
   }
-
-  for ( const promise of promises ) {
-    queue.add(async () => {
-      try {
-        const response = await promise as PromiseRejectedResult;
-        if (response.status === "rejected") logger.error("Could not sink data: " + response.reason);
-      } catch (e) {
-        logger.error("Unknown error: " + e);
-      }
-    });
-  }
-
   return new Response("OK");
 }
 
 // Manifest index
-function handleManifest(manifest: Manifest) {
-  const promises = [];
+function handleManifest(queue: PQueue, manifest: Manifest) {
   const { moduleHash, type, moduleName, chain } = manifest;
   if (!knownModuleHashes.has(moduleHash)) {
-    promises.push(client.insert({ values: {
+    queue.add(() => client.insert({ values: {
       module_hash: moduleHash,
       chain,
       type,
@@ -44,12 +33,10 @@ function handleManifest(manifest: Manifest) {
     }, table: "manifest", format: "JSONEachRow" }));
     knownModuleHashes.add(moduleHash);
   }
-  return promises;
 }
 
 // Block Index
-function handleClock(manifest: Manifest, clock: Clock) {
-  const promises = [];
+function handleClock(queue: PQueue, manifest: Manifest, clock: Clock) {
   const block_id = clock.id;
   const block_number = clock.number;
   const timestamp = Number(new Date(clock.timestamp));
@@ -58,7 +45,7 @@ function handleClock(manifest: Manifest, clock: Clock) {
   const block_key = `${block_id}-${finalBlockOnly}`
 
   if (!knownBlockId.has(block_key)) {
-    promises.push(client.insert({ values: {
+    queue.add(() => client.insert({ values: {
       block_id,
       block_number,
       chain,
@@ -67,18 +54,18 @@ function handleClock(manifest: Manifest, clock: Clock) {
     }, table: "block", format: "JSONEachRow" }))
     knownBlockId.add(block_key);
   }
-  return promises;
 }
 
 function handleEntityChange(
+  queue: PQueue,
   change: EntityChange,
   metadata: { clock: Clock; manifest: Manifest }
-): Promise<unknown> {
+) {
   const values = getValuesInEntityChange(change);
 
   switch (change.operation) {
     case "OPERATION_CREATE":
-      return insertEntityChange(change.entity, values, { ...metadata, id: change.id });
+      return insertEntityChange(queue, change.entity, values, { ...metadata, id: change.id });
 
     // case "OPERATION_UPDATE":
     //   return client.update();
@@ -92,7 +79,8 @@ function handleEntityChange(
   }
 }
 
-async function insertEntityChange(
+function insertEntityChange(
+  queue: PQueue,
   table: string,
   values: Record<string, unknown>,
   metadata: { id: string; clock: Clock; manifest: Manifest }
@@ -103,5 +91,5 @@ async function insertEntityChange(
   values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
   values["chain"] = metadata.manifest.chain; // Chain Index
 
-  return client.insert({ values, table, format: "JSONEachRow" });
+  return queue.add(() => client.insert({ values, table, format: "JSONEachRow" }));
 }
