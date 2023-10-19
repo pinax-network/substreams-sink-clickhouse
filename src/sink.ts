@@ -84,6 +84,9 @@ function handleEntityChange(
   metadata: { clock: Clock; manifest: Manifest }
 ) {
   const values = getValuesInEntityChange(change);
+  logger.info(
+    "handleEntityChange | " + change.operation + " | " + change.id + " | " + JSON.stringify(values)
+  );
 
   switch (change.operation) {
     case "OPERATION_CREATE":
