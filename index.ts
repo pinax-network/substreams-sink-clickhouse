@@ -67,6 +67,12 @@ const opts = program
       .choices(["0", "1"])
       .default(config.WAIT_FOR_ASYNC_INSERTS)
   )
+  .addOption(
+    new Option(
+      "--p-queue-limit <p-queue-limit>",
+      "Insert delay to each response when the pqueue exceeds this value"
+    ).default(config.P_QUEUE_LIMIT)
+  )
   .parse()
   .opts();
 
@@ -92,4 +98,5 @@ if (opts.schemaUrl) {
   await initializeTables(schema);
 }
 
-serve(opts.port, opts.auth, opts.key);
+const pQueueLimit = parseInt(opts.pQueueLimit || config.P_QUEUE_LIMIT);
+serve(opts.port, opts.auth, opts.key, pQueueLimit);

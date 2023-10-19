@@ -8,15 +8,17 @@ import openapi from "./openapi.js";
 import { handlePingRequest } from "./ping.js";
 import * as prometheus from "./prometheus.js";
 import { BodySchema, TableInitSchema } from "./schemas.js";
-import { handleSinkRequest } from "./sink.js";
+import { makeSinkRequestHandler } from "./sink.js";
 import { handleTableInitialization } from "./table-initialization.js";
 
 type Handler = (req: Request) => Response | Promise<Response>;
 
 function makeHandlers(
+  pQueueLimit: number,
   ...authConfig: Parameters<typeof authProvider>
 ): Record<string, Record<string, Handler>> {
   const { signed, authenticated } = authProvider(...authConfig);
+  const handleSinkRequest = makeSinkRequestHandler(pQueueLimit);
 
   return {
     GET: {
@@ -42,9 +44,10 @@ function makeHandlers(
 export async function serve(
   port: number,
   authKey: string | undefined,
-  publicKey: string | undefined
+  publicKey: string | undefined,
+  pQueueLimit: number
 ) {
-  const handlers = makeHandlers({ authKey, publicKey });
+  const handlers = makeHandlers(pQueueLimit, { authKey, publicKey });
 
   const app = Bun.serve({
     port,

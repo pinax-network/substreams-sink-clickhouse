@@ -1,36 +1,51 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
+import PQueue from "p-queue";
 import { client } from "./clickhouse.js";
 import { getValuesInEntityChange } from "./entity-changes.js";
 import { logger } from "./logger.js";
 import { Clock, Manifest, PayloadBody } from "./schemas.js";
-import PQueue from 'p-queue';
 
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
-const queue = new PQueue({concurrency: 2});
-queue.on('error', logger.error);
+const queue = new PQueue({ concurrency: 2 });
+queue.on("error", logger.error);
 
-export async function handleSinkRequest({ data, ...metadata }: PayloadBody): Promise<Response> {
-  handleManifest(queue, metadata.manifest);
-  handleClock(queue, metadata.manifest, metadata.clock);
-  for ( const change of data.entityChanges ) {
-    handleEntityChange(queue, change, metadata);
-  }
-  // TO-DO: Logging can be improved
-  logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
-  return new Response("OK");
+export function makeSinkRequestHandler(pQueueLimit: number) {
+  return async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
+    handleManifest(queue, metadata.manifest);
+    handleClock(queue, metadata.manifest, metadata.clock);
+    for (const change of data.entityChanges) {
+      handleEntityChange(queue, change, metadata);
+    }
+
+    if (queue.size > pQueueLimit) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    // TO-DO: Logging can be improved
+    logger.info(
+      `handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`
+    );
+    return new Response("OK");
+  };
 }
 
 // Manifest index
 function handleManifest(queue: PQueue, manifest: Manifest) {
   const { moduleHash, type, moduleName, chain } = manifest;
   if (!knownModuleHashes.has(moduleHash)) {
-    queue.add(() => client.insert({ values: {
-      module_hash: moduleHash,
-      chain,
-      type,
-      module_name: moduleName,
-    }, table: "manifest", format: "JSONEachRow" }));
+    queue.add(() =>
+      client.insert({
+        values: {
+          module_hash: moduleHash,
+          chain,
+          type,
+          module_name: moduleName,
+        },
+        table: "manifest",
+        format: "JSONEachRow",
+      })
+    );
     knownModuleHashes.add(moduleHash);
   }
 }
@@ -42,16 +57,22 @@ function handleClock(queue: PQueue, manifest: Manifest, clock: Clock) {
   const timestamp = Number(new Date(clock.timestamp));
   const finalBlockOnly = manifest.finalBlockOnly === "true";
   const chain = manifest.chain;
-  const block_key = `${block_id}-${finalBlockOnly}`
+  const block_key = `${block_id}-${finalBlockOnly}`;
 
   if (!knownBlockId.has(block_key)) {
-    queue.add(() => client.insert({ values: {
-      block_id,
-      block_number,
-      chain,
-      timestamp,
-      final_block: finalBlockOnly
-    }, table: "block", format: "JSONEachRow" }))
+    queue.add(() =>
+      client.insert({
+        values: {
+          block_id,
+          block_number,
+          chain,
+          timestamp,
+          final_block: finalBlockOnly,
+        },
+        table: "block",
+        format: "JSONEachRow",
+      })
+    );
     knownBlockId.add(block_key);
   }
 }

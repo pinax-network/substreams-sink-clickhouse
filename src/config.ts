@@ -23,6 +23,7 @@ const EnvSchema = z.object({
 
   ASYNC_INSERTS: z.coerce.number().default(1),
   WAIT_FOR_ASYNC_INSERTS: z.coerce.number().default(0),
+  P_QUEUE_LIMIT: z.coerce.number().default(10),
 
   SCHEMA_URL: z.string().default("./schema.sql"),
 });
