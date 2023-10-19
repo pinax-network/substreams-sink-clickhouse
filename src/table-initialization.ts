@@ -11,8 +11,7 @@ CREATE TABLE IF NOT EXISTS manifest (
     type          String(),
 )
 ENGINE = ReplacingMergeTree
-PRIMARY KEY (module_hash)
-ORDER BY (module_hash, module_name);
+ORDER BY (module_hash);
 `,
 `
 CREATE TABLE IF NOT EXISTS block (
@@ -23,8 +22,7 @@ CREATE TABLE IF NOT EXISTS block (
   final_block   Bool,
 )
 ENGINE = ReplacingMergeTree
-PRIMARY KEY (block_id)
-ORDER BY (block_id, block_number, timestamp);
+ORDER BY (block_id);
 `];
 
 export function initializeManifest(): Promise<unknown> {
