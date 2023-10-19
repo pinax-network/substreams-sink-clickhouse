@@ -26,11 +26,22 @@ ENGINE = ReplacingMergeTree
 PRIMARY KEY (block_id)
 ORDER BY (block_id, block_number, timestamp);
 `,
+  `CREATE TABLE IF NOT EXISTS unparsed_json (
+    raw_data    JSON,
+    source      LowCardinality(String),
+    id          String,
+    block_id    FixedString(64),
+    module_hash FixedString(40),
+    chain       LowCardinality(String)
+  )
+  ENGINE = MergeTree
+  ORDER BY (source, chain, module_hash, block_id)`,
 ];
 
 export function initializeManifest(): Promise<unknown> {
   logger.info("Initializing 'manifest' table.");
   logger.info("Initializing 'clock' table.");
+  logger.info("Initializing 'unparsed_json' table.");
   return Promise.all(queries.map((query) => client.command({ query })));
 }
 

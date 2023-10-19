@@ -7,6 +7,7 @@ import { Clock, Manifest, PayloadBody } from "./schemas.js";
 
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
+const existingTables = new Map<string, boolean>();
 
 export function makeSinkRequestHandler(concurrency: number, pQueueLimit: number) {
   const queue = new PQueue({ concurrency });
@@ -78,19 +79,34 @@ function handleClock(queue: PQueue, manifest: Manifest, clock: Clock) {
   }
 }
 
-function handleEntityChange(
+async function handleEntityChange(
   queue: PQueue,
   change: EntityChange,
   metadata: { clock: Clock; manifest: Manifest }
 ) {
-  const values = getValuesInEntityChange(change);
+  const tableExists = await checkForTable(change.entity);
+
+  let values = getValuesInEntityChange(change);
+  const jsonData = JSON.stringify(values);
+  const table = tableExists ? change.entity : "unparsed_json";
   logger.info(
-    "handleEntityChange | " + change.operation + " | " + change.id + " | " + JSON.stringify(values)
+    "handleEntityChange | " +
+      table +
+      " | " +
+      change.operation +
+      " | " +
+      change.id +
+      " | " +
+      jsonData
   );
+
+  if (!tableExists) {
+    values = { raw_data: jsonData, source: change.entity };
+  }
 
   switch (change.operation) {
     case "OPERATION_CREATE":
-      return insertEntityChange(queue, change.entity, values, { ...metadata, id: change.id });
+      return insertEntityChange(queue, table, values, { ...metadata, id: change.id });
 
     // case "OPERATION_UPDATE":
     //   return client.update();
@@ -116,5 +132,22 @@ function insertEntityChange(
   values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
   values["chain"] = metadata.manifest.chain; // Chain Index
 
-  return queue.add(() => client.insert({ values, table, format: "JSONEachRow" }));
+  return queue.add(() => client.insert({ values, table, format: "JSONStringsEachRow" }));
+}
+
+async function checkForTable(table: string): Promise<boolean> {
+  if (!existingTables.has(table)) {
+    const response = await client.query({
+      query: "EXISTS " + table,
+      format: "JSONEachRow",
+    });
+    const data = await response.json<Array<{ result: 0 | 1 }>>();
+
+    const foundTable = data[0]?.result === 1;
+    existingTables.set(table, foundTable);
+
+    logger.info(`Found table '${table}': ${foundTable}. Saving data as json: ${!foundTable}`);
+  }
+
+  return existingTables.get(table)!;
 }

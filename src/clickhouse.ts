@@ -24,6 +24,7 @@ export async function initializeClickhouse(options: {
     clickhouse_settings: {
       wait_for_async_insert: options.waitForInsert ? 1 : 0,
       async_insert: options.asyncInsert ? 1 : 0,
+      allow_experimental_object_type: 1,
     },
     application: APP_NAME,
   });
