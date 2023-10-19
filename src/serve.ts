@@ -14,11 +14,14 @@ import { handleTableInitialization } from "./table-initialization.js";
 type Handler = (req: Request) => Response | Promise<Response>;
 
 function makeHandlers(
-  pQueueLimit: number,
-  ...authConfig: Parameters<typeof authProvider>
+  authConfig: Parameters<typeof authProvider>[0],
+  pQueueConfig: { pQueueConcurrency: number; pQueueLimit: number }
 ): Record<string, Record<string, Handler>> {
-  const { signed, authenticated } = authProvider(...authConfig);
-  const handleSinkRequest = makeSinkRequestHandler(pQueueLimit);
+  const { signed, authenticated } = authProvider(authConfig);
+  const handleSinkRequest = makeSinkRequestHandler(
+    pQueueConfig.pQueueConcurrency,
+    pQueueConfig.pQueueLimit
+  );
 
   return {
     GET: {
@@ -45,9 +48,10 @@ export async function serve(
   port: number,
   authKey: string | undefined,
   publicKey: string | undefined,
-  pQueueLimit: number
+  pQueueLimit: number,
+  pQueueConcurrency: number
 ) {
-  const handlers = makeHandlers(pQueueLimit, { authKey, publicKey });
+  const handlers = makeHandlers({ authKey, publicKey }, { pQueueConcurrency, pQueueLimit });
 
   const app = Bun.serve({
     port,

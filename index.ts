@@ -73,6 +73,12 @@ const opts = program
       "Insert delay to each response when the pqueue exceeds this value"
     ).default(config.P_QUEUE_LIMIT)
   )
+  .addOption(
+    new Option(
+      "--p-queue-concurrency <p-queue-concurrency>",
+      "https://github.com/sindresorhus/p-queue#concurrency"
+    ).default(config.P_QUEUE_CONCURRENCY)
+  )
   .parse()
   .opts();
 
@@ -98,5 +104,6 @@ if (opts.schemaUrl) {
   await initializeTables(schema);
 }
 
-const pQueueLimit = parseInt(opts.pQueueLimit || config.P_QUEUE_LIMIT);
-serve(opts.port, opts.auth, opts.key, pQueueLimit);
+const pQueueLimit = parseInt(opts.pQueueLimit) || config.P_QUEUE_LIMIT;
+const pQueueConcurrency = parseInt(opts.pQueueConcurrency) || config.P_QUEUE_CONCURRENCY;
+serve(opts.port, opts.auth, opts.key, pQueueLimit, pQueueConcurrency);

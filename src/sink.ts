@@ -7,10 +7,11 @@ import { Clock, Manifest, PayloadBody } from "./schemas.js";
 
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
-const queue = new PQueue({ concurrency: 2 });
-queue.on("error", logger.error);
 
-export function makeSinkRequestHandler(pQueueLimit: number) {
+export function makeSinkRequestHandler(concurrency: number, pQueueLimit: number) {
+  const queue = new PQueue({ concurrency });
+  queue.on("error", logger.error);
+
   return async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     handleManifest(queue, metadata.manifest);
     handleClock(queue, metadata.manifest, metadata.clock);

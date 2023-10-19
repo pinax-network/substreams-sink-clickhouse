@@ -32,6 +32,7 @@ DB_PASSWORD=
 CREATE_DB=false
 
 P_QUEUE_LIMIT=10
+P_QUEUE_CONCURRENCY=10
 
 SCHEMA_URL=...
 VERBOSE=true
@@ -105,21 +106,22 @@ bun start
 
 #### CLI structure
 
-| Flags                | Arguments         | Default                 | Description                                                                                                       |
-| -------------------- | ----------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `-p`, `--port`       | `<port>`          | `3000`                  | HTTP port on which to attach the sink                                                                             |
-| `-v`, `--verbose`    | -                 | `"pretty"`              | Enables logs.                                                                                                     |
-| `-s`, `--schema-url` | `[schema-url]`    | `SCHEMA_URL` in `.env`  | URL to a `.sql` file to execute before starting the sink                                                          |
-| `--key`              | `[public-key]`    | -                       | Public key to validate messages                                                                                   |
-| `--auth`             | `[auth-key]`      | `""`                    | Auth key to validate requests                                                                                     |
-| `--host`             | `[hostname]`      | `http://localhost:8123` | Database HTTP hostname                                                                                            |
-| `--name`             | `[db-name]`       | `default`               | The database to use inside ClickHouse                                                                             |
-| `--user`             | `[db-user]`       | `default`               | Database user                                                                                                     |
-| `--password`         | `[db-password]`   | `""`                    | Password associated with the specified username                                                                   |
-| `--create-db`        | -                 | -                       | Creates the requested database if it does not exist                                                               |
-| `--async-insert`     | `<async-insert>`  | 1                       | See [ClickHouse documentation](https://clickhouse.com/docs/en/operations/settings/settings#async-insert)          |
-| `--wait-insert`      | `<wait-insert>`   | 0                       | See [ClickHouse documentation](https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert) |
-| `--p-queue-limit`    | `<p-queue-limit>` | 10                      | Defines how many promises can be pending before delaying responses                                                |
+| Flags                   | Arguments               | Default                 | Description                                                                                                       |
+| ----------------------- | ----------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `-p`, `--port`          | `<port>`                | `3000`                  | HTTP port on which to attach the sink                                                                             |
+| `-v`, `--verbose`       | -                       | `"pretty"`              | Enables logs.                                                                                                     |
+| `-s`, `--schema-url`    | `[schema-url]`          | `SCHEMA_URL` in `.env`  | URL to a `.sql` file to execute before starting the sink                                                          |
+| `--key`                 | `[public-key]`          | -                       | Public key to validate messages                                                                                   |
+| `--auth`                | `[auth-key]`            | `""`                    | Auth key to validate requests                                                                                     |
+| `--host`                | `[hostname]`            | `http://localhost:8123` | Database HTTP hostname                                                                                            |
+| `--name`                | `[db-name]`             | `default`               | The database to use inside ClickHouse                                                                             |
+| `--user`                | `[db-user]`             | `default`               | Database user                                                                                                     |
+| `--password`            | `[db-password]`         | `""`                    | Password associated with the specified username                                                                   |
+| `--create-db`           | -                       | -                       | Creates the requested database if it does not exist                                                               |
+| `--async-insert`        | `<async-insert>`        | 1                       | See [ClickHouse documentation](https://clickhouse.com/docs/en/operations/settings/settings#async-insert)          |
+| `--wait-insert`         | `<wait-insert>`         | 0                       | See [ClickHouse documentation](https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert) |
+| `--p-queue-limit`       | `<p-queue-limit>`       | 10                      | Defines how many promises can be pending before delaying responses                                                |
+| `--p-queue-concurrency` | `<p-queue-concurrency>` | 10                      | See [PQueue documentation](https://github.com/sindresorhus/p-queue#concurrency)                                   |
 
 ## Database structure
 
