@@ -56,6 +56,8 @@ substreams-sink-clickhouse --create-db --name <DB_NAME>
 
 ### Schema initialization
 
+_This step can be skipped. If so, the data will be stored as-is in the `unparsed_json` table. It should then be parsed by the user with ClickHouse's tools (eg: `MaterializedView`)_
+
 Initializes the database according to a SQL file. See [example file](#example-sql-file).
 
 **CLI**
@@ -132,8 +134,20 @@ erDiagram
     USER_DIMENSION }|--|{ block : " "
     USER_DIMENSION }|--|{ manifest : " "
 
+    block }|--|{ unparsed_json : " "
+    manifest }|--|{ unparsed_json : " "
+
     USER_DIMENSION {
         user_data unknown
+        id String
+        block_id FixedString(64)
+        module_hash FixedString(40)
+        chain LowCardinality(String)
+    }
+
+    unparsed_json {
+        raw_data JSON
+        source LowCardinality(String)
         id String
         block_id FixedString(64)
         module_hash FixedString(40)
