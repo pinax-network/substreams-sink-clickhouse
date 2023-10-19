@@ -1,8 +1,4 @@
-import {
-  description,
-  name,
-  version,
-} from "./package.json" assert { type: "json" };
+import { description, name, version } from "./package.json" assert { type: "json" };
 
 import { Option, program } from "commander";
 import { initializeClickhouse } from "./src/clickhouse.js";
@@ -10,11 +6,7 @@ import config from "./src/config.js";
 import { logger } from "./src/logger.js";
 import { ping } from "./src/ping.js";
 import { serve } from "./src/serve.js";
-import {
-  initializeManifest,
-  initializeTables,
-  readSchema,
-} from "./src/table-initialization.js";
+import { initializeManifest, initializeTables, readSchema } from "./src/table-initialization.js";
 
 const opts = program
   .name(name)
@@ -22,10 +14,7 @@ const opts = program
   .description(description)
   .showHelpAfterError()
   .addOption(
-    new Option(
-      "-p, --port <port>",
-      "HTTP port on which to attach the sink"
-    ).default(config.PORT)
+    new Option("-p, --port <port>", "HTTP port on which to attach the sink").default(config.PORT)
   )
   .addOption(
     new Option("-v, --verbose [format]", "Enable logs")
@@ -40,34 +29,27 @@ const opts = program
     ).preset(config.SCHEMA_URL)
   )
   .addOption(
-    new Option("--key [public-key]", "Public key to validate messages").default(
-      config.PUBLIC_KEY
-    )
+    new Option("--key [public-key]", "Public key to validate messages").default(config.PUBLIC_KEY)
   )
   .addOption(
-    new Option("--auth [auth-key]", "Auth key to validate requests").default(
-      config.AUTH_KEY
-    )
+    new Option("--auth [auth-key]", "Auth key to validate requests").default(config.AUTH_KEY)
   )
+  .addOption(new Option("--host [hostname]", "Database HTTP hostname").default(config.DB_HOST))
   .addOption(
-    new Option("--host [hostname]", "Database HTTP hostname").default(
-      config.DB_HOST
-    )
+    new Option("--name [db-name]", "The database to use inside ClickHouse").default(config.DB_NAME)
   )
-  .addOption(
-    new Option(
-      "--name [db-name]",
-      "The database to use inside ClickHouse"
-    ).default(config.DB_NAME)
-  )
-  .addOption(
-    new Option("--user [db-user]", "Database user").default(config.DB_USERNAME)
-  )
+  .addOption(new Option("--user [db-user]", "Database user").default(config.DB_USERNAME))
   .addOption(
     new Option(
       "--password [db-password]",
       "Password associated with the specified username"
     ).default(config.DB_PASSWORD)
+  )
+  .addOption(
+    new Option(
+      "--create-db",
+      "If the specified database does not exist, automatically create it"
+    ).default(config.CREATE_DB)
   )
   .parse()
   .opts();
@@ -76,11 +58,12 @@ if (opts.verbose) {
   logger.enable(opts.verbose);
 }
 
-initializeClickhouse({
+await initializeClickhouse({
   host: opts.host,
-  uesrname: opts.username,
+  username: opts.username,
   password: opts.password,
   database: opts.name,
+  createDatabase: opts.createDb,
 });
 
 await ping();

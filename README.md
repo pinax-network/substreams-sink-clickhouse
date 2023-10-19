@@ -29,6 +29,7 @@ DB_HOST=http://127.0.0.1:8123
 DB_NAME=clickhouse_sink
 DB_USERNAME=default
 DB_PASSWORD=
+CREATE_DB=false
 
 SCHEMA_URL=...
 VERBOSE=true
@@ -44,19 +45,27 @@ substreams-sink-clickhouse --help
 
 ### Database initialization
 
-Create a database in ClickHouse. (Optionnaly, skip this step and use the `default` database.)
+Create a database in ClickHouse. (Optionally, skip this step and use the `default` database.)
 
 ```bash
-$ clickhouse client
-> CREATE DATABASE clickhouse_sink
-> SHOW DATABASES # <--- validate that it is found
+substreams-sink-clickhouse --create-db --name <DB_NAME>
 ```
 
 ### Schema initialization
 
 Initializes the database according to a SQL file. See [example file](#example-sql-file).
 
-It can also be done by uploading a `.sql` file on [http://localhost:3000](http://localhost:3000).
+**CLI**
+
+```
+substreams-sink-clickhouse --schema-url <SCHEMA_URL>
+```
+
+**Web UI**
+
+Upload a `.sql` file on [http://localhost:3000](http://localhost:3000). (POST request `/schema`, Content-Type: `application/octet-stream`)
+
+**Curl**
 
 ```bash
 curl --location --request POST 'http://localhost:3000/schema' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '<SQL_INSTRUCTIONS>'
@@ -105,6 +114,7 @@ bun start
 | `--name`             | `[db-name]`     | `default`               | The database to use inside ClickHouse                    |
 | `--user`             | `[db-user]`     | `default`               | Database user                                            |
 | `--password`         | `[db-password]` | `""`                    | Password associated with the specified username          |
+| `--create-db`        | -               | -                       | Creates the requested database if it does not exist      |
 
 ## Database structure
 
