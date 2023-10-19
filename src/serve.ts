@@ -58,5 +58,5 @@ export async function serve(
     },
   });
 
-  logger.info(`Sink listening on port ${app.port}`);
+  logger.info(`Sink listening on http://${app.hostname}:${app.port}`);
 }

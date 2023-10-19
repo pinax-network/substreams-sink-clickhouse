@@ -3,7 +3,8 @@ import { logger } from "./logger.js";
 import { TableInitSchema } from "./schemas.js";
 import { splitSchemaByTableCreation } from "./table-utils.js";
 
-const queries = [`
+const queries = [
+  `
 CREATE TABLE IF NOT EXISTS manifest (
     module_hash   FixedString(40),
     module_name   String(),
@@ -13,7 +14,7 @@ CREATE TABLE IF NOT EXISTS manifest (
 ENGINE = ReplacingMergeTree
 ORDER BY (module_hash);
 `,
-`
+  `
 CREATE TABLE IF NOT EXISTS block (
   block_id      FixedString(64),
   block_number  UInt32(),
@@ -22,13 +23,15 @@ CREATE TABLE IF NOT EXISTS block (
   final_block   Bool,
 )
 ENGINE = ReplacingMergeTree
-ORDER BY (block_id);
-`];
+PRIMARY KEY (block_id)
+ORDER BY (block_id, block_number, timestamp);
+`,
+];
 
 export function initializeManifest(): Promise<unknown> {
   logger.info("Initializing 'manifest' table.");
   logger.info("Initializing 'clock' table.");
-  return Promise.all(queries.map(query => client.command({ query })));
+  return Promise.all(queries.map((query) => client.command({ query })));
 }
 
 const metadataQueries = (tableName: string) => [
@@ -43,7 +46,7 @@ const metadataQueries = (tableName: string) => [
 export async function handleTableInitialization(schema: TableInitSchema): Promise<Response> {
   try {
     const tables = await initializeTables(schema);
-    return new Response("OK\nProcessed tables: " + tables);
+    return new Response("OK\nProcessed tables: " + tables.join(", "));
   } catch (err) {
     return new Response("Could not create the tables: " + err, { status: 500 });
   }
@@ -77,6 +80,8 @@ export async function initializeTables(schema: string): Promise<string[]> {
 }
 
 export async function readSchema(schemaUrl: string): Promise<string> {
+  logger.info(`Reading '${schemaUrl}'.`);
+
   try {
     const file = Bun.file(schemaUrl);
     if (await file.exists()) {
