@@ -28,7 +28,7 @@ function handleEntityChange(
 
   switch (change.operation) {
     case "OPERATION_CREATE":
-      return insertEntityChange(change.entity, values, metadata);
+      return insertEntityChange(change.entity, values, { ...metadata, id: change.id });
 
     // case "OPERATION_UPDATE":
     //   return client.update();
@@ -45,7 +45,7 @@ function handleEntityChange(
 async function insertEntityChange(
   table: string,
   values: Record<string, unknown>,
-  metadata: { clock: Clock; manifest: Manifest }
+  metadata: { id: string; clock: Clock; manifest: Manifest }
 ) {
   if (!knownModuleHashes.includes(metadata.manifest.moduleHash)) {
     await client.command({
@@ -56,6 +56,7 @@ async function insertEntityChange(
     knownModuleHashes.push(metadata.manifest.moduleHash);
   }
 
+  values["entity_id"] = metadata.id;
   values["chain"] = metadata.manifest.chain;
   values["block_id"] = metadata.clock.id;
   values["block_number"] = metadata.clock.number;
