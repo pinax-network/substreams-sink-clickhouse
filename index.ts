@@ -51,6 +51,22 @@ const opts = program
       "If the specified database does not exist, automatically create it"
     ).default(config.CREATE_DB)
   )
+  .addOption(
+    new Option(
+      "--async-insert <async-insert>",
+      "https://clickhouse.com/docs/en/operations/settings/settings#async-insert"
+    )
+      .choices(["0", "1"])
+      .default(config.ASYNC_INSERTS)
+  )
+  .addOption(
+    new Option(
+      "--wait-insert <wait-insert>",
+      "https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert"
+    )
+      .choices(["0", "1"])
+      .default(config.WAIT_FOR_ASYNC_INSERTS)
+  )
   .parse()
   .opts();
 
@@ -64,6 +80,8 @@ await initializeClickhouse({
   password: opts.password,
   database: opts.name,
   createDatabase: opts.createDb,
+  asyncInsert: +opts.asyncInsert,
+  waitForInsert: +opts.waitInsert,
 });
 
 await ping();

@@ -5,31 +5,27 @@ import { logger } from "./logger.js";
 const APP_NAME = "substreams-sink-clickhouse";
 let client: WebClickHouseClient;
 
-export async function initializeClickhouse(
-  options:
-    | Record<"host" | "username" | "password" | "database", string> & { createDatabase: boolean }
-) {
+export async function initializeClickhouse(options: {
+  database: string;
+  username: string;
+  password: string;
+  host: string;
+  asyncInsert: number;
+  waitForInsert: number;
+  createDatabase: boolean;
+}) {
   logger.info(`Initializing ClickHouse client with database: '${options.database}'`);
   if (options.createDatabase) {
-    logger.info(`Creating database '${options.database}'`);
-
-    if (!options.database) {
-      throw new Error("The database name must be specified");
-    }
-
-    await createClient({ application: APP_NAME }).exec({
-      query: `CREATE DATABASE IF NOT EXISTS "${options.database}"`,
-    });
-    logger.info("Database created");
+    await initializeDatabase(options.database);
   }
 
   client = createClient({
     ...options,
-    application: APP_NAME,
     clickhouse_settings: {
-      async_insert: 1,
-      wait_for_async_insert: 0,
+      wait_for_async_insert: options.waitForInsert ? 1 : 0,
+      async_insert: options.asyncInsert ? 1 : 0,
     },
+    application: APP_NAME,
   });
 
   // These overrides should not be required but the @clickhouse/client-web instance
@@ -44,6 +40,19 @@ export async function initializeClickhouse(
       return { success: false, error: new Error(message) };
     }
   };
+}
+
+async function initializeDatabase(database: string) {
+  logger.info(`Creating database '${database}'`);
+
+  if (!database) {
+    throw new Error("The database name must be specified");
+  }
+
+  await createClient({ application: APP_NAME }).exec({
+    query: `CREATE DATABASE IF NOT EXISTS "${database}"`,
+  });
+  logger.info("Database created");
 }
 
 export { client };

@@ -21,6 +21,9 @@ const EnvSchema = z.object({
     .transform((str) => str === "true")
     .default("false"),
 
+  ASYNC_INSERTS: z.coerce.number().default(1),
+  WAIT_FOR_ASYNC_INSERTS: z.coerce.number().default(0),
+
   SCHEMA_URL: z.string().default("./schema.sql"),
 });
 

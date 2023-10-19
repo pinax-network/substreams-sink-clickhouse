@@ -103,18 +103,20 @@ bun start
 
 #### CLI structure
 
-| Flags                | Arguments       | Default                 | Description                                              |
-| -------------------- | --------------- | ----------------------- | -------------------------------------------------------- |
-| `-p`, `--port`       | `<port>`        | `3000`                  | HTTP port on which to attach the sink                    |
-| `-v`, `--verbose`    | -               | `"pretty"`              | Enables logs.                                            |
-| `-s`, `--schema-url` | `[schema-url]`  | `SCHEMA_URL` in `.env`  | URL to a `.sql` file to execute before starting the sink |
-| `--key`              | `[public-key]`  | -                       | Public key to validate messages                          |
-| `--auth`             | `[auth-key]`    | `""`                    | Auth key to validate requests                            |
-| `--host`             | `[hostname]`    | `http://localhost:8123` | Database HTTP hostname                                   |
-| `--name`             | `[db-name]`     | `default`               | The database to use inside ClickHouse                    |
-| `--user`             | `[db-user]`     | `default`               | Database user                                            |
-| `--password`         | `[db-password]` | `""`                    | Password associated with the specified username          |
-| `--create-db`        | -               | -                       | Creates the requested database if it does not exist      |
+| Flags                | Arguments        | Default                 | Description                                                                                                       |
+| -------------------- | ---------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `-p`, `--port`       | `<port>`         | `3000`                  | HTTP port on which to attach the sink                                                                             |
+| `-v`, `--verbose`    | -                | `"pretty"`              | Enables logs.                                                                                                     |
+| `-s`, `--schema-url` | `[schema-url]`   | `SCHEMA_URL` in `.env`  | URL to a `.sql` file to execute before starting the sink                                                          |
+| `--key`              | `[public-key]`   | -                       | Public key to validate messages                                                                                   |
+| `--auth`             | `[auth-key]`     | `""`                    | Auth key to validate requests                                                                                     |
+| `--host`             | `[hostname]`     | `http://localhost:8123` | Database HTTP hostname                                                                                            |
+| `--name`             | `[db-name]`      | `default`               | The database to use inside ClickHouse                                                                             |
+| `--user`             | `[db-user]`      | `default`               | Database user                                                                                                     |
+| `--password`         | `[db-password]`  | `""`                    | Password associated with the specified username                                                                   |
+| `--create-db`        | -                | -                       | Creates the requested database if it does not exist                                                               |
+| `--async-insert`     | `<async-insert>` | 1                       | See [ClickHouse documentation](https://clickhouse.com/docs/en/operations/settings/settings#async-insert)          |
+| `--wait-insert`      | `<wait-insert>`  | 0                       | See [ClickHouse documentation](https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert) |
 
 ## Database structure
 
