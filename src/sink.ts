@@ -9,8 +9,6 @@ const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
 const queue = new PQueue({concurrency: 2});
 queue.on('error', logger.error);
-//       const response = await promise as PromiseRejectedResult;
-//       if (response.status === "rejected") logger.error("Could not sink data: " + response.reason);
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody): Promise<Response> {
   handleManifest(queue, metadata.manifest);
@@ -18,6 +16,8 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody): Pro
   for ( const change of data.entityChanges ) {
     handleEntityChange(queue, change, metadata);
   }
+  // TO-DO: Logging can be improved
+  logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
   return new Response("OK");
 }
 
