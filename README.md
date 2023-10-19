@@ -112,11 +112,13 @@ Every table created by the user is extended by metadata associated with the rece
 
 | Field        | Type                     |
 | ------------ | ------------------------ |
+| entity_id    | `String`                 |
 | timestamp    | `DateTime('UTC')`        |
 | block_number | `UInt32`                 |
 | block_id     | `FixedString(64)`        |
 | chain        | `LowCardinality(String)` |
 | module_hash  | `FixedString(40)`        |
+| final_block  | `Bool`                   |
 
 An index is added to the tuple `(chain, module_hash)`.
 
