@@ -37,7 +37,7 @@ const ConfigSchema = z.object({
   waitForInsert: z.coerce.number().pipe(z.literal(0).or(z.literal(1))),
   queueLimit: z.coerce.number().positive(),
   queueConcurrency: z.coerce.number().positive(),
-  schemaUrl: z.string().default("./schema.sql"),
+  schemaUrl: z.optional(z.string()),
 });
 
 let config: z.infer<typeof ConfigSchema>;
