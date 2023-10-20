@@ -1,6 +1,6 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import { describe, expect, test } from "bun:test";
-import { getValuesInEntityChange } from "../entity-changes.js";
+import { getValuesInEntityChange } from "./entity-changes.js";
 
 describe("entity-changes", () => {
   test("it should parse fields out of entity-changes correctly", () => {

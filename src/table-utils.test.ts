@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { getTableName, splitSchemaByTableCreation } from "../table-utils.js";
+import { getTableName, splitSchemaByTableCreation } from "./table-utils.js";
 
 describe("table-utils", () => {
   describe("splitSchemByTableCreation", () => {
     test("it should extract the table creation queries", () => {
-      const schema = `CREATE TABLE foo (num UInt64)    
+      const schema = `CREATE TABLE foo (num UInt64)
        ENGINE MergeTree
        ORDER BY (num)
-    
+
        CREATE TABLE IF NOT EXISTS bar (str UInt64)
        ENGINE MergeTree
        ORDER BY (str)`;
@@ -31,7 +31,7 @@ describe("table-utils", () => {
   describe("getTableName", () => {
     test("it should find the table name from the query", () => {
       const queries = [
-        `CREATE TABLE foo (num UInt64) 
+        `CREATE TABLE foo (num UInt64)
         ENGINE MergeTree
         ORDER BY (num)`,
 

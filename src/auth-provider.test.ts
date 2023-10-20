@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import nacl from "tweetnacl";
 import z from "zod";
-import { authProvider } from "../auth-provider.js";
+import { authProvider } from "./auth-provider.js";
 
 const EmptySchema = z.any();
 

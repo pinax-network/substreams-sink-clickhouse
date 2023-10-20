@@ -5,7 +5,7 @@ import { ping } from "./src/ping.js";
 import { serve } from "./src/serve.js";
 import { initializeManifest, initializeTables, readSchema } from "./src/table-initialization.js";
 
-if (config.verbose) logger.enable("pretty");
+if (config.verbose) logger.enable();
 
 await initializeClickhouse({...config});
 await ping();
