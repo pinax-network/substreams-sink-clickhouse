@@ -24,7 +24,7 @@ const ConfigSchema = z.object({
     .string()
     .transform((str) => parseInt(str))
     .pipe(z.number().positive()),
-  verbose: z.string().transform((str) => str.toLowerCase() === "true"),
+  verbose: z.enum(["pretty", "json"]).or(z.string().transform((str) => str.toLowerCase() === "true")),
   host: z.string(),
   database: z.string(),
   username: z.string(),
@@ -49,7 +49,7 @@ export function parseConfig(showHelp = true, argv?: readonly string[]) {
     .description(description)
     .showHelpAfterError(showHelp)
     .addOption(new Option("-p, --port <number>", "HTTP port on which to attach the sink").env("PORT").default(DEFAULT_PORT))
-    .addOption(new Option("-v, --verbose <boolean>", "Enable verbose logging").choices(["true", "false"]).env("VERBOSE").default(DEFAULT_VERBOSE))
+    .addOption(new Option("-v, --verbose <mode>", "Enable verbose logging").choices(["true", "false", "pretty", "json"]).env("VERBOSE").default(DEFAULT_VERBOSE))
     .addOption(new Option("-s, --schema-url [string]", "Execute SQL instructions before starting the sink").env("SCHEMA_URL").preset(DEFAULT_SCHEMA_URL))
     .addOption(new Option("--public-key <string>", "Public key to validate messages").env("PUBLIC_KEY"))
     .addOption(new Option("--auth-key <string>", "Auth key to validate requests").env("AUTH_KEY"))

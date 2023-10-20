@@ -30,9 +30,11 @@ describe("config", () => {
   });
 
   describe.skipIf(skipTests)("--verbose", () => {
-    test("it should allow boolean values", () => {
+    test("it should allow boolean values, 'pretty' and 'json'", () => {
       expectConfiguration("verbose").with("true", "VERBOSE", "-v", "--verbose").toBe(true);
       expectConfiguration("verbose").with("false", "VERBOSE", "-v", "--verbose").toBe(false);
+      expectConfiguration("verbose").with("pretty", "VERBOSE", "-v", "--verbose").toBe("pretty");
+      expectConfiguration("verbose").with("json", "VERBOSE", "-v", "--verbose").toBe("json");
     });
 
     test("it should fail on any other input", () => {

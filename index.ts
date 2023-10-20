@@ -6,7 +6,9 @@ import { serve } from "./src/serve.js";
 import { initializeManifest, initializeTables, readSchema } from "./src/table-initialization.js";
 
 parseConfig();
-if (config.verbose) logger.enable("pretty");
+if (config.verbose) {
+  logger.enable(config.verbose);
+}
 
 await initializeClickhouse({ ...config });
 await ping();

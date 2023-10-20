@@ -8,8 +8,8 @@ class SinkLogger extends Logger<ILogObj> {
     this.settings.name = name;
   }
 
-  public enable(type: "pretty" | "json" = "pretty") {
-    this.settings.type = type;
+  public enable(type: true | "pretty" | "json" = "pretty") {
+    this.settings.type = type === true ? "pretty" : type;
     this.settings.minLevel = 0;
   }
 
