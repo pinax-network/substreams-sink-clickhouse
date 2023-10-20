@@ -1,6 +1,6 @@
-import { client } from "./clickhouse.js";
-import { logger } from "./logger.js";
-import { TableInitSchema } from "./schemas.js";
+import { client } from "../config.js";
+import { logger } from "../logger.js";
+import { TableInitSchema } from "../schemas.js";
 import { splitSchemaByTableCreation } from "./table-utils.js";
 
 const queries = [

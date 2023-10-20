@@ -1,5 +1,6 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 
+// TO-DO logic should be moved to @substreams/sink-entity-changes
 export function getValuesInEntityChange(change: EntityChange): Record<string, unknown> {
   const values: Record<string, unknown> = {};
 
@@ -15,6 +16,5 @@ export function getValuesInEntityChange(change: EntityChange): Record<string, un
       }
     }
   }
-
   return values;
 }

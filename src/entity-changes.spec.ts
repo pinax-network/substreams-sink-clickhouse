@@ -2,6 +2,7 @@ import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import { describe, expect, test } from "bun:test";
 import { getValuesInEntityChange } from "./entity-changes.js";
 
+// TO-DO: should be moved to @substreams/sink-entity-changes
 describe("entity-changes", () => {
   test("it should parse fields out of entity-changes correctly", () => {
     const change: Partial<EntityChange> = {

@@ -1,34 +1,29 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
-import { client } from "./clickhouse.js";
-import { getValuesInEntityChange } from "./entity-changes.js";
-import { logger } from "./logger.js";
-import { Clock, Manifest, PayloadBody } from "./schemas.js";
+import { getValuesInEntityChange } from "../entity-changes.js";
+import { logger } from "../logger.js";
+import { Clock, Manifest, PayloadBody } from "../schemas.js";
+import { client, config } from "../config.js";
+const { setTimeout } = require("timers/promises");
 
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
 const existingTables = new Map<string, boolean>();
+const queue = new PQueue({ concurrency: config.queueConcurrency });
 
-export function makeSinkRequestHandler(concurrency: number, queueLimit: number) {
-  const queue = new PQueue({ concurrency });
-  queue.on("error", logger.error);
+export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
+  handleManifest(queue, metadata.manifest);
+  handleClock(queue, metadata.manifest, metadata.clock);
+  for (const change of data.entityChanges) {
+    handleEntityChange(queue, change, metadata);
+  }
 
-  return async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
-    handleManifest(queue, metadata.manifest);
-    handleClock(queue, metadata.manifest, metadata.clock);
-    for (const change of data.entityChanges) {
-      handleEntityChange(queue, change, metadata);
-    }
+  if (queue.size > config.queueLimit) await setTimeout(1000);
 
-    if (queue.size > queueLimit) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-
-    // TO-DO: Logging can be improved
-    logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
-    return new Response("OK");
-  };
-}
+  // TO-DO: Logging can be improved
+  logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
+  return new Response("OK");
+};
 
 // Manifest index
 function handleManifest(queue: PQueue, manifest: Manifest) {
@@ -82,7 +77,9 @@ async function handleEntityChange(
   change: EntityChange,
   metadata: { clock: Clock; manifest: Manifest }
 ) {
-  const tableExists = await checkForTable(change.entity);
+  // TO-DO: existsTable needs to be refactored to use `client.query()`
+  // Or else should be removed entirely
+  const tableExists = await existsTable(change.entity);
 
   let values = getValuesInEntityChange(change);
   const jsonData = JSON.stringify(values);
@@ -124,7 +121,9 @@ function insertEntityChange(
   return queue.add(() => client.insert({ values, table, format: "JSONStringsEachRow" }));
 }
 
-async function checkForTable(table: string): Promise<boolean> {
+// TO-DO: this function won't work in a serverless function environment or running with multiple replicas
+// Cannot depend on memory to know if table exists or not
+async function existsTable(table: string) {
   if (!existingTables.has(table)) {
     const response = await client.query({
       query: "EXISTS " + table,
@@ -137,6 +136,5 @@ async function checkForTable(table: string): Promise<boolean> {
 
     logger.info(`Found table '${table}': ${foundTable}. Saving data as json: ${!foundTable}`);
   }
-
   return existingTables.get(table)!;
 }

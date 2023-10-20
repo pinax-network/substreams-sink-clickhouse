@@ -16,7 +16,7 @@ export function registerGauge(name: string, help: string) {
   } catch (error) {}
 }
 
-// TO-DO: Add more metrics
+// TO-DO: Add Prometheus metrics
+// https://github.com/pinax-network/substreams-sink-clickhouse/issues/26
 export const requests = registerCounter("requests", "Total requests");
-
 export const registry = await register.metrics();

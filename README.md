@@ -48,6 +48,10 @@ These can all be set when starting the sink. See [cli structure](#cli-structure)
 PUBLIC_KEY=... # Ed25519 Public-key provided by https://github.com/pinax-network/substreams-sink-webhook
 AUTH_KEY=... # /schema endpoint is a protected endpoint (uses HTTP Basic authentication)
 
+# HTTP Server
+PORT=3000
+HOSTNAME=0.0.0.0
+
 # Clickhouse Database
 HOST=http://127.0.0.1:8123
 DATABASE=default
