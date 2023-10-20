@@ -19,4 +19,4 @@ if (config.schemaUrl) {
   await initializeTables(schema);
 }
 
-serve(config.port, config.authKey, config.publicKey, config.queueLimit, config.queueConcurrency);
+serve(config.port);

@@ -3,6 +3,7 @@ import swaggerUI from "../swagger/index.html";
 
 import { file } from "bun";
 import { authProvider } from "./auth-provider.js";
+import { config } from "./config.js";
 import { logger } from "./logger.js";
 import openapi from "./openapi.js";
 import { handlePingRequest } from "./ping.js";
@@ -13,15 +14,12 @@ import { handleTableInitialization } from "./table-initialization.js";
 
 type Handler = (req: Request) => Response | Promise<Response>;
 
-function makeHandlers(
-  authConfig: Parameters<typeof authProvider>[0],
-  queueConfig: { queueConcurrency: number; queueLimit: number }
-): Record<string, Record<string, Handler>> {
-  const { signed, authenticated } = authProvider(authConfig);
-  const handleSinkRequest = makeSinkRequestHandler(
-    queueConfig.queueConcurrency,
-    queueConfig.queueLimit
-  );
+function makeHandlers(): Record<string, Record<string, Handler>> {
+  const handleSinkRequest = makeSinkRequestHandler(config.queueConcurrency, config.queueLimit);
+  const { signed, authenticated } = authProvider({
+    publicKey: config.publicKey,
+    authKey: config.authKey,
+  });
 
   return {
     GET: {
@@ -44,14 +42,8 @@ function makeHandlers(
   };
 }
 
-export async function serve(
-  port: number,
-  authKey: string | undefined,
-  publicKey: string | undefined,
-  queueLimit: number,
-  queueConcurrency: number
-) {
-  const handlers = makeHandlers({ authKey, publicKey }, { queueConcurrency, queueLimit });
+export async function serve(port: number) {
+  const handlers = makeHandlers();
 
   const app = Bun.serve({
     port,

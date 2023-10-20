@@ -87,7 +87,6 @@ async function handleEntityChange(
   let values = getValuesInEntityChange(change);
   const jsonData = JSON.stringify(values);
   const table = tableExists ? change.entity : "unparsed_json";
-  logger.info(["handleEntityChange", table, change.operation, change.id, jsonData].join(" | "));
 
   if (!tableExists) {
     values = { raw_data: jsonData, source: change.entity };
