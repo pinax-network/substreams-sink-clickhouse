@@ -15,12 +15,12 @@ type Handler = (req: Request) => Response | Promise<Response>;
 
 function makeHandlers(
   authConfig: Parameters<typeof authProvider>[0],
-  pQueueConfig: { pQueueConcurrency: number; pQueueLimit: number }
+  queueConfig: { queueConcurrency: number; queueLimit: number }
 ): Record<string, Record<string, Handler>> {
   const { signed, authenticated } = authProvider(authConfig);
   const handleSinkRequest = makeSinkRequestHandler(
-    pQueueConfig.pQueueConcurrency,
-    pQueueConfig.pQueueLimit
+    queueConfig.queueConcurrency,
+    queueConfig.queueLimit
   );
 
   return {
@@ -48,10 +48,10 @@ export async function serve(
   port: number,
   authKey: string | undefined,
   publicKey: string | undefined,
-  pQueueLimit: number,
-  pQueueConcurrency: number
+  queueLimit: number,
+  queueConcurrency: number
 ) {
-  const handlers = makeHandlers({ authKey, publicKey }, { pQueueConcurrency, pQueueLimit });
+  const handlers = makeHandlers({ authKey, publicKey }, { queueConcurrency, queueLimit });
 
   const app = Bun.serve({
     port,

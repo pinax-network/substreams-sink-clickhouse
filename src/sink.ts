@@ -9,7 +9,7 @@ const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
 const existingTables = new Map<string, boolean>();
 
-export function makeSinkRequestHandler(concurrency: number, pQueueLimit: number) {
+export function makeSinkRequestHandler(concurrency: number, queueLimit: number) {
   const queue = new PQueue({ concurrency });
   queue.on("error", logger.error);
 
@@ -20,14 +20,12 @@ export function makeSinkRequestHandler(concurrency: number, pQueueLimit: number)
       handleEntityChange(queue, change, metadata);
     }
 
-    if (queue.size > pQueueLimit) {
+    if (queue.size > queueLimit) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     // TO-DO: Logging can be improved
-    logger.info(
-      `handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`
-    );
+    logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
     return new Response("OK");
   };
 }
@@ -89,16 +87,7 @@ async function handleEntityChange(
   let values = getValuesInEntityChange(change);
   const jsonData = JSON.stringify(values);
   const table = tableExists ? change.entity : "unparsed_json";
-  logger.info(
-    "handleEntityChange | " +
-      table +
-      " | " +
-      change.operation +
-      " | " +
-      change.id +
-      " | " +
-      jsonData
-  );
+  logger.info(["handleEntityChange", table, change.operation, change.id, jsonData].join(" | "));
 
   if (!tableExists) {
     values = { raw_data: jsonData, source: change.entity };

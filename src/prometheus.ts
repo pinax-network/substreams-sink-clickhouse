@@ -16,22 +16,7 @@ export function registerGauge(name: string, help: string) {
   } catch (error) {}
 }
 
-export const activeConnections = registerGauge(
-  "active_connections",
-  "All active connections"
-);
-export const connected = registerCounter(
-  "connected",
-  "Total connected clients"
-);
-export const publishedMessages = registerCounter(
-  "published_messages",
-  "Total published messages"
-);
-export const bytesPublished = registerCounter(
-  "bytes_published",
-  "Total bytes published"
-);
-export const disconnects = registerCounter("disconnects", "Total disconnects");
+// TO-DO: Add more metrics
+export const requests = registerCounter("requests", "Total requests");
 
 export const registry = await register.metrics();
