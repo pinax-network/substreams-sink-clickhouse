@@ -10,7 +10,7 @@ if (config.verbose) {
   logger.enable(config.verbose);
 }
 
-await initializeClickhouse({ ...config });
+await initializeClickhouse();
 await ping();
 await initializeManifest();
 

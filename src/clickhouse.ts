@@ -1,29 +1,25 @@
 import { PingResult, createClient } from "@clickhouse/client-web";
 import { WebClickHouseClient } from "@clickhouse/client-web/dist/client.js";
+import { config } from "./config.js";
 import { logger } from "./logger.js";
 
 const APP_NAME = "substreams-sink-clickhouse";
 let client: WebClickHouseClient;
 
-export async function initializeClickhouse(options: {
-  database: string;
-  username: string;
-  password: string;
-  host: string;
-  asyncInsert: number;
-  waitForInsert: number;
-  createDatabase: boolean;
-}) {
-  logger.info(`Initializing ClickHouse client with database: '${options.database}'`);
-  if (options.createDatabase) {
-    await initializeDatabase(options.database);
+export async function initializeClickhouse() {
+  logger.info(`Initializing ClickHouse client with database: '${config.database}'`);
+  if (config.createDatabase) {
+    await initializeDatabase(config.database);
   }
 
   client = createClient({
-    ...options,
+    database: config.database,
+    username: config.username,
+    password: config.password,
+    host: config.host,
     clickhouse_settings: {
-      wait_for_async_insert: options.waitForInsert ? 1 : 0,
-      async_insert: options.asyncInsert ? 1 : 0,
+      wait_for_async_insert: config.waitForInsert,
+      async_insert: config.asyncInsert,
       allow_experimental_object_type: 1,
     },
     application: APP_NAME,
