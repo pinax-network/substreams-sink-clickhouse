@@ -40,9 +40,8 @@ Options:
 
 ### Environment variables
 
-These can all be set when starting the sink. See [cli structure](#cli-structure).
-
 **.env**
+
 ```bash
 # Authentication
 PUBLIC_KEY=... # Ed25519 Public-key provided by https://github.com/pinax-network/substreams-sink-webhook

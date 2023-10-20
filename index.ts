@@ -1,13 +1,14 @@
 import { initializeClickhouse } from "./src/clickhouse.js";
-import { config } from "./src/config.js";
+import { config, parseConfig } from "./src/config.js";
 import { logger } from "./src/logger.js";
 import { ping } from "./src/ping.js";
 import { serve } from "./src/serve.js";
 import { initializeManifest, initializeTables, readSchema } from "./src/table-initialization.js";
 
+parseConfig();
 if (config.verbose) logger.enable("pretty");
 
-await initializeClickhouse({...config});
+await initializeClickhouse({ ...config });
 await ping();
 await initializeManifest();
 
