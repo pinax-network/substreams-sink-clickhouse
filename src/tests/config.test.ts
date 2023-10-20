@@ -6,7 +6,7 @@ describe("config", () => {
   let skipTests = true;
 
   try {
-    parseConfig();
+    parseConfig(false);
     skipTests = false;
   } catch {}
 
@@ -16,7 +16,7 @@ describe("config", () => {
   // This test ensures that every field is either optional or has a default value
   test("it should allow the sink to start without any configuration", () => {
     process.env = {};
-    expect(() => parseConfig()).not.toThrow();
+    expect(() => parseConfig(false)).not.toThrow();
   });
 
   describe.skipIf(skipTests)("--port", () => {
@@ -114,6 +114,7 @@ function expectConfiguration(field: keyof typeof config) {
           process.env = {};
           if (envField) {
             process.env = { [envField]: input };
+            expect(() => parseConfig(false)).not.toThrow();
             expect(config[field]).toBe(expected);
           }
           process.env = {};

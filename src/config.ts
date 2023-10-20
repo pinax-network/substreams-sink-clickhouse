@@ -1,4 +1,4 @@
-import { Option, program } from "commander";
+import { Command, Option } from "commander";
 import "dotenv/config";
 import z from "zod";
 import { description, name, version } from "../package.json" assert { type: "json" };
@@ -43,14 +43,14 @@ const ConfigSchema = z.object({
 let config: z.infer<typeof ConfigSchema>;
 
 export function parseConfig(showHelp = true, argv?: readonly string[]) {
-  const command = program
+  const command = new Command()
     .name(name)
     .version(version)
     .description(description)
     .showHelpAfterError(showHelp)
     .addOption(new Option("-p, --port <number>", "HTTP port on which to attach the sink").env("PORT").default(DEFAULT_PORT))
     .addOption(new Option("-v, --verbose <boolean>", "Enable verbose logging").choices(["true", "false"]).env("VERBOSE").default(DEFAULT_VERBOSE))
-    .addOption(new Option("-s, --schema-url <string>", "Execute SQL instructions before starting the sink").env("SCHEMA_URL").preset(DEFAULT_SCHEMA_URL))
+    .addOption(new Option("-s, --schema-url [string]", "Execute SQL instructions before starting the sink").env("SCHEMA_URL").preset(DEFAULT_SCHEMA_URL))
     .addOption(new Option("--public-key <string>", "Public key to validate messages").env("PUBLIC_KEY"))
     .addOption(new Option("--auth-key <string>", "Auth key to validate requests").env("AUTH_KEY"))
     .addOption(new Option("--host <string>", "Database HTTP hostname").env("HOST").default(DEFAULT_HOST))
@@ -61,18 +61,15 @@ export function parseConfig(showHelp = true, argv?: readonly string[]) {
     .addOption(new Option("--async-insert <number>", "https://clickhouse.com/docs/en/operations/settings/settings#async-insert").choices(["0", "1"]).env("ASYNC_INSERT").default(DEFAULT_ASYNC_INSERT))
     .addOption(new Option("--wait-for-insert <number>", "https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert").choices(["0", "1"]).env("WAIT_FOR_INSERT").default(DEFAULT_WAIT_FOR_INSERT))
     .addOption(new Option("--queue-limit <number>", "Insert delay to each response when the pqueue exceeds this value").env("QUEUE_LIMIT").default(DEFAULT_QUEUE_LIMIT))
-    .addOption(new Option("--queue-concurrency <number>", "https://github.com/sindresorhus/p-queue#concurrency").env("QUEUE_CONCURRENCY").default(DEFAULT_QUEUE_CONCURRENCY))
-    .parse(argv);
+    .addOption(new Option("--queue-concurrency <number>", "https://github.com/sindresorhus/p-queue#concurrency").env("QUEUE_CONCURRENCY").default(DEFAULT_QUEUE_CONCURRENCY));
 
   if (!showHelp) {
-    command.exitOverride(() => {
-      throw new Error("Invalid arguments");
+    command.exitOverride((err) => {
+      throw new Error("Invalid arguments: " + err);
     });
   }
 
-  console.log(command.opts());
-
-  config = ConfigSchema.parse(command.opts());
+  config = ConfigSchema.parse(command.parse(argv).opts());
 }
 
 export { config };
