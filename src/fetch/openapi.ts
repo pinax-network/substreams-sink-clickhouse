@@ -1,6 +1,6 @@
 import pkg from "../../package.json" assert { type: "json" };
 
-import { OpenApiBuilder, SchemaObject } from "openapi3-ts/oas30";
+import { OpenApiBuilder, SchemaObject } from "openapi3-ts/oas31";
 import * as ztjs from "zod-to-json-schema";
 import { BodySchema } from "../schemas.js";
 
