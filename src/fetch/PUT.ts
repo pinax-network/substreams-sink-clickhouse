@@ -4,6 +4,8 @@ import { handleTableInitialization } from "../clickhouse/table-initialization.js
 export default async function (req: Request) {
     const { pathname} = new URL(req.url);
     // TO-DO: add Basic Auth
+    // use Hono Basic Auth middleware
+    // https://hono.dev/middleware/builtin/basic-auth
     if ( pathname === "/schema") {
         const body = await req.text();
         if (!body) return new Response("missing body", { status: 400 });
