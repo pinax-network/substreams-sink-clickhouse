@@ -1,10 +1,9 @@
-import { Server } from "bun";
 import { BodySchema } from "../schemas.js";
 import { config } from "../config.js";
 import { verify } from "../webhook/verify.js";
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
 
-export default async function (req: Request, server: Server) {
+export default async function (req: Request) {
     const { pathname} = new URL(req.url);
 
     if (pathname !== "/" ) return new Response("Not found", { status: 400 });

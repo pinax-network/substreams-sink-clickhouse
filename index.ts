@@ -29,10 +29,10 @@ if ( true ) {
 const app = Bun.serve({
   hostname: config.hostname,
   port: config.port,
-  fetch(req: Request, server: Server) {
-    if ( req.method == "GET" ) return GET(req, server);
-    if ( req.method == "POST") return POST(req, server);
-    if ( req.method == "PUT") return PUT(req, server);
+  fetch(req: Request) {
+    if ( req.method == "GET" ) return GET(req);
+    if ( req.method == "POST") return POST(req);
+    if ( req.method == "PUT") return PUT(req);
     return new Response("Invalid request", { status: 400 });
   },
 });
