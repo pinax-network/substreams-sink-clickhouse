@@ -2,9 +2,21 @@
   "name": "substreams-sink-clickhouse",
   "version": "0.0.6",
   "description": "Substreams Clickhouse sink module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "type": "module",
+  "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Julien",
+      "email": "julien.rousseau@pinax.network",
+      "url": "https://github.com/JulienR1"
+    },
+    {
+      "name": "Denis Carriere",
+      "email": "denis@pinax.network",
+      "url": "https://github.com/DenisCarriere/"
+    }
+  ],
   "scripts": {
     "start": "bun index.ts",
     "dev": "bun --watch index.ts",
@@ -12,45 +24,21 @@
     "test": "bun test",
     "build": "bun build --compile ./index.ts --outfile substreams-sink-clickhouse"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pinax-network/substreams-sink-clickhouse.git"
-  },
-  "keywords": [
-    "substreams",
-    "streamingfast",
-    "firehose",
-    "thegraph",
-    "pinax"
-  ],
-  "author": {
-    "name": "Julien",
-    "email": "julien.rousseau@pinax.network"
-  },
-  "files": [
-    "dist"
-  ],
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/pinax-network/substreams-sink-clickhouse/issues"
-  },
-  "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse#readme",
-  "devDependencies": {
-    "@tsconfig/recommended": "^1.0.3",
-    "bun-types": "^1.0.3",
-    "typescript": "^5.2.2"
-  },
   "dependencies": {
-    "@clickhouse/client-web": "^0.2.2",
-    "@substreams/sink-entity-changes": "^0.3.1",
-    "commander": "^11.0.0",
-    "dotenv": "^16.3.1",
-    "openapi3-ts": "^4.1.2",
+    "@clickhouse/client-web": "latest",
+    "@substreams/sink-entity-changes": "latest",
+    "commander": "latest",
+    "dotenv": "latest",
+    "openapi3-ts": "latest",
     "p-queue": "latest",
-    "prom-client": "^14.2.0",
-    "tslog": "^4.9.2",
-    "tweetnacl": "^1.0.3",
-    "zod": "^3.22.4",
-    "zod-to-json-schema": "^3.21.4"
+    "prom-client": "latest",
+    "tslog": "latest",
+    "tweetnacl": "latest",
+    "zod": "latest",
+    "zod-to-json-schema": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "latest"
   }
 }

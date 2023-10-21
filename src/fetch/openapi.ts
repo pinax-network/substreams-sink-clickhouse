@@ -23,50 +23,6 @@ export default new OpenApiBuilder()
   })
   .addExternalDocs({ url: pkg.homepage, description: "Extra documentation" })
   .addSecurityScheme("auth-key", { type: "http", scheme: "bearer" })
-  .addPath("/webhook", {
-    post: {
-      tags: [TAGS.USAGE],
-      summary: "Entry point for substreams-sink-webhook",
-      externalDocs: {
-        description: "substreams-sink-webhook",
-        url: "https://github.com/pinax-network/substreams-sink-webhook",
-      },
-      parameters: [
-        { name: "x-signature-timestamp", in: "header" },
-        { name: "x-signature-ed25519", in: "header" },
-      ],
-      requestBody: {
-        content: {
-          "application/json": { schema: zodToJsonSchema(BodySchema) },
-        },
-      },
-      responses: {
-        "200": { description: "OK" },
-        "400": { description: "Bad request" },
-      },
-    },
-  })
-  .addPath("/health", {
-    get: {
-      tags: [TAGS.HEALTH],
-      summary: "Performs health checks and checks if the database is accessible",
-      responses: { "200": { description: "OK" } },
-    },
-  })
-  .addPath("/metrics", {
-    get: {
-      tags: [TAGS.MONITORING],
-      summary: "Prometheus metrics",
-      responses: {"200": { description: "Prometheus metrics"}},
-    },
-  })
-  .addPath("/openapi", {
-    get: {
-      tags: [TAGS.DOCS],
-      summary: "OpenAPI specification",
-      responses: { "200": {description: "OpenAPI JSON Specification" }},
-    },
-  })
   .addPath("/schema", {
     put: {
       tags: [TAGS.USAGE],
@@ -112,6 +68,50 @@ export default new OpenApiBuilder()
         "400": { description: "Bad request" },
         "401": { description: "Unauthorized" },
       },
+    },
+  })
+  .addPath("/webhook", {
+    post: {
+      tags: [TAGS.USAGE],
+      summary: "Entry point for substreams-sink-webhook",
+      externalDocs: {
+        description: "substreams-sink-webhook",
+        url: "https://github.com/pinax-network/substreams-sink-webhook",
+      },
+      parameters: [
+        { name: "x-signature-timestamp", in: "header" },
+        { name: "x-signature-ed25519", in: "header" },
+      ],
+      requestBody: {
+        content: {
+          "application/json": { schema: zodToJsonSchema(BodySchema) },
+        },
+      },
+      responses: {
+        "200": { description: "OK" },
+        "400": { description: "Bad request" },
+      },
+    },
+  })
+  .addPath("/health", {
+    get: {
+      tags: [TAGS.HEALTH],
+      summary: "Performs health checks and checks if the database is accessible",
+      responses: { "200": { description: "OK" } },
+    },
+  })
+  .addPath("/metrics", {
+    get: {
+      tags: [TAGS.MONITORING],
+      summary: "Prometheus metrics",
+      responses: {"200": { description: "Prometheus metrics"}},
+    },
+  })
+  .addPath("/openapi", {
+    get: {
+      tags: [TAGS.DOCS],
+      summary: "OpenAPI specification",
+      responses: { "200": {description: "OpenAPI JSON Specification" }},
     },
   })
   .getSpecAsJson();
