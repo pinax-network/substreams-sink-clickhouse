@@ -1,6 +1,6 @@
 import { client } from "../config.js";
 
-export async function health() {
+export default async function (req: Request) {
   try {
     const response = await client.ping();
     if (response.success === false) throw new Error(response.error.message);

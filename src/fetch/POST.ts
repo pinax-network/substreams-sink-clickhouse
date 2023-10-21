@@ -6,7 +6,7 @@ import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
 export default async function (req: Request) {
     const { pathname} = new URL(req.url);
 
-    if (pathname !== "/" ) return new Response("Not found", { status: 400 });
+    if (pathname !== "/webhook" ) return new Response("Not found", { status: 400 });
 
     const timestamp = req.headers.get("x-signature-timestamp");
     const signature = req.headers.get("x-signature-ed25519");

@@ -23,7 +23,7 @@ export default new OpenApiBuilder()
   })
   .addExternalDocs({ url: pkg.homepage, description: "Extra documentation" })
   .addSecurityScheme("auth-key", { type: "http", scheme: "bearer" })
-  .addPath("/", {
+  .addPath("/webhook", {
     post: {
       tags: [TAGS.USAGE],
       summary: "Entry point for substreams-sink-webhook",
@@ -46,52 +46,29 @@ export default new OpenApiBuilder()
       },
     },
   })
-  .addPath("/ping", {
-    get: {
-      tags: [TAGS.HEALTH],
-      summary: "Checks if the database is accessible",
-      responses: {
-        "200": { description: "OK" },
-        "400": { description: "Could not access the database." },
-      },
-    },
-  })
   .addPath("/health", {
     get: {
       tags: [TAGS.HEALTH],
-      summary: "Returns the current process' status",
+      summary: "Performs health checks and checks if the database is accessible",
       responses: { "200": { description: "OK" } },
     },
   })
   .addPath("/metrics", {
     get: {
       tags: [TAGS.MONITORING],
-      summary: "Exposes Prometheus metrics",
-      responses: {
-        "200": {
-          description: "The available metrics",
-          content: {
-            "text/plain": {
-              example: `active_connections 0
-connected 0
-published_messages 0
-bytes_published 0
-disconnects 0`,
-            },
-          },
-        },
-      },
+      summary: "Prometheus metrics",
+      responses: {"200": { description: "Prometheus metrics"}},
     },
   })
   .addPath("/openapi", {
     get: {
       tags: [TAGS.DOCS],
       summary: "OpenAPI specification",
-      responses: { "200": { description: "" } },
+      responses: { "200": {description: "OpenAPI JSON Specification" }},
     },
   })
   .addPath("/schema", {
-    post: {
+    put: {
       tags: [TAGS.USAGE],
       summary: "Initialize the sink according to a SQL schema",
       description: "Supports `CREATE TABLE` statements",
@@ -109,8 +86,31 @@ disconnects 0`,
         },
       },
       responses: {
-        "200": { description: "OK\nProcessed tables: []" },
-        "400": { description: "Could not create the tables" },
+        "200": { description: "OK" },
+        "400": { description: "Bad request" },
+        "401": { description: "Unauthorized" },
+      },
+    },
+  })
+  .addPath("/init", {
+    put: {
+      tags: [TAGS.USAGE],
+      summary: "Initialize database & manifest",
+      security: [{ "auth-key": [] }],
+      requestBody: {
+        content: {
+          "text/plain": {
+            schema: { type: "string" },
+          },
+          "application/octet-stream": {
+            schema: { type: "string", format: "base64" },
+          },
+        },
+      },
+      responses: {
+        "200": { description: "OK" },
+        "400": { description: "Bad request" },
+        "401": { description: "Unauthorized" },
       },
     },
   })
