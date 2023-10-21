@@ -1,19 +1,13 @@
 import pkg from "../../package.json" assert { type: "json" };
 
-import { OpenApiBuilder, SchemaObject } from "openapi3-ts/oas31";
-import * as ztjs from "zod-to-json-schema";
-import { BodySchema } from "../schemas.js";
+import { OpenApiBuilder } from "openapi3-ts/oas31";
 
 const TAGS = {
-  MONITORING: "Monitoring",
-  HEALTH: "Health",
   USAGE: "Usage",
+  HEALTH: "Health",
+  MONITORING: "Monitoring",
   DOCS: "Documentation",
 } as const;
-
-const zodToJsonSchema = (
-  ...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>
-) => ztjs.zodToJsonSchema(...params) as SchemaObject;
 
 export default new OpenApiBuilder()
   .addInfo({
@@ -84,7 +78,7 @@ export default new OpenApiBuilder()
       ],
       requestBody: {
         content: {
-          "application/json": { schema: zodToJsonSchema(BodySchema) },
+          "application/json": { schema: { type: "string" }},
         },
       },
       responses: {
