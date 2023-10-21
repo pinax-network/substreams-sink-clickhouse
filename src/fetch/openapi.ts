@@ -1,8 +1,8 @@
-import pkg from "../package.json" assert { type: "json" };
+import pkg from "../../package.json" assert { type: "json" };
 
 import { OpenApiBuilder, SchemaObject } from "openapi3-ts/oas30";
 import * as ztjs from "zod-to-json-schema";
-import { BodySchema } from "./schemas.js";
+import { BodySchema } from "../schemas.js";
 
 const TAGS = {
   MONITORING: "Monitoring",

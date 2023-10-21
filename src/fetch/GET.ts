@@ -1,5 +1,5 @@
 import { registry } from "../prometheus.js";
-import openapi from "../openapi.js";
+import openapi from "./openapi.js";
 import health from "./health.js";
 
 export default async function (req: Request) {
