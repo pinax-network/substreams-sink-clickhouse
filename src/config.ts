@@ -7,7 +7,7 @@ import { createClient } from "./clickhouse/createClient.js";
 
 // Defaults
 export const DEFAULT_PORT = "3000";
-export const DEFAULT_VERBOSE = "pretty";
+export const DEFAULT_VERBOSE = "true";
 export const DEFAULT_HOSTNAME = "0.0.0.0"
 export const DEFAULT_HOST = "http://localhost:8123";
 export const DEFAULT_DATABASE = "default";
@@ -21,7 +21,7 @@ export const DEFAULT_QUEUE_CONCURRENCY = 10;
 export const DEFAULT_SCHEMA_URL = "./schema.sql";
 export const APP_NAME = name;
 
-const opts = program
+export const opts = program
   .name(name)
   .version(version)
   .description(description)
@@ -44,33 +44,29 @@ const opts = program
   .parse()
   .opts();
 
-export const config = z.object({
+export const boolean = z.string().transform((str) => str.toLowerCase() === "true").or(z.boolean())
+export const positiveNumber = z.string().transform((str) => parseInt(str)).pipe(z.number().positive())
+export const oneOrZero = z.coerce.number().pipe(z.literal(0).or(z.literal(1)));
+
+export const ConfigSchema = z.object({
   publicKey: z.string(),
-  authKey: z.string().optional(),
-  port: z
-    .string()
-    .transform((str) => parseInt(str))
-    .pipe(z.number().positive()),
-  verbose: z
-    .string()
-    .transform((str) => str.toLowerCase() === "true")
-    .or(z.boolean()),
+  authKey: z.optional(z.string()),
+  port: positiveNumber,
+  verbose: boolean,
   host: z.string(),
   hostname: z.string(),
   database: z.string(),
   username: z.string(),
   password: z.string(),
-  createDatabase: z
-    .string()
-    .transform((str) => str.toLowerCase() === "true")
-    .or(z.boolean()),
-  asyncInsert: z.coerce.number().pipe(z.literal(0).or(z.literal(1))),
-  waitForAsyncInsert: z.coerce.number().pipe(z.literal(0).or(z.literal(1))),
-  queueLimit: z.coerce.number().positive(),
-  queueConcurrency: z.coerce.number().positive(),
+  createDatabase: boolean,
+  asyncInsert: oneOrZero,
+  waitForAsyncInsert: oneOrZero,
+  queueLimit: positiveNumber,
+  queueConcurrency: positiveNumber,
   schemaUrl: z.optional(z.string()),
-}).parse(opts)
+})
+export type ConfigSchema = z.infer<typeof ConfigSchema>;
+export const config = ConfigSchema.parse(opts);
 
-
-
+// WebClickHouseClient
 export const client = createClient();
