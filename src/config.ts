@@ -1,9 +1,9 @@
 import "dotenv/config";
 
-import z from "zod";
 import { Option, program } from "commander";
 import { description, name, version } from "../package.json" assert { type: "json" };
 import { createClient } from "./clickhouse/createClient.js";
+import { ConfigSchema } from "./schemas.js";
 
 // Defaults
 export const DEFAULT_PORT = "3000";
@@ -44,28 +44,8 @@ export const opts = program
   .parse()
   .opts();
 
-export const boolean = z.string().transform((str) => str.toLowerCase() === "true").or(z.boolean())
-export const positiveNumber = z.string().transform((str) => parseInt(str)).pipe(z.number().positive())
-export const oneOrZero = z.coerce.number().pipe(z.literal(0).or(z.literal(1)));
 
-export const ConfigSchema = z.object({
-  publicKey: z.string(),
-  authKey: z.optional(z.string()),
-  port: positiveNumber,
-  verbose: boolean,
-  host: z.string(),
-  hostname: z.string(),
-  database: z.string(),
-  username: z.string(),
-  password: z.string(),
-  createDatabase: boolean,
-  asyncInsert: oneOrZero,
-  waitForAsyncInsert: oneOrZero,
-  queueLimit: positiveNumber,
-  queueConcurrency: positiveNumber,
-  schemaUrl: z.optional(z.string()),
-})
-export type ConfigSchema = z.infer<typeof ConfigSchema>;
+// Validate Commander argument & .env options
 export const config = ConfigSchema.parse(opts);
 
 // WebClickHouseClient

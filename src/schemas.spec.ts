@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { ConfigSchema, boolean, oneOrZero, positiveNumber } from "./config.js";
+import { ConfigSchema, boolean, oneOrZero, positiveNumber } from "./schemas.js";
+
+test("boolean::true", () => expect(boolean.parse("true")).toBe(true));
+test("boolean::false", () => expect(boolean.parse("false")).toBe(false));
+test("oneOrZero::0", () => expect(oneOrZero.parse("0")).toBe(0));
+test("oneOrZero::1", () => expect(oneOrZero.parse("1")).toBe(1));
+test("positiveNumber::1", () => expect(positiveNumber.parse("1")).toBe(1));
 
 const config = ConfigSchema.parse({
   port: "3000",
@@ -31,9 +37,4 @@ describe("ConfigSchema", () => {
   test("waitForAsyncInsert", () => expect(config.waitForAsyncInsert).toBe(0));
   test("asyncInsert", () => expect(config.asyncInsert).toBe(1));
   test("createDatabase", () => expect(config.createDatabase).toBe(false));
-  test("boolean::true", () => expect(boolean.parse("true")).toBe(true));
-  test("boolean::false", () => expect(boolean.parse("false")).toBe(false));
-  test("oneOrZero::0", () => expect(oneOrZero.parse("0")).toBe(0));
-  test("oneOrZero::1", () => expect(oneOrZero.parse("1")).toBe(1));
-  test("positiveNumber::1", () => expect(positiveNumber.parse("1")).toBe(1));
 });
