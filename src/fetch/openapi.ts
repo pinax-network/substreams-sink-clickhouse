@@ -27,8 +27,7 @@ export default new OpenApiBuilder()
         content: {
           "text/plain": {
             schema: { type: "string" },
-            example:
-              "CREATE TABLE foo (bar UInt32) ENGINE = MergeTree ORDER BY (bar)",
+            example: "CREATE TABLE foo (bar UInt32)\nENGINE = MergeTree\nORDER BY (bar)",
           },
           "application/octet-stream": {
             schema: { type: "string", format: "base64" },
@@ -36,9 +35,9 @@ export default new OpenApiBuilder()
         },
       },
       responses: {
-        "200": { description: "OK" },
-        "400": { description: "Bad request" },
-        "401": { description: "Unauthorized" },
+        200: { description: "Success", content: {"text/plain": {example: "OK", schema: {type: "string"}}} },
+        400: { description: "Bad request", content: {"text/plain": {example: "Bad request", schema: {type: "string"}}} },
+        401: { description: "Unauthorized", content: {"text/plain": {example: "Unauthorized", schema: {type: "string"}}} },
       },
     },
   })
