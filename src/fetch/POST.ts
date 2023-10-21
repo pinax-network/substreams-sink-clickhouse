@@ -21,7 +21,7 @@ export default async function (req: Request) {
 
     if (!isVerified) return new Response("invalid request signature", { status: 400 });
 
-    const body = BodySchema.parse(text);
+    const body = BodySchema.parse(JSON.parse(text));
 
     if ( "message" in body ) {
         if (body.message === "PING") return new Response("OK");
