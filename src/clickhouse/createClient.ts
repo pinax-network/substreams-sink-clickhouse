@@ -5,12 +5,10 @@ export function createClient() {
   const client = createClientWeb({
     ...config,
     clickhouse_settings: {
-      // TO-DO: remove fallback configs, should be defined in config
-      wait_for_async_insert: config.waitForInsert ? 1 : 0,
-      async_insert: config.asyncInsert ? 1 : 0,
+      wait_for_async_insert: config.waitForAsyncInsert,
+      async_insert: config.asyncInsert,
       allow_experimental_object_type: 1,
     },
-    // TO-DO: define `--application` as config
     application: APP_NAME,
   });
 

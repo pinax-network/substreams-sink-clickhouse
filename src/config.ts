@@ -15,7 +15,7 @@ export const DEFAULT_USERNAME = "default";
 export const DEFAULT_PASSWORD = "";
 export const DEFAULT_CREATE_DATABASE = "false";
 export const DEFAULT_ASYNC_INSERT = 1;
-export const DEFAULT_WAIT_FOR_INSERT = 0;
+export const DEFAULT_WAIT_FOR_ASYNC_INSERT = 0;
 export const DEFAULT_QUEUE_LIMIT = 10;
 export const DEFAULT_QUEUE_CONCURRENCY = 10;
 export const DEFAULT_SCHEMA_URL = "./schema.sql";
@@ -38,7 +38,7 @@ const opts = program
   .addOption(new Option("--database <string>", "The database to use inside ClickHouse").env("DATABASE").default(DEFAULT_DATABASE))
   .addOption(new Option("--create-database <boolean", "If the specified database does not exist, automatically create it").env("CREATE_DATABASE").default(DEFAULT_CREATE_DATABASE))
   .addOption(new Option("--async-insert <number>", "https://clickhouse.com/docs/en/operations/settings/settings#async-insert").choices(["0", "1"]).env("ASYNC_INSERT").default(DEFAULT_ASYNC_INSERT))
-  .addOption(new Option("--wait-for-insert <boolean>", "https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert").choices(["0", "1"]).env("WAIT_FOR_INSERT").default(DEFAULT_WAIT_FOR_INSERT))
+  .addOption(new Option("--wait-for-async-insert <boolean>", "https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert").choices(["0", "1"]).env("WAIT_FOR_INSERT").default(DEFAULT_WAIT_FOR_ASYNC_INSERT))
   .addOption(new Option("--queue-limit <number>","Insert delay to each response when the pqueue exceeds this value").env("QUEUE_LIMIT").default(DEFAULT_QUEUE_LIMIT))
   .addOption(new Option("--queue-concurrency <number>","https://github.com/sindresorhus/p-queue#concurrency").env("QUEUE_CONCURRENCY").default(DEFAULT_QUEUE_CONCURRENCY))
   .parse()
@@ -47,19 +47,30 @@ const opts = program
 export const config = z.object({
   publicKey: z.string(),
   authKey: z.string().optional(),
-  port: z.string().transform((str) => parseInt(str)),
-  verbose: z.string().transform((str) => str === "true"),
+  port: z
+    .string()
+    .transform((str) => parseInt(str))
+    .pipe(z.number().positive()),
+  verbose: z
+    .string()
+    .transform((str) => str.toLowerCase() === "true")
+    .or(z.boolean()),
   host: z.string(),
   hostname: z.string(),
   database: z.string(),
   username: z.string(),
   password: z.string(),
-  createDatabase: z.string().transform((str) => str === "true"),
-  asyncInsert: z.coerce.number(),
-  waitForInsert: z.coerce.number(),
-  queueLimit: z.coerce.number(),
-  queueConcurrency: z.coerce.number(),
-  schemaUrl: z.string(),
+  createDatabase: z
+    .string()
+    .transform((str) => str.toLowerCase() === "true")
+    .or(z.boolean()),
+  asyncInsert: z.coerce.number().pipe(z.literal(0).or(z.literal(1))),
+  waitForAsyncInsert: z.coerce.number().pipe(z.literal(0).or(z.literal(1))),
+  queueLimit: z.coerce.number().positive(),
+  queueConcurrency: z.coerce.number().positive(),
+  schemaUrl: z.optional(z.string()),
 }).parse(opts)
+
+
 
 export const client = createClient();
