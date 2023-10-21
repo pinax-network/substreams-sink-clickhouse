@@ -1,11 +1,11 @@
 import schema from "./schema.js";
 import init from "./init.js";
+import { validateBearerAuth } from "./bearerAuth.js";
 
 export default async function (req: Request) {
     const { pathname} = new URL(req.url);
-    // TO-DO: add Basic Auth
-    // use Hono Basic Auth middleware
-    // https://hono.dev/middleware/builtin/basic-auth
+    const authError = validateBearerAuth(req);
+    if ( authError ) return authError;
 
     if ( pathname === "/schema") return schema(req);
     if ( pathname === "/init") return init(req);
