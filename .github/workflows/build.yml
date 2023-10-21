@@ -1,19 +1,21 @@
-name: Release
+name: Generate standalone Bun executable
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  build-and-push-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: oven-sh/setup-bun@v1
-
+        with:
+          bun-version: latest
       - run: bun install
+      - run: bun test
       - run: bun run build
       - uses: softprops/action-gh-release@v1
         with:
