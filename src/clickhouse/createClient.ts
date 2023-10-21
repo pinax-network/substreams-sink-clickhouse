@@ -1,5 +1,6 @@
 import { createClient as createClientWeb } from "@clickhouse/client-web";
 import { APP_NAME, config } from "../config.js";
+import { ping } from "./ping.js";
 
 export function createClient() {
   const client = createClientWeb({
@@ -15,5 +16,6 @@ export function createClient() {
   // These overrides should not be required but the @clickhouse/client-web instance
   // does not work well with Bun's implementation of Node streams.
   client.command = client.exec;
+  client.ping = ping;
   return client;
 }
