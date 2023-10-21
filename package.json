@@ -8,8 +8,8 @@
   "scripts": {
     "start": "bun index.ts",
     "dev": "bun --watch index.ts",
+    "pretest": "bunx tsc --noEmit",
     "test": "bun test",
-    "lint": "bunx tsc --noEmit",
     "build": "bun build --compile ./index.ts --outfile substreams-sink-clickhouse"
   },
   "repository": {
