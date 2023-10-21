@@ -9,7 +9,7 @@ export function getValuesInEntityChange(change: EntityChange): Record<string, un
       const value = Object.values(field.newValue)[0];
       if (value) {
         if (Array.isArray(value)) {
-          values[field.name] = "[" + value.join(", ") + "]";
+          values[field.name] = `[${ value.join(", ") }]`;
         } else {
           values[field.name] = value;
         }
