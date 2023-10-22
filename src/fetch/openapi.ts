@@ -1,6 +1,6 @@
 import pkg from "../../package.json" assert { type: "json" };
 
-import { OpenApiBuilder } from "openapi3-ts/oas31";
+import { OpenApiBuilder, ResponsesObject } from "openapi3-ts/oas31";
 
 const TAGS = {
   USAGE: "Usage",
@@ -8,6 +8,12 @@ const TAGS = {
   MONITORING: "Monitoring",
   DOCS: "Documentation",
 } as const;
+
+const PUT_RESPONSES: ResponsesObject = {
+  200: { description: "Success", content: {"text/plain": {example: "OK", schema: {type: "string"}}} },
+  400: { description: "Bad request", content: {"text/plain": {example: "Bad request", schema: {type: "string"}}} },
+  401: { description: "Unauthorized", content: {"text/plain": {example: "Unauthorized", schema: {type: "string"}}} },
+}
 
 export default new OpenApiBuilder()
   .addInfo({
@@ -34,11 +40,7 @@ export default new OpenApiBuilder()
           },
         },
       },
-      responses: {
-        200: { description: "Success", content: {"text/plain": {example: "OK", schema: {type: "string"}}} },
-        400: { description: "Bad request", content: {"text/plain": {example: "Bad request", schema: {type: "string"}}} },
-        401: { description: "Unauthorized", content: {"text/plain": {example: "Unauthorized", schema: {type: "string"}}} },
-      },
+      responses: PUT_RESPONSES,
     },
   })
   .addPath("/init", {
@@ -46,21 +48,7 @@ export default new OpenApiBuilder()
       tags: [TAGS.USAGE],
       summary: "Initialize database & manifest",
       security: [{ "auth-key": [] }],
-      requestBody: {
-        content: {
-          "text/plain": {
-            schema: { type: "string" },
-          },
-          "application/octet-stream": {
-            schema: { type: "string", format: "base64" },
-          },
-        },
-      },
-      responses: {
-        "200": { description: "OK" },
-        "400": { description: "Bad request" },
-        "401": { description: "Unauthorized" },
-      },
+      responses: PUT_RESPONSES,
     },
   })
   .addPath("/webhook", {
@@ -80,31 +68,28 @@ export default new OpenApiBuilder()
           "application/json": { schema: { type: "string" }},
         },
       },
-      responses: {
-        "200": { description: "OK" },
-        "400": { description: "Bad request" },
-      },
+      responses: PUT_RESPONSES,
     },
   })
   .addPath("/health", {
     get: {
       tags: [TAGS.HEALTH],
       summary: "Performs health checks and checks if the database is accessible",
-      responses: { "200": { description: "OK" } },
+      responses: { 200: { description: "Success", content: {"text/plain": {example: "OK", schema: {type: "string"}}} } },
     },
   })
   .addPath("/metrics", {
     get: {
       tags: [TAGS.MONITORING],
       summary: "Prometheus metrics",
-      responses: {"200": { description: "Prometheus metrics"}},
+      responses: {200: { description: "Prometheus metrics"}},
     },
   })
   .addPath("/openapi", {
     get: {
       tags: [TAGS.DOCS],
       summary: "OpenAPI specification",
-      responses: { "200": {description: "OpenAPI JSON Specification" }},
+      responses: { 200: { description: "OpenAPI specification JSON", content: {"application/json": {}} }},
     },
   })
   .getSpecAsJson();
