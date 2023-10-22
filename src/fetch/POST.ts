@@ -1,6 +1,6 @@
 import { BodySchema } from "../schemas.js";
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
-import signatureEd25519 from "./signatureEd25519.js";
+import signatureEd25519 from "../webhook/signatureEd25519.js";
 
 export default async function (req: Request) {
     // validate Ed25519 signature

@@ -1,5 +1,5 @@
 import { config } from "../config.js";
-import { verify } from "../webhook/verify.js";
+import { verify } from "./verify.js";
 
 export default async function (req: Request, text: string) {
     const timestamp = req.headers.get("x-signature-timestamp");
