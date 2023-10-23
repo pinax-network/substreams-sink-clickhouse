@@ -8,25 +8,31 @@ const { setTimeout } = require("timers/promises");
 
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
+const knownBlockIdFinal = new Set<string>();
 const existingTables = new Map<string, boolean>();
 const queue = new PQueue({ concurrency: config.queueConcurrency });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
-  handleManifest(queue, metadata.manifest);
-  handleClock(queue, metadata.manifest, metadata.clock);
+  const { manifest, clock  } = metadata;
+  // Indexes
+  handleModuleHashes(queue, manifest);
+  handleBlocks(queue, manifest, clock);
+  handleFinalBlocks(queue, manifest, clock);
+
+  // EntityChanges
   for (const change of data.entityChanges) {
     handleEntityChange(queue, change, metadata);
   }
 
+  // Prevent queue from growing too large
   if (queue.size > config.queueLimit) await setTimeout(1000);
 
-  // TO-DO: Logging can be improved
   logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
   return new Response("OK");
 };
 
-// Manifest index
-function handleManifest(queue: PQueue, manifest: Manifest) {
+// Module Hashes index
+function handleModuleHashes(queue: PQueue, manifest: Manifest) {
   const { moduleHash, type, moduleName, chain } = manifest;
   if (!knownModuleHashes.has(moduleHash)) {
     queue.add(() =>
@@ -37,7 +43,7 @@ function handleManifest(queue: PQueue, manifest: Manifest) {
           type,
           module_name: moduleName,
         },
-        table: "manifest",
+        table: "module_hashes",
         format: "JSONEachRow",
       })
     );
@@ -45,16 +51,33 @@ function handleManifest(queue: PQueue, manifest: Manifest) {
   }
 }
 
+
+// Final Block Index
+function handleFinalBlocks(queue: PQueue, manifest: Manifest, clock: Clock) {
+  const block_id = clock.id;
+  const finalBlockOnly = manifest.finalBlockOnly === "true";
+  if (!finalBlockOnly) return; // Only insert final blocks
+
+  if (!knownBlockIdFinal.has(block_id)) {
+    queue.add(() =>
+      client.insert({
+        values: { block_id },
+        table: "final_blocks",
+        format: "JSONEachRow",
+      })
+    );
+    knownBlockIdFinal.add(block_id);
+  }
+}
+
 // Block Index
-function handleClock(queue: PQueue, manifest: Manifest, clock: Clock) {
+function handleBlocks(queue: PQueue, manifest: Manifest, clock: Clock) {
   const block_id = clock.id;
   const block_number = clock.number;
   const timestamp = Number(new Date(clock.timestamp));
-  const finalBlockOnly = manifest.finalBlockOnly === "true";
   const chain = manifest.chain;
-  const block_key = `${block_id}-${finalBlockOnly}`;
 
-  if (!knownBlockId.has(block_key)) {
+  if (!knownBlockId.has(block_id)) {
     queue.add(() =>
       client.insert({
         values: {
@@ -62,13 +85,12 @@ function handleClock(queue: PQueue, manifest: Manifest, clock: Clock) {
           block_number,
           chain,
           timestamp,
-          final_block: finalBlockOnly,
         },
-        table: "block",
+        table: "blocks",
         format: "JSONEachRow",
       })
     );
-    knownBlockId.add(block_key);
+    knownBlockId.add(block_id);
   }
 }
 
