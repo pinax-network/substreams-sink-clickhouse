@@ -3,7 +3,13 @@ import PQueue from "p-queue";
 import { client, config } from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
-import { entity_changes, queue_size } from "../prometheus.js";
+import {
+  entity_chages_unsupported,
+  entity_changes_deleted,
+  entity_changes_inserted,
+  entity_changes_updated,
+  queue_size,
+} from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 const { setTimeout } = require("timers/promises");
 
@@ -98,13 +104,14 @@ async function handleEntityChange(
     case "OPERATION_CREATE":
       return insertEntityChange(queue, table, values, { ...metadata, id: change.id });
 
-    // case "OPERATION_UPDATE":
-    //   return client.update();
+    case "OPERATION_UPDATE":
+      return updateEntityChange();
 
-    // case "OPERATION_DELETE":
-    //   return client.delete({ values, table: change.entity });
+    case "OPERATION_DELETE":
+      return deleteEntityChange();
 
     default:
+      entity_chages_unsupported?.inc();
       logger.error("unsupported operation found in entityChanges: " + change.operation.toString());
       return Promise.resolve();
   }
@@ -122,8 +129,24 @@ function insertEntityChange(
   values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
   values["chain"] = metadata.manifest.chain; // Chain Index
 
-  entity_changes?.inc();
+  entity_changes_inserted?.inc();
   return queue.add(() => client.insert({ values, table, format: "JSONStringsEachRow" }));
+}
+
+// TODO: implement function
+function updateEntityChange(): Promise<void> {
+  entity_changes_updated?.inc();
+  return Promise.resolve();
+
+  // return client.update();
+}
+
+// TODO: implement function
+function deleteEntityChange(): Promise<void> {
+  entity_changes_deleted?.inc();
+  return Promise.resolve();
+
+  // return client.delete({ values, table: change.entity });
 }
 
 // TO-DO: this function won't work in a serverless function environment or running with multiple replicas
