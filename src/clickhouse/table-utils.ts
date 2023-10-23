@@ -4,10 +4,11 @@ export function splitSchemaByTableCreation(
   return file
     .split(/(CREATE TABLE)/gi)
     .filter(
-      (query) =>
+      (query, index) =>
         typeof query === "string" &&
         query.trim().length > 0 &&
-        query.trim().toUpperCase() !== "CREATE TABLE"
+        query.trim().toUpperCase() !== "CREATE TABLE" &&
+        index !== 0 // The first index will always be either 'CREATE TABLE' or useless sql (eg: a comment)
     )
     .map((query) => ({
       query: `CREATE TABLE ${query}`,
@@ -22,7 +23,7 @@ export function getTableName(schema: string) {
     .replaceAll(/\([\s\S]*\)[\s\S]*/gi, "") // Remove body and everything after
     .replace(/CREATE TABLE/i, "") // Remove 'CREATE TABLE'
     .replace(/IF NOT EXISTS/i, "") // Remove 'IF NOT EXISTS' if it is present
-    .replace(/ON .*/i, "") // Remove 'ON [cluster] if it is present
+    .replace(/\sON .*/i, "") // Remove 'ON [cluster] if it is present
     .split(".") // The result will be '[db].TableName'
     .reverse()[0] // Keep only the last part: 'TableName'
     .trim();

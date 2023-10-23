@@ -8,7 +8,7 @@ export default async function (req: Request): Promise<Response> {
   if (authError instanceof Response) return authError;
 
   if (pathname === "/schema/sql") return schema(req);
-  if (pathname === "/schema/graphql") return schema(req);
-  if (pathname === "/init") return init(req);
+  if (pathname === "/schema/graphql") return new Response("Not implemented", { status: 501 });
+  if (pathname === "/init") return init();
   return new Response("Not found", { status: 400 });
 }

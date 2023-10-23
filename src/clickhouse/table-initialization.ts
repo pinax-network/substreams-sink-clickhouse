@@ -1,47 +1,21 @@
+// @ts-expect-error
+import initialTablesFile from "./initial-tables.sql";
+
+import { file } from "bun";
 import { client } from "../config.js";
 import { logger } from "../logger.js";
 import { splitSchemaByTableCreation } from "./table-utils.js";
 
-const queries = [
-  `
-CREATE TABLE IF NOT EXISTS manifest (
-    module_hash   FixedString(40),
-    module_name   String(),
-    chain         LowCardinality(String),
-    type          String(),
-)
-ENGINE = ReplacingMergeTree
-ORDER BY (module_hash);
-`,
-  `
-CREATE TABLE IF NOT EXISTS block (
-  block_id      FixedString(64),
-  block_number  UInt32(),
-  chain         LowCardinality(String),
-  timestamp     DateTime64(3, 'UTC'),
-  final_block   Bool,
-)
-ENGINE = ReplacingMergeTree
-PRIMARY KEY (block_id)
-ORDER BY (block_id, block_number, timestamp);
-`,
-  `CREATE TABLE IF NOT EXISTS unparsed_json (
-    raw_data    JSON,
-    source      LowCardinality(String),
-    id          String,
-    block_id    FixedString(64),
-    module_hash FixedString(40),
-    chain       LowCardinality(String)
-  )
-  ENGINE = MergeTree
-  ORDER BY (source, chain, module_hash, block_id)`,
-];
+export async function initializeDefaultTables(): Promise<unknown> {
+  const initialTables = await file(initialTablesFile).text();
+  const queries = splitSchemaByTableCreation(initialTables);
 
-export function initializeManifest(): Promise<unknown> {
-  logger.info("Initializing 'manifest' table.");
-  logger.info("Initializing 'clock' table.");
-  logger.info("Initializing 'unparsed_json' table.");
-  return Promise.all(queries.map((query) => client.command({ query })));
+  return Promise.allSettled(
+    queries.map(({ tableName, query }) => {
+      logger.info(`Initializing '${tableName}'.`);
+      return client.command({ query });
+    })
+  );
 }
 
 const metadataQueries = (tableName: string) => [
