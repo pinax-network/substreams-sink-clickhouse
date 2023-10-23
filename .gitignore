@@ -4,6 +4,5 @@ dist/
 substreams-sink-clickhouse
 .env
 replay.log
-*.sql
 package-lock.json
 .DS_Store
