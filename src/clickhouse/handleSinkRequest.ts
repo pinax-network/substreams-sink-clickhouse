@@ -13,10 +13,11 @@ import {
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 const { setTimeout } = require("timers/promises");
 
+// TO-DO: moves these to a separate file `src/clickhouse/stores.ts`
 const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
 const knownBlockIdFinal = new Set<string>();
-const existingTables = new Map<string, boolean>();
+const knownTables = new Map<string, boolean>();
 const queue = new PQueue({ concurrency: config.queueConcurrency });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
@@ -58,7 +59,6 @@ function handleModuleHashes(queue: PQueue, manifest: Manifest) {
     knownModuleHashes.add(moduleHash);
   }
 }
-
 
 // Final Block Index
 function handleFinalBlocks(queue: PQueue, manifest: Manifest, clock: Clock) {
@@ -107,8 +107,6 @@ async function handleEntityChange(
   change: EntityChange,
   metadata: { clock: Clock; manifest: Manifest }
 ) {
-  // TO-DO: existsTable needs to be refactored to use `client.query()`
-  // Or else should be removed entirely
   const tableExists = await existsTable(change.entity);
 
   let values = getValuesInEntityChange(change);
@@ -169,20 +167,24 @@ function deleteEntityChange(): Promise<void> {
   // return client.delete({ values, table: change.entity });
 }
 
-// TO-DO: this function won't work in a serverless function environment or running with multiple replicas
-// Cannot depend on memory to know if table exists or not
+// in memory TABLE name cache
+// if true => true
+// if false => false
+// if undefined => check EXISTS if true or false
 async function existsTable(table: string) {
-  if (!existingTables.has(table)) {
-    const response = await client.query({
-      query: "EXISTS " + table,
-      format: "JSONEachRow",
-    });
-    const data = await response.json<Array<{ result: 0 | 1 }>>();
+  // Return cached value if known (reduces number of EXISTS queries)
+  if ( knownTables.has(table) ) return knownTables.get(table);
 
-    const foundTable = data[0]?.result === 1;
-    existingTables.set(table, foundTable);
+  // Check if table EXISTS
+  const response = await client.query({
+    query: "EXISTS " + table,
+    format: "JSONEachRow",
+  });
 
-    logger.info(`Found table '${table}': ${foundTable}. Saving data as json: ${!foundTable}`);
-  }
-  return existingTables.get(table)!;
+  // handle EXISTS response
+  const data = await response.json<Array<{ result: 0 | 1 }>>();
+  const exists = data[0]?.result === 1;
+  knownTables.set(table, exists);
+  logger.info(`EXISTS [${table}=${exists}]`);
+  return exists;
 }
