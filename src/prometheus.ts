@@ -18,4 +18,7 @@ export function registerGauge(name: string, help: string) {
 
 // TO-DO: Add Prometheus metrics
 // https://github.com/pinax-network/substreams-sink-clickhouse/issues/26
-export const requests = registerCounter("requests", "Total requests");
+export const sink_requests = registerCounter("sink_requests", "Total requests");
+export const sink_request_errors = registerCounter("sink_request_errors", "Total failed requests");
+export const queue_size = registerGauge("queue_size", "Amount of promises being processed");
+export const entity_changes = registerCounter("entity_changes", "Total entity changes");

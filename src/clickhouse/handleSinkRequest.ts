@@ -1,9 +1,10 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
+import { client, config } from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
+import { entity_changes, queue_size } from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
-import { client, config } from "../config.js";
 const { setTimeout } = require("timers/promises");
 
 const knownModuleHashes = new Set<string>();
@@ -18,12 +19,15 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     handleEntityChange(queue, change, metadata);
   }
 
+  queue_size?.set(queue.size);
   if (queue.size > config.queueLimit) await setTimeout(1000);
 
   // TO-DO: Logging can be improved
-  logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
+  logger.info(
+    `handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`
+  );
   return new Response("OK");
-};
+}
 
 // Manifest index
 function handleManifest(queue: PQueue, manifest: Manifest) {
@@ -118,6 +122,7 @@ function insertEntityChange(
   values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
   values["chain"] = metadata.manifest.chain; // Chain Index
 
+  entity_changes?.inc();
   return queue.add(() => client.insert({ values, table, format: "JSONStringsEachRow" }));
 }
 
