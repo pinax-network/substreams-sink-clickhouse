@@ -34,7 +34,8 @@
     "prom-client": "latest",
     "tslog": "latest",
     "tweetnacl": "latest",
-    "zod": "latest"
+    "zod": "latest",
+    "zod-to-json-schema": "^3.21.4"
   },
   "devDependencies": {
     "bun-types": "latest",
