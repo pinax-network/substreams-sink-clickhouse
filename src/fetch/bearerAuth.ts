@@ -9,7 +9,7 @@ export function tokenToBase64(token: string): string {
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/WWW-Authenticate#directives_
 // https://github.com/honojs/hono/blob/main/src/middleware/bearer-auth/index.ts
-export function validateBearerAuth(request: Request) {
+export function validateBearerAuth(request: Request) :true | Response{
     if ( !config.authKey ) return true;
     const headerToken = request.headers.get('Authorization');
 
@@ -22,7 +22,7 @@ export function validateBearerAuth(request: Request) {
             },
         })
     }
-    if ( !headerToken ) return false;
+
     const regexp = new RegExp('^' + PREFIX + ' +(' + TOKEN_STRINGS + ') *$')
     const match = regexp.exec(headerToken)
 
@@ -46,4 +46,6 @@ export function validateBearerAuth(request: Request) {
             },
         })
     }
+
+    return true
 }
