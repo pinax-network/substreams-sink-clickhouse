@@ -11,6 +11,7 @@ export default async function (req: Request) {
 
   // parse POST body payload
   try {
+    sink_requests?.inc();
     const body = BodySchema.parse(JSON.parse(text));
 
     if ("message" in body) {
@@ -19,9 +20,8 @@ export default async function (req: Request) {
     }
 
     return handleSinkRequest(body);
-  } catch {
+  } catch (err) {
     sink_request_errors?.inc();
-  } finally {
-    sink_requests?.inc();
+    return new Response("invalid request: " + JSON.stringify(err), { status: 400 });
   }
 }
