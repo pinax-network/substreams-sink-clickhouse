@@ -1,7 +1,5 @@
-// @ts-expect-error
-import swaggerUI from "../../swagger/index.html";
-// @ts-expect-error
 import favicon from "../../swagger/favicon.png";
+import swaggerUI from "../../swagger/index.html";
 
 import { file } from "bun";
 import { registry } from "../prometheus.js";
