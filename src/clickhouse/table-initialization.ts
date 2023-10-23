@@ -1,6 +1,5 @@
 import { client } from "../config.js";
 import { logger } from "../logger.js";
-import { TableInitSchema } from "../schemas.js";
 import { splitSchemaByTableCreation } from "./table-utils.js";
 
 const queries = [
@@ -54,19 +53,12 @@ const metadataQueries = (tableName: string) => [
   `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS block_index (chain, block_id) TYPE minmax`,
 ];
 
-export async function handleTableInitialization(schema: TableInitSchema): Promise<Response> {
-  try {
-    await initializeTables(schema);
-    return new Response("OK");
-  } catch (err) {
-    return new Response(`Could not create the tables: ${err}`, { status: 500 });
-  }
-}
-
 export async function initializeTables(schema: string): Promise<string[]> {
   logger.info("Executing schema");
   const tables = splitSchemaByTableCreation(schema);
-  logger.info(`Found ${tables.length} table(s): ${tables.map(({ tableName }) => `'${tableName}'`).join(", ")}`);
+  logger.info(
+    `Found ${tables.length} table(s): ${tables.map(({ tableName }) => `'${tableName}'`).join(", ")}`
+  );
 
   try {
     for (const { tableName, query } of tables) {
