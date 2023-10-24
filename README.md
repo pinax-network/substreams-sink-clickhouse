@@ -135,30 +135,28 @@ substreams-sink-clickhouse --create-db --name <DB_NAME>
 
 ### Schema initialization
 
-_This step can be skipped. If so, the data will be stored as-is in the `unparsed_json` table. It should then be parsed by the user with ClickHouse's tools (eg: `MaterializedView`)_
+_This step can be skipped. If so, the data will be stored as-is in the `unparsed_json` table. It should then be parsed by the user with ClickHouse's tools. See this [article](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views)._
 
-Initializes the database according to a SQL file. See [example file](#example-sql-file).
-
-**CLI**
-
-```
-substreams-sink-clickhouse --schema-url <SCHEMA_URL>
-```
+Initializes the database according to a SQL or a GraphQL file. See [example schema files](#schema-examples).
 
 **Web UI**
 
-Upload a `.sql` file on [http://localhost:3000](http://localhost:3000). (POST request `/schema`, Content-Type: `application/octet-stream`)
+Upload a schema file on [http://localhost:3000](http://localhost:3000).
+
+_Use PUT `/schema/sql` or PUT `/schema/graphql` with `Content-Type: application/octet-stream`._
 
 **Curl**
 
 ```bash
-curl --location --request POST 'http://localhost:3000/schema' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '<SQL_INSTRUCTIONS>'
+> curl --location --request PUT 'http://localhost:3000/schema/sql' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '<SQL_INSTRUCTIONS>'
+
+> curl --location --request PUT 'http://localhost:3000/schema/graphql' --header 'Authorization: Bearer <AUTH_KEY>' --header 'Content-Type: application/json' --data-raw '<GRAPHQL_ENTITY>'
 ```
 
-#### Example SQL file
+### Schema examples
 
 <details>
-<summary>Click to expand</summary>
+<summary><b>Example SQL file</b></summary>
 
 ```sql
 CREATE TABLE IF NOT EXISTS contracts (
@@ -169,6 +167,21 @@ CREATE TABLE IF NOT EXISTS contracts (
 )
 ENGINE = ReplacingMergeTree
 ORDER BY (address)
+```
+
+</details>
+
+<details>
+<summary><b>Example GraphQL file</b></summary>
+
+```graphql
+type Contracts @entity {
+  id: ID!
+  address: String!
+  name: String
+  symbol: String
+  decimals: BigInt
+}
 ```
 
 </details>
