@@ -8,7 +8,57 @@
 
 ## Features
 
-- TO-DO: See [issues](https://github.com/pinax-network/substreams-sink-clickhouse/issues?q=is%3Aissue+is%3Aclosed)
+<details>
+<summary><b>Serverless data sinking</b></summary>
+
+By using this sink with [substreams-sink-webhook](https://github.com/pinax-network/substreams-sink-webhook), data from any substreams is available in ClickHouse easily.
+
+</details>
+
+<details>
+<summary><b>Automatic block information</b></summary>
+
+Data for each block is stored alongside every record. The fields and their structure can be found in the [database structure](#database-structure).
+
+</details>
+
+<details>
+<summary><b>SQL schemas</b></summary>
+
+A schema can be passed in to define the end table for substreams data. It will be extended as described in the [database structure](#database-structure).
+
+They can be set according to the steps in [database initialization](#database-initialization).
+
+</details>
+
+<details>
+<summary><b>GraphQL schemas</b></summary>
+
+[TheGraph's GraphQL entity](https://thegraph.com/docs/en/developing/creating-a-subgraph/#defining-entities) schemas can be passed in to define the end table for substreams data. See [database initialization](#database-initialization).
+
+They are converted to SQL following these rules before being executed. The available types are defined [here](https://thegraph.com/docs/en/developing/creating-a-subgraph/#graphql-supported-scalars).
+
+| GraphQL data type | ClickHouse equivalent |
+| ----------------- | --------------------- |
+| `Bytes`           | `String`              |
+| `String`          | `String`              |
+| `Boolean`         | `boolean`             |
+| `Int`             | `Int32`               |
+| `BigInt`          | `String`              |
+| `BigDecimal`      | `String`              |
+| `Float`           | `Float64`             |
+| `ID`              | `String`              |
+
+</details>
+
+<details>
+<summary><b>NO schema</b></summary>
+
+No schema is required to store data in ClickHouse. Everything can be stored in `unparsed_json` (see [database structure](#database-structure)).
+
+The user **must** build custom [views](https://clickhouse.com/docs/en/guides/developer/cascading-materialized-views) to transform the data according to their needs. Further details are available in [ClickHouse's documentation](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views).
+
+</details>
 
 ## Usage
 
@@ -30,7 +80,7 @@ Options:
   --database <string>           The database to use inside ClickHouse (default: "default", env: DATABASE)
   --username <string>           Database user (default: "default", env: USERNAME)
   --password <string>           Password associated with the specified username (default: "", env: PASSWORD)
-  --create-database <boolean    If the specified database does not exist, automatically create it (default: "false", env: CREATE_DATABASE)
+  --create-database <boolean>    If the specified database does not exist, automatically create it (default: "false", env: CREATE_DATABASE)
   --async-insert <number>       https://clickhouse.com/docs/en/operations/settings/settings#async-insert (choices: "0", "1", default: 1, env: ASYNC_INSERT)
   --wait-for-insert <boolean>   https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert (choices: "0", "1", default: 0, env: WAIT_FOR_INSERT)
   --queue-limit <number>        Insert delay to each response when the pqueue exceeds this value (default: 10, env: QUEUE_LIMIT)
