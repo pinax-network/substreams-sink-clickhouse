@@ -1,8 +1,11 @@
 import { EntityChanges } from "@substreams/sink-entity-changes/zod";
 import z from "zod";
 
-export const boolean = z.string().transform((str) => str.toLowerCase() === "true").or(z.boolean())
-export const positiveNumber = z.string().transform((str) => parseInt(str)).pipe(z.number().positive())
+export const boolean = z
+  .string()
+  .transform((str) => str.toLowerCase() === "true")
+  .or(z.boolean());
+export const positiveNumber = z.coerce.number().pipe(z.number().positive());
 export const oneOrZero = z.coerce.number().pipe(z.literal(0).or(z.literal(1)));
 
 export const ConfigSchema = z.object({
@@ -21,7 +24,7 @@ export const ConfigSchema = z.object({
   queueLimit: positiveNumber,
   queueConcurrency: positiveNumber,
   schemaUrl: z.optional(z.string()),
-})
+});
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 
 export const ClockSchema = z.object({

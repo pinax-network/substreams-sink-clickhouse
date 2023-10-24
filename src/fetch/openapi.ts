@@ -1,6 +1,11 @@
 import pkg from "../../package.json" assert { type: "json" };
 
-import { OpenApiBuilder, ResponsesObject } from "openapi3-ts/oas31";
+import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
+import { z } from "zod";
+import * as ztjs from "zod-to-json-schema";
+import { BodySchema } from "../schemas.js";
+
+const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) => ztjs.zodToJsonSchema(...params) as SchemaObject;
 
 const TAGS = {
   USAGE: "Usage",
@@ -10,10 +15,12 @@ const TAGS = {
 } as const;
 
 const PUT_RESPONSES: ResponsesObject = {
-  200: { description: "Success", content: {"text/plain": {example: "OK", schema: {type: "string"}}} },
-  400: { description: "Bad request", content: {"text/plain": {example: "Bad request", schema: {type: "string"}}} },
-  401: { description: "Unauthorized", content: {"text/plain": {example: "Unauthorized", schema: {type: "string"}}} },
-}
+  200: { description: "Success", content: { "text/plain": { example: "OK", schema: { type: "string" } } } },
+  400: { description: "Bad request", content: { "text/plain": { example: "Bad request", schema: { type: "string" } } } },
+  401: { description: "Unauthorized", content: { "text/plain": { example: "Unauthorized", schema: { type: "string" } } } },
+};
+
+const ExecuteSchemaResponse = z.object({ success: z.literal("OK"), schema: z.string() });
 
 export default new OpenApiBuilder()
   .addInfo({
@@ -23,7 +30,15 @@ export default new OpenApiBuilder()
   })
   .addExternalDocs({ url: pkg.homepage, description: "Extra documentation" })
   .addSecurityScheme("auth-key", { type: "http", scheme: "bearer" })
-  .addPath("/schema", {
+  .addPath("/init", {
+    put: {
+      tags: [TAGS.USAGE],
+      summary: "Initialize database & manifest",
+      security: [{ "auth-key": [] }],
+      responses: PUT_RESPONSES,
+    },
+  })
+  .addPath("/schema/sql", {
     put: {
       tags: [TAGS.USAGE],
       summary: "Initialize the sink according to a SQL schema",
@@ -40,15 +55,43 @@ export default new OpenApiBuilder()
           },
         },
       },
-      responses: PUT_RESPONSES,
+      responses: {
+        ...PUT_RESPONSES,
+        200: {
+          description: "Success",
+          content: { "application/json": { schema: zodToJsonSchema(ExecuteSchemaResponse) } },
+        },
+      },
     },
   })
-  .addPath("/init", {
+  .addPath("/schema/graphql", {
     put: {
       tags: [TAGS.USAGE],
-      summary: "Initialize database & manifest",
+      summary: "Initialize the sink according to a GraphQL schema",
+      description: "Supports TheGraph's `@entity` statements. See https://thegraph.com/docs/en/querying/graphql-api/#entities",
+      externalDocs: {
+        description: "Valid data types",
+        url: "https://thegraph.com/docs/en/developing/creating-a-subgraph/#built-in-scalar-types",
+      },
       security: [{ "auth-key": [] }],
-      responses: PUT_RESPONSES,
+      requestBody: {
+        content: {
+          "text/plain": {
+            schema: { type: "string" },
+            example: "type Foo @entity {\n\tid: ID!\n\tbar: BigInt\n}",
+          },
+          "application/octet-stream": {
+            schema: { type: "string", format: "base64" },
+          },
+        },
+      },
+      responses: {
+        ...PUT_RESPONSES,
+        200: {
+          description: "Success",
+          content: { "application/json": { schema: zodToJsonSchema(ExecuteSchemaResponse) } },
+        },
+      },
     },
   })
   .addPath("/webhook", {
@@ -65,7 +108,7 @@ export default new OpenApiBuilder()
       ],
       requestBody: {
         content: {
-          "application/json": { schema: { type: "string" }},
+          "application/json": { schema: zodToJsonSchema(BodySchema) },
         },
       },
       responses: PUT_RESPONSES,
@@ -75,21 +118,21 @@ export default new OpenApiBuilder()
     get: {
       tags: [TAGS.HEALTH],
       summary: "Performs health checks and checks if the database is accessible",
-      responses: { 200: { description: "Success", content: {"text/plain": {example: "OK", schema: {type: "string"}}} } },
+      responses: { 200: PUT_RESPONSES[200] },
     },
   })
   .addPath("/metrics", {
     get: {
       tags: [TAGS.MONITORING],
       summary: "Prometheus metrics",
-      responses: {200: { description: "Prometheus metrics"}},
+      responses: { 200: { description: "Prometheus metrics" } },
     },
   })
   .addPath("/openapi", {
     get: {
       tags: [TAGS.DOCS],
       summary: "OpenAPI specification",
-      responses: { 200: { description: "OpenAPI specification JSON", content: {"application/json": {}} }},
+      responses: { 200: { description: "OpenAPI specification JSON", content: { "application/json": {} } } },
     },
   })
   .getSpecAsJson();

@@ -2,7 +2,13 @@ import { expect, test } from "bun:test";
 import { getTableName, splitSchemaByTableCreation } from "./table-utils.js";
 
 test("splitSchemaByTableCreation", () => {
-  const schema = `CREATE TABLE foo (num UInt64)
+  const schema = `
+    --a comment
+    CREATE TABLE foo (num UInt64)
+    ENGINE MergeTree
+    ORDER BY (num)
+
+    CREATE TABLE foo (num UInt64)
     ENGINE MergeTree
     ORDER BY (num)
 
@@ -12,15 +18,14 @@ test("splitSchemaByTableCreation", () => {
 
   const tables = splitSchemaByTableCreation(schema);
 
-  expect(tables.length).toBe(2);
+  expect(tables.length).toBe(3);
 
-  expect(tables[0].tableName).toBe("foo");
-  expect(tables[1].tableName).toBe("bar");
-
-  expect(tables[0].query.includes("CREATE TABLE  foo")).toBeTrue();
-  expect(tables[0].query.includes("ORDER BY (num)")).toBeTrue();
-  expect(tables[1].query.includes("CREATE TABLE  IF NOT EXISTS bar")).toBeTrue();
-  expect(tables[1].query.includes("ORDER BY (str)")).toBeTrue();
+  expect(tables[0].includes("CREATE TABLE  foo")).toBeTrue();
+  expect(tables[0].includes("ORDER BY (num)")).toBeTrue();
+  expect(tables[1].includes("CREATE TABLE  foo")).toBeTrue();
+  expect(tables[1].includes("ORDER BY (num)")).toBeTrue();
+  expect(tables[2].includes("CREATE TABLE  IF NOT EXISTS bar")).toBeTrue();
+  expect(tables[2].includes("ORDER BY (str)")).toBeTrue();
 });
 
 test("getTableName", () => {
@@ -46,4 +51,10 @@ test("getTableName", () => {
     const tableName = getTableName(query);
     expect(tableName).toBe("foo");
   }
+
+  const differentName =
+    "create table finishes_with_on (num UInt32) ENGINE MergeTree ORDER BY (num)";
+
+  const tableName = getTableName(differentName);
+  expect(tableName).toBe("finishes_with_on");
 });
