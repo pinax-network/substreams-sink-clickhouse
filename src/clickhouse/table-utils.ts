@@ -1,6 +1,4 @@
-export function splitSchemaByTableCreation(
-  file: string
-): Array<{ tableName: string; query: string }> {
+export function splitSchemaByTableCreation(file: string): Array<string> {
   return file
     .split(/(CREATE TABLE)/gi)
     .filter(
@@ -10,10 +8,7 @@ export function splitSchemaByTableCreation(
         query.trim().toUpperCase() !== "CREATE TABLE" &&
         index !== 0 // The first index will always be either 'CREATE TABLE' or useless sql (eg: a comment)
     )
-    .map((query) => ({
-      query: `CREATE TABLE ${query}`,
-      tableName: getTableName(query),
-    }));
+    .map((query) => `CREATE TABLE ${query}`);
 }
 
 export function getTableName(schema: string) {

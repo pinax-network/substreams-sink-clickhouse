@@ -1,6 +1,6 @@
 import { client } from "../config.js";
 import { logger } from "../logger.js";
-import { splitSchemaByTableCreation } from "./table-utils.js";
+import { getTableName } from "./table-utils.js";
 import tables from "./tables/index.js";
 
 export function initializeDefaultTables(): Promise<unknown> {
@@ -21,31 +21,27 @@ const metadataQueries = (tableName: string) => [
   `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS block_index (chain, block_id) TYPE minmax`,
 ];
 
-export async function initializeTables(schema: string): Promise<string[]> {
+export async function initializeTables(tableSchemas: string[]): Promise<void> {
   logger.info("Executing schema");
-  const tables = splitSchemaByTableCreation(schema);
-  logger.info(
-    `Found ${tables.length} table(s): ${tables.map(({ tableName }) => `'${tableName}'`).join(", ")}`
-  );
 
   try {
-    for (const { tableName, query } of tables) {
+    for (const schema of tableSchemas) {
+      const tableName = getTableName(schema);
       logger.info(`Executing '${tableName}'`);
 
-      await client.command({ query });
+      await client.command({ query: schema });
       for (const query of metadataQueries(tableName)) {
         await client.command({ query });
       }
     }
   } catch (err) {
     logger.error("Could not initialize the tables.");
-    logger.error("Request: " + schema);
+    logger.error("Request: " + tableSchemas);
     logger.error(err);
     throw err;
   }
 
   logger.info("Complete.");
-  return tables.map((table) => table.tableName);
 }
 
 export async function readSchema(schemaUrl: string): Promise<string> {
