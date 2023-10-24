@@ -1,18 +1,12 @@
-// @ts-expect-error
-import initialTablesFile from "./initial-tables.sql";
-
-import { file } from "bun";
 import { client } from "../config.js";
 import { logger } from "../logger.js";
 import { splitSchemaByTableCreation } from "./table-utils.js";
+import tables from "./tables/index.js";
 
-export async function initializeDefaultTables(): Promise<unknown> {
-  const initialTables = await file(initialTablesFile).text();
-  const queries = splitSchemaByTableCreation(initialTables);
-
-  return Promise.allSettled(
-    queries.map(({ tableName, query }) => {
-      logger.info(`Initializing '${tableName}'.`);
+export function initializeDefaultTables(): Promise<unknown> {
+  return Promise.all(
+    tables.map(([table, query]) => {
+      logger.info(`CREATE TABLE [${table}]`);
       return client.command({ query });
     })
   );
