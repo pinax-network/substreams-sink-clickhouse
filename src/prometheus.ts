@@ -25,4 +25,4 @@ export const queue_size = registerGauge("queue_size", "Amount of promises being 
 export const entity_changes_inserted = registerCounter("entity_changes_inserted", "Total inserted entity changes")!;
 export const entity_changes_updated = registerCounter("entity_changes_updated", "Total updated entity changes")!;
 export const entity_changes_deleted = registerCounter("entity_changes_deleted", "Total deleted entity changes")!;
-export const entity_chages_unsupported = registerCounter("entity_changes_unsupported", "Total unsupported entity changes")!
+export const entity_changes_unsupported = registerCounter("entity_changes_unsupported", "Total unsupported entity changes")!

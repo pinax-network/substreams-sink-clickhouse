@@ -119,7 +119,7 @@ async function handleEntityChange(queue: PQueue, change: EntityChange, metadata:
       return deleteEntityChange();
 
     default:
-      prometheus.entity_chages_unsupported.inc();
+      prometheus.entity_changes_unsupported.inc();
       logger.error("unsupported operation found in entityChanges: " + change.operation.toString());
       return Promise.resolve();
   }
