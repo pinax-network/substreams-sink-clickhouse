@@ -3,13 +3,7 @@ import PQueue from "p-queue";
 import { client, config } from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
-import {
-  entity_chages_unsupported,
-  entity_changes_deleted,
-  entity_changes_inserted,
-  entity_changes_updated,
-  queue_size,
-} from "../prometheus.js";
+import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 const { setTimeout } = require("timers/promises");
 
@@ -21,7 +15,7 @@ const knownTables = new Map<string, boolean>();
 const queue = new PQueue({ concurrency: config.queueConcurrency });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
-  const { manifest, clock  } = metadata;
+  const { manifest, clock } = metadata;
   // Indexes
   handleModuleHashes(queue, manifest);
   handleBlocks(queue, manifest, clock);
@@ -33,7 +27,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   }
 
   // Prevent queue from growing too large
-  queue_size?.set(queue.size);
+  prometheus.queue_size.set(queue.size);
   if (queue.size > config.queueLimit) await setTimeout(1000);
 
   logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length},queue.size=${queue.size}`);
@@ -102,11 +96,7 @@ function handleBlocks(queue: PQueue, manifest: Manifest, clock: Clock) {
   }
 }
 
-async function handleEntityChange(
-  queue: PQueue,
-  change: EntityChange,
-  metadata: { clock: Clock; manifest: Manifest }
-) {
+async function handleEntityChange(queue: PQueue, change: EntityChange, metadata: { clock: Clock; manifest: Manifest }) {
   const tableExists = await existsTable(change.entity);
 
   let values = getValuesInEntityChange(change);
@@ -129,31 +119,26 @@ async function handleEntityChange(
       return deleteEntityChange();
 
     default:
-      entity_chages_unsupported?.inc();
+      prometheus.entity_chages_unsupported.inc();
       logger.error("unsupported operation found in entityChanges: " + change.operation.toString());
       return Promise.resolve();
   }
 }
 
-function insertEntityChange(
-  queue: PQueue,
-  table: string,
-  values: Record<string, unknown>,
-  metadata: { id: string; clock: Clock; manifest: Manifest }
-) {
+function insertEntityChange(queue: PQueue, table: string, values: Record<string, unknown>, metadata: { id: string; clock: Clock; manifest: Manifest }) {
   // EntityChange
   values["id"] = metadata.id; // Entity ID
   values["block_id"] = metadata.clock.id; // Block Index
   values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
   values["chain"] = metadata.manifest.chain; // Chain Index
 
-  entity_changes_inserted?.inc();
+  prometheus.entity_changes_inserted.inc();
   return queue.add(() => client.insert({ values, table, format: "JSONStringsEachRow" }));
 }
 
 // TODO: implement function
 function updateEntityChange(): Promise<void> {
-  entity_changes_updated?.inc();
+  prometheus.entity_changes_updated.inc();
   return Promise.resolve();
 
   // return client.update();
@@ -161,7 +146,7 @@ function updateEntityChange(): Promise<void> {
 
 // TODO: implement function
 function deleteEntityChange(): Promise<void> {
-  entity_changes_deleted?.inc();
+  prometheus.entity_changes_deleted.inc();
   return Promise.resolve();
 
   // return client.delete({ values, table: change.entity });
@@ -173,7 +158,7 @@ function deleteEntityChange(): Promise<void> {
 // if undefined => check EXISTS if true or false
 async function existsTable(table: string) {
   // Return cached value if known (reduces number of EXISTS queries)
-  if ( knownTables.has(table) ) return knownTables.get(table);
+  if (knownTables.has(table)) return knownTables.get(table);
 
   // Check if table EXISTS
   const response = await client.query({

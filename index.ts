@@ -11,7 +11,7 @@ if (config.verbose) logger.enable();
 const app = Bun.serve({
   hostname: config.hostname,
   port: config.port,
-  fetch: function fetch(req: Request) {
+  fetch(req: Request) {
     if (req.method == "GET") return GET(req);
     if (req.method == "POST") return POST(req);
     if (req.method == "PUT") return PUT(req);
