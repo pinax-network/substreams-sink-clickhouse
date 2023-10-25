@@ -2,12 +2,12 @@ import { z } from "zod";
 import client from "../clickhouse/createClient.js";
 
 type BlockViewType = Array<{
-  count: number;
-  count_distinct: number;
+  count: string;
+  count_distinct: string;
   max: number;
   min: number;
-  delta: number;
-  missing: number;
+  delta: string;
+  missing: string;
 }>;
 
 export const BlockResponseSchema = z.object({
@@ -37,12 +37,12 @@ export async function blocks(): Promise<Response> {
     const data = await response.json<BlockViewType>();
 
     const dto: BlockResponseSchema = {
-      distinctCount: data[0].count_distinct,
-      count: data[0].count,
+      distinctCount: parseInt(data[0].count_distinct),
+      count: parseInt(data[0].count),
       max: data[0].max,
       min: data[0].min,
-      delta: data[0].delta,
-      missing: data[0].missing,
+      delta: parseInt(data[0].delta),
+      missing: parseInt(data[0].missing),
     };
 
     return new Response(JSON.stringify(dto), { headers: { "Content-Type": "application/json" } });
