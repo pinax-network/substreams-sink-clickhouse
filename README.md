@@ -88,7 +88,7 @@ Options:
 
 ### Environment variables
 
-These can all be set when starting the sink. See [cli structure](#cli-structure).
+These can all be set when starting the sink. See [usage](#usage).
 
 **.env**
 
