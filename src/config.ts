@@ -2,7 +2,6 @@ import "dotenv/config";
 
 import { Option, program } from "commander";
 import { description, name, version } from "../package.json" assert { type: "json" };
-import { createClient } from "./clickhouse/createClient.js";
 import { ConfigSchema } from "./schemas.js";
 
 // Defaults
@@ -47,6 +46,3 @@ export const opts = program
 
 // Validate Commander argument & .env options
 export const config = ConfigSchema.parse(opts);
-
-// WebClickHouseClient
-export const client = createClient();

@@ -1,4 +1,4 @@
-import { client } from "../config.js";
+import client from "./createClient.js";
 import { logger } from "../logger.js";
 
 export async function createDatabase(database: string) {

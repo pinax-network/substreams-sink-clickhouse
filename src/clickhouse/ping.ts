@@ -1,5 +1,5 @@
 import { PingResult } from "@clickhouse/client-web";
-import { client } from "../config.js";
+import client from "./createClient.js";
 
 export async function ping(): Promise<PingResult> {
   try {

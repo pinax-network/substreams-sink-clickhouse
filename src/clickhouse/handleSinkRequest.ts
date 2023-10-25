@@ -1,6 +1,7 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
-import { client, config } from "../config.js";
+import client from "./createClient.js";
+import { config } from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";

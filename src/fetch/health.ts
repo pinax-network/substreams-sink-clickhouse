@@ -1,4 +1,4 @@
-import { client } from "../config.js";
+import client from "../clickhouse/createClient.js";
 
 export default async function (req: Request) {
   try {
