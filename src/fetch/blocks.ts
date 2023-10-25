@@ -6,8 +6,6 @@ type BlockViewType = Array<{
   count_distinct: string;
   max: number;
   min: number;
-  delta: string;
-  missing: string;
 }>;
 
 export const BlockResponseSchema = z.object({
@@ -26,9 +24,7 @@ export async function blocks(): Promise<Response> {
         COUNT() AS count,
         COUNTDISTINCT(block_number) AS count_distinct,
         MAX(block_number) AS max,
-        MIN(block_number) AS min,
-        MAX(block_number) - MIN(block_number) AS delta,
-        MAX(block_number) - COUNTDISTINCT(block_number) - MIN(block_number) AS missing
+        MIN(block_number) AS min
     FROM blocks
     `;
 
@@ -36,14 +32,14 @@ export async function blocks(): Promise<Response> {
     const response = await client.query({ query, format: "JSONEachRow" });
     const data = await response.json<BlockViewType>();
 
-    const dto: BlockResponseSchema = {
-      distinctCount: parseInt(data[0].count_distinct),
-      count: parseInt(data[0].count),
-      max: data[0].max,
-      min: data[0].min,
-      delta: parseInt(data[0].delta),
-      missing: parseInt(data[0].missing),
-    };
+    const distinctCount = parseInt(data[0].count_distinct);
+    const max = data[0].max;
+    const min = data[0].min;
+    const delta = max - min;
+    const missing = max - min - distinctCount;
+    const count = parseInt(data[0].count);
+
+    const dto: BlockResponseSchema = { max, min, distinctCount, delta, missing, count };
 
     return new Response(JSON.stringify(dto), { headers: { "Content-Type": "application/json" } });
   } catch (err) {
