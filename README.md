@@ -167,11 +167,13 @@ erDiagram
 
 **Indexes**
 
-| Table          | Fields                                     |
-| -------------- | ------------------------------------------ |
-| USER_DIMENSION | `(chain, module_hash)` `(chain, block_id)` |
-| block          | `(block_id, block_number, timestamp)`      |
-| manifest       | `module_hash`                              |
+| Table          | Fields                                       |
+| -------------- | -------------------------------------------- |
+| USER_DIMENSION | `(chain, module_hash)` `(chain, block_id)`   |
+| module_hashes  | `module_hash`                                |
+| blocks         | `(block_id, block_number, chain, timestamp)` |
+| unparsed_json  | `(source, chain, module_hash, block_id)`     |
+| final_blocks   | `block_id`                                   |
 
 ### Database initialization
 
