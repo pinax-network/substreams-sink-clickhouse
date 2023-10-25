@@ -4,8 +4,10 @@ import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
 import { BodySchema } from "../schemas.js";
+import { BlockResponseSchema } from "./blocks.js";
 
-const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) => ztjs.zodToJsonSchema(...params) as SchemaObject;
+const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
+  ztjs.zodToJsonSchema(...params) as SchemaObject;
 
 const TAGS = {
   USAGE: "Usage",
@@ -15,9 +17,18 @@ const TAGS = {
 } as const;
 
 const PUT_RESPONSES: ResponsesObject = {
-  200: { description: "Success", content: { "text/plain": { example: "OK", schema: { type: "string" } } } },
-  400: { description: "Bad request", content: { "text/plain": { example: "Bad request", schema: { type: "string" } } } },
-  401: { description: "Unauthorized", content: { "text/plain": { example: "Unauthorized", schema: { type: "string" } } } },
+  200: {
+    description: "Success",
+    content: { "text/plain": { example: "OK", schema: { type: "string" } } },
+  },
+  400: {
+    description: "Bad request",
+    content: { "text/plain": { example: "Bad request", schema: { type: "string" } } },
+  },
+  401: {
+    description: "Unauthorized",
+    content: { "text/plain": { example: "Unauthorized", schema: { type: "string" } } },
+  },
 };
 
 const ExecuteSchemaResponse = z.object({ success: z.literal("OK"), schema: z.string() });
@@ -68,7 +79,8 @@ export default new OpenApiBuilder()
     put: {
       tags: [TAGS.USAGE],
       summary: "Initialize the sink according to a GraphQL schema",
-      description: "Supports TheGraph's `@entity` statements. See https://thegraph.com/docs/en/querying/graphql-api/#entities",
+      description:
+        "Supports TheGraph's `@entity` statements. See https://thegraph.com/docs/en/querying/graphql-api/#entities",
       externalDocs: {
         description: "Valid data types",
         url: "https://thegraph.com/docs/en/developing/creating-a-subgraph/#built-in-scalar-types",
@@ -128,11 +140,30 @@ export default new OpenApiBuilder()
       responses: { 200: { description: "Prometheus metrics" } },
     },
   })
+  .addPath("/blocks", {
+    get: {
+      tags: [TAGS.MONITORING],
+      summary: "Gives a summary of known blocks, including min, max and unique block numbers",
+      responses: {
+        200: {
+          description: "Block number summary",
+          content: {
+            "application/json": {
+              schema: zodToJsonSchema(BlockResponseSchema),
+            },
+          },
+        },
+        500: { description: "Internal server errror" },
+      },
+    },
+  })
   .addPath("/openapi", {
     get: {
       tags: [TAGS.DOCS],
       summary: "OpenAPI specification",
-      responses: { 200: { description: "OpenAPI specification JSON", content: { "application/json": {} } } },
+      responses: {
+        200: { description: "OpenAPI specification JSON", content: { "application/json": {} } },
+      },
     },
   })
   .getSpecAsJson();
