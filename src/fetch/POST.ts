@@ -2,8 +2,15 @@ import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
 import { sink_request_errors, sink_requests } from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
 import signatureEd25519 from "../webhook/signatureEd25519.js";
+import { query } from "./query.js";
 
 export default async function (req: Request) {
+  const { pathname } = new URL(req.url);
+
+  if (pathname === "/query") {
+    return query(req);
+  }
+
   // validate Ed25519 signature
   const text = await req.text();
   const signatureError = await signatureEd25519(req, text);
