@@ -133,7 +133,7 @@ export default new OpenApiBuilder()
       requestBody: {
         content: {
           "text/plain": {
-            schema: { type: "string", example: "SELECT * FROM foo" },
+            schema: { type: "string", example: "SELECT COUNT() FROM blocks" },
           },
         },
       },
