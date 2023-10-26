@@ -126,6 +126,20 @@ export default new OpenApiBuilder()
       responses: PUT_RESPONSES,
     },
   })
+  .addPath("/query", {
+    post: {
+      tags: [TAGS.USAGE],
+      summary: "Execute queries against the database in read-only mode",
+      requestBody: {
+        content: {
+          "text/plain": {
+            schema: { type: "string", example: "SELECT * FROM foo" },
+          },
+        },
+      },
+      responses: { 200: { description: "query result", content: { "application/json": {} } } },
+    },
+  })
   .addPath("/health", {
     get: {
       tags: [TAGS.HEALTH],
