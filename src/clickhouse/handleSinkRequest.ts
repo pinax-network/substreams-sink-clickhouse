@@ -15,10 +15,10 @@ const knownTables = new Map<string, boolean>();
 let nextUpdateTime: number = 0;
 let promise: Promise<unknown> = Promise.resolve();
 let insertions: Record<
-  "entityChanges" | "moduleHashes" | "finalBlocks" | "blocks",
+  "moduleHashes" | "finalBlocks" | "blocks",
   Array<Record<string, unknown>>
-> = {
-  entityChanges: [],
+> & { entityChanges: Record<string, unknown[]> } = {
+  entityChanges: {},
   moduleHashes: [],
   finalBlocks: [],
   blocks: [],
@@ -38,7 +38,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   }
 
   if (
-    insertions.entityChanges.length > config.maxBufferSize ||
+    // insertions.entityChanges.length > config.maxBufferSize ||
     insertions.moduleHashes.length > config.maxBufferSize ||
     insertions.finalBlocks.length > config.maxBufferSize ||
     insertions.blocks.length > config.maxBufferSize
@@ -71,12 +71,12 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
         await client.insert({ values: insertions.blocks, table: "blocks", format: "JSONEachRow" });
       }
 
-      if (insertions.entityChanges.length > 0) {
-        await client.insert({
-          values: insertions.entityChanges,
-          table: "Clock",
-          format: "JSONStringsEachRow",
-        });
+      if (Object.keys(insertions.entityChanges).length > 0) {
+        for (const [table, values] of Object.entries(insertions.entityChanges)) {
+          if (values.length > 0) {
+            await client.insert({ table, values, format: "JSONStringsEachRow" });
+          }
+        }
       }
 
       resolve();
@@ -84,7 +84,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 
     nextUpdateTime = new Date().getTime() + 2000;
     insertions = {
-      entityChanges: [], //Array(insertions.entityChanges.length),
+      entityChanges: {}, //Array(insertions.entityChanges.length),
       moduleHashes: [], //Array(insertions.moduleHashes.length),
       finalBlocks: [], //Array(insertions.finalBlocks.length),
       blocks: [], //Array(insertions.blocks.length),
@@ -205,7 +205,8 @@ function insertEntityChange(
 
   prometheus.entity_changes_inserted.inc();
   // return queue.add(() => client.insert({ values, table, format: "JSONStringsEachRow" }));
-  insertions.entityChanges.push(values);
+  insertions.entityChanges[table] ??= [];
+  insertions.entityChanges[table].push(values);
 }
 
 // TODO: implement function
