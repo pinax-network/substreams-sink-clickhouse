@@ -23,6 +23,7 @@ export const ConfigSchema = z.object({
   waitForAsyncInsert: oneOrZero,
   queueLimit: positiveNumber,
   queueConcurrency: positiveNumber,
+  maxBufferSize: positiveNumber,
   schemaUrl: z.optional(z.string()),
 });
 export type ConfigSchema = z.infer<typeof ConfigSchema>;

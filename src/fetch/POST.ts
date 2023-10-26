@@ -1,5 +1,5 @@
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
-import { sink_request_errors, sink_requests } from "../prometheus.js";
+import * as prometheus from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
 import signatureEd25519 from "../webhook/signatureEd25519.js";
 
@@ -11,7 +11,7 @@ export default async function (req: Request) {
 
   // parse POST body payload
   try {
-    sink_requests?.inc();
+    prometheus.requests.inc();
     const body = BodySchema.parse(JSON.parse(text));
 
     if ("message" in body) {
@@ -21,7 +21,7 @@ export default async function (req: Request) {
 
     return handleSinkRequest(body);
   } catch (err) {
-    sink_request_errors?.inc();
+    prometheus.request_errors.inc();
     return new Response("invalid request: " + JSON.stringify(err), { status: 400 });
   }
 }
