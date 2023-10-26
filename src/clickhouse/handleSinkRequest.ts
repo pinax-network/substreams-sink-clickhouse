@@ -1,5 +1,4 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
-import PQueue from "p-queue";
 import { config } from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
@@ -14,7 +13,7 @@ const knownBlockIdFinal = new Set<string>();
 const knownTables = new Map<string, boolean>();
 
 let nextUpdateTime: number = 0;
-let promises: Array<Promise<unknown>> = [];
+let promise: Promise<unknown> = Promise.resolve();
 let insertions: Record<
   "entityChanges" | "moduleHashes" | "finalBlocks" | "blocks",
   Array<Record<string, unknown>>
@@ -24,9 +23,6 @@ let insertions: Record<
   finalBlocks: [],
   blocks: [],
 };
-
-let promise: Promise<unknown> = Promise.resolve();
-const queue = new PQueue({ concurrency: 1 });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   prometheus.sink_requests?.inc();
@@ -45,20 +41,16 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     insertions.entityChanges.length > config.maxBufferSize ||
     insertions.moduleHashes.length > config.maxBufferSize ||
     insertions.finalBlocks.length > config.maxBufferSize ||
-    insertions.blocks.length > config.maxBufferSize ||
-    new Date().getTime() > nextUpdateTime
+    insertions.blocks.length > config.maxBufferSize
   ) {
-    console.log(
-      "------------> ",
-      insertions.moduleHashes.length,
-      insertions.finalBlocks.length,
-      insertions.blocks.length,
-      insertions.entityChanges.length,
-      promise
-    );
+    const waitTime = nextUpdateTime - new Date().getTime();
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+  }
+
+  if (new Date().getTime() > nextUpdateTime) {
     await promise;
 
-    promise = queue.add(async () => {
+    promise = new Promise<void>(async (resolve) => {
       if (insertions.moduleHashes.length > 0) {
         await client.insert({
           values: insertions.moduleHashes,
@@ -66,6 +58,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
           format: "JSONEachRow",
         });
       }
+
       if (insertions.finalBlocks.length > 0) {
         await client.insert({
           values: insertions.finalBlocks,
@@ -73,9 +66,11 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
           format: "JSONEachRow",
         });
       }
+
       if (insertions.blocks.length > 0) {
         await client.insert({ values: insertions.blocks, table: "blocks", format: "JSONEachRow" });
       }
+
       if (insertions.entityChanges.length > 0) {
         await client.insert({
           values: insertions.entityChanges,
@@ -83,9 +78,9 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
           format: "JSONStringsEachRow",
         });
       }
-    });
 
-    // promise = new Promise((resolve) => queue.on("completed", resolve));
+      resolve();
+    });
 
     nextUpdateTime = new Date().getTime() + 2000;
     insertions = {
