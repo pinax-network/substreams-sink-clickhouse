@@ -106,12 +106,10 @@ HOST=http://127.0.0.1:8123
 DATABASE=default
 USERNAME=default
 PASSWORD=
-CREATE_DB=false
 
 # Sink
 QUEUE_LIMIT=10
 QUEUE_CONCURRENCY=10
-SCHEMA_URL=... # generate SQL schema by providing file (ex: ./schema.sql) or URL path (ex: https://example.com/schema.sql)
 VERBOSE=true
 ```
 
@@ -177,10 +175,12 @@ erDiagram
 
 ### Database initialization
 
-Create a database in ClickHouse. (Optionally, skip this step and use the `default` database.)
+Create a database in ClickHouse and setup the dimension tables.
+
+Use `POST /init` on [http://localhost:3000](http://localhost:3000).
 
 ```bash
-substreams-sink-clickhouse --create-db --name <DB_NAME>
+> curl --location --request PUT 'http://localhost:3000/init' --header 'Authorization: Bearer <AUTH_KEY>
 ```
 
 ### Schema initialization
