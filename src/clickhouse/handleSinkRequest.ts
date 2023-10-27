@@ -53,7 +53,9 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     await promise;
 
     promise = new Promise<void>(async (resolve) => {
-      if (insertions.moduleHashes.length > 0) {
+      const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
+
+      if (moduleHashes.length > 0) {
         await client.insert({
           values: insertions.moduleHashes,
           table: "module_hashes",
@@ -61,7 +63,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
         });
       }
 
-      if (insertions.finalBlocks.length > 0) {
+      if (finalBlocks.length > 0) {
         await client.insert({
           values: insertions.finalBlocks,
           table: "final_blocks",
@@ -69,11 +71,11 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
         });
       }
 
-      if (insertions.blocks.length > 0) {
+      if (blocks.length > 0) {
         await client.insert({ values: insertions.blocks, table: "blocks", format: "JSONEachRow" });
       }
 
-      if (insertions.cursors.length > 0) {
+      if (cursors.length > 0) {
         await client.insert({
           values: insertions.cursors,
           table: "cursors",
@@ -81,7 +83,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
         });
       }
 
-      if (Object.keys(insertions.entityChanges).length > 0) {
+      if (Object.keys(entityChanges).length > 0) {
         for (const [table, values] of Object.entries(insertions.entityChanges)) {
           if (values.length > 0) {
             await client.insert({ table, values, format: "JSONStringsEachRow" });
@@ -182,6 +184,7 @@ function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
   //   table: "cursors",
   //   format: "JSONEachRow",
   // });
+
   insertions.cursors.push({
     cursor,
     block_id: clock.id,
