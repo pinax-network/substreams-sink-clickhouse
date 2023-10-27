@@ -1,11 +1,11 @@
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
-import client from "./createClient.js";
 import { config } from "../config.js";
 import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
+import client from "./createClient.js";
 const { setTimeout } = require("timers/promises");
 
 // TO-DO: moves these to a separate file `src/clickhouse/stores.ts`
@@ -16,11 +16,12 @@ const knownTables = new Map<string, boolean>();
 const queue = new PQueue({ concurrency: config.queueConcurrency });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
-  const { manifest, clock } = metadata;
+  const { manifest, clock, cursor } = metadata;
   // Indexes
   handleModuleHashes(queue, manifest);
   handleBlocks(queue, manifest, clock);
   handleFinalBlocks(queue, manifest, clock);
+  handleCursors(queue, manifest, clock, cursor);
 
   // EntityChanges
   for (const change of data.entityChanges) {
@@ -97,7 +98,26 @@ function handleBlocks(queue: PQueue, manifest: Manifest, clock: Clock) {
   }
 }
 
-async function handleEntityChange(queue: PQueue, change: EntityChange, metadata: { clock: Clock; manifest: Manifest }) {
+function handleCursors(queue: PQueue, manifest: Manifest, clock: Clock, cursor: string) {
+  queue.add(() =>
+    client.insert({
+      values: {
+        cursor,
+        block_id: clock.id,
+        chain: manifest.chain,
+        module_hash: manifest.moduleHash,
+      },
+      table: "cursors",
+      format: "JSONEachRow",
+    })
+  );
+}
+
+async function handleEntityChange(
+  queue: PQueue,
+  change: EntityChange,
+  metadata: { clock: Clock; manifest: Manifest }
+) {
   const tableExists = await existsTable(change.entity);
 
   let values = getValuesInEntityChange(change);
