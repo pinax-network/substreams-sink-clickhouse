@@ -1,5 +1,6 @@
 import pkg from "../../package.json" assert { type: "json" };
 
+import { LicenseObject } from "openapi3-ts/oas30";
 import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
@@ -38,6 +39,11 @@ export default new OpenApiBuilder()
     title: pkg.name,
     version: pkg.version,
     description: pkg.description,
+    license: {
+      name: pkg.license,
+      identifier: pkg.license,
+      url: `${pkg.homepage}/blob/main/LICENSE`,
+    } as LicenseObject,
   })
   .addExternalDocs({ url: pkg.homepage, description: "Extra documentation" })
   .addSecurityScheme("auth-key", { type: "http", scheme: "bearer" })
@@ -115,8 +121,16 @@ export default new OpenApiBuilder()
         url: "https://github.com/pinax-network/substreams-sink-webhook",
       },
       parameters: [
-        { name: "x-signature-timestamp", in: "header" },
-        { name: "x-signature-ed25519", in: "header" },
+        {
+          in: "header",
+          name: "x-signature-timestamp",
+          content: { "application/json": { schema: { type: "string" } } },
+        },
+        {
+          in: "header",
+          name: "x-signature-ed25519",
+          content: { "application/json": { schema: { type: "string" } } },
+        },
       ],
       requestBody: {
         content: {
@@ -124,6 +138,20 @@ export default new OpenApiBuilder()
         },
       },
       responses: PUT_RESPONSES,
+    },
+  })
+  .addPath("/query", {
+    post: {
+      tags: [TAGS.USAGE],
+      summary: "Execute queries against the database in read-only mode",
+      requestBody: {
+        content: {
+          "text/plain": {
+            schema: { type: "string", examples: ["SELECT COUNT() FROM blocks"] },
+          },
+        },
+      },
+      responses: { 200: { description: "query result", content: { "application/json": {} } } },
     },
   })
   .addPath("/health", {

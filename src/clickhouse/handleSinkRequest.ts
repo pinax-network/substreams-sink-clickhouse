@@ -15,22 +15,24 @@ const knownTables = new Map<string, boolean>();
 let nextUpdateTime: number = 0;
 let promise: Promise<unknown> = Promise.resolve();
 let insertions: Record<
-  "moduleHashes" | "finalBlocks" | "blocks",
+  "moduleHashes" | "finalBlocks" | "blocks" | "cursors",
   Array<Record<string, unknown>>
 > & { entityChanges: Record<string, unknown[]> } = {
   entityChanges: {},
   moduleHashes: [],
   finalBlocks: [],
+  cursors: [],
   blocks: [],
 };
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   prometheus.sink_requests?.inc();
-  const { manifest, clock } = metadata;
+  const { manifest, clock, cursor } = metadata;
   // Indexes
   handleModuleHashes(manifest);
   handleBlocks(manifest, clock);
   handleFinalBlocks(manifest, clock);
+  handleCursors(manifest, clock, cursor);
 
   // EntityChanges
   for (const change of data.entityChanges) {
@@ -71,6 +73,14 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
         await client.insert({ values: insertions.blocks, table: "blocks", format: "JSONEachRow" });
       }
 
+      if (insertions.cursors.length > 0) {
+        await client.insert({
+          values: insertions.cursors,
+          table: "cursors",
+          format: "JSONEachRow",
+        });
+      }
+
       if (Object.keys(insertions.entityChanges).length > 0) {
         for (const [table, values] of Object.entries(insertions.entityChanges)) {
           if (values.length > 0) {
@@ -87,6 +97,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
       entityChanges: {}, //Array(insertions.entityChanges.length),
       moduleHashes: [], //Array(insertions.moduleHashes.length),
       finalBlocks: [], //Array(insertions.finalBlocks.length),
+      cursors: [],
       blocks: [], //Array(insertions.blocks.length),
     };
   }
@@ -158,6 +169,25 @@ function handleBlocks(manifest: Manifest, clock: Clock) {
     insertions.blocks.push({ block_id, block_number, chain, timestamp });
     knownBlockId.add(block_id);
   }
+}
+
+function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
+  // client.insert({
+  //   values: {
+  //     cursor,
+  //     block_id: clock.id,
+  //     chain: manifest.chain,
+  //     module_hash: manifest.moduleHash,
+  //   },
+  //   table: "cursors",
+  //   format: "JSONEachRow",
+  // });
+  insertions.cursors.push({
+    cursor,
+    block_id: clock.id,
+    chain: manifest.chain,
+    module_hash: manifest.moduleHash,
+  });
 }
 
 async function handleEntityChange(
