@@ -18,12 +18,10 @@ export const ConfigSchema = z.object({
   database: z.string(),
   username: z.string(),
   password: z.string(),
-  createDatabase: boolean,
   asyncInsert: oneOrZero,
   waitForAsyncInsert: oneOrZero,
   queueLimit: positiveNumber,
   queueConcurrency: positiveNumber,
-  schemaUrl: z.optional(z.string()),
 });
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 
