@@ -116,8 +116,16 @@ export default new OpenApiBuilder()
         url: "https://github.com/pinax-network/substreams-sink-webhook",
       },
       parameters: [
-        { name: "x-signature-timestamp", in: "header" },
-        { name: "x-signature-ed25519", in: "header" },
+        {
+          in: "header",
+          name: "x-signature-timestamp",
+          content: { "application/json": { schema: { type: "string" } } },
+        },
+        {
+          in: "header",
+          name: "x-signature-ed25519",
+          content: { "application/json": { schema: { type: "string" } } },
+        },
       ],
       requestBody: {
         content: {
@@ -134,7 +142,7 @@ export default new OpenApiBuilder()
       requestBody: {
         content: {
           "text/plain": {
-            schema: { type: "string", example: "SELECT COUNT() FROM blocks" },
+            schema: { type: "string", examples: ["SELECT COUNT() FROM blocks"] },
           },
         },
       },
