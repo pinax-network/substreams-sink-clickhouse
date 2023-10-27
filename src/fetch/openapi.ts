@@ -41,6 +41,7 @@ export default new OpenApiBuilder()
   })
   .addExternalDocs({ url: pkg.homepage, description: "Extra documentation" })
   .addSecurityScheme("auth-key", { type: "http", scheme: "bearer" })
+  .addLicense({ name: pkg.license, url: `${pkg.homepage}/blob/main/LICENSE` })
   .addPath("/init", {
     put: {
       tags: [TAGS.USAGE],
