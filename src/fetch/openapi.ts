@@ -1,5 +1,6 @@
 import pkg from "../../package.json" assert { type: "json" };
 
+import { LicenseObject } from "openapi3-ts/oas30";
 import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
@@ -38,10 +39,14 @@ export default new OpenApiBuilder()
     title: pkg.name,
     version: pkg.version,
     description: pkg.description,
+    license: {
+      name: pkg.license,
+      identifier: pkg.license,
+      url: `${pkg.homepage}/blob/main/LICENSE`,
+    } as LicenseObject,
   })
   .addExternalDocs({ url: pkg.homepage, description: "Extra documentation" })
   .addSecurityScheme("auth-key", { type: "http", scheme: "bearer" })
-  .addLicense({ name: pkg.license, url: `${pkg.homepage}/blob/main/LICENSE` })
   .addPath("/init", {
     put: {
       tags: [TAGS.USAGE],
