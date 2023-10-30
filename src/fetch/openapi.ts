@@ -4,6 +4,7 @@ import { LicenseObject } from "openapi3-ts/oas30";
 import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
+import { store } from "../clickhouse/stores.js";
 import { BodySchema } from "../schemas.js";
 import { BlockResponseSchema } from "./blocks.js";
 
@@ -152,6 +153,48 @@ export default new OpenApiBuilder()
         },
       },
       responses: { 200: { description: "query result", content: { "application/json": {} } } },
+    },
+  })
+  .addPath("/cursors/latest", {
+    get: {
+      tags: [TAGS.USAGE],
+      summary: "Finds the latest cursor for a given chain and table",
+      parameters: [
+        { name: "chain", in: "query", required: false, schema: { enum: await store.chains } },
+        { name: "table", in: "query", required: false, schema: { enum: await store.publicTables } },
+      ],
+      responses: {
+        200: {
+          description: "Success",
+          content: {
+            "application/json": { schema: zodToJsonSchema(z.object({ cursor: z.string() })) },
+          },
+        },
+        400: PUT_RESPONSES[400],
+      },
+    },
+  })
+  .addPath("/cursors/missing", {
+    get: {
+      tags: [TAGS.USAGE],
+      summary: "Finds the missing blocks and returns the start and end cursors",
+      parameters: [
+        { name: "chain", in: "query", required: false, schema: { enum: await store.chains } },
+        { name: "table", in: "query", required: false, schema: { enum: await store.publicTables } },
+      ],
+      responses: {
+        200: {
+          description: "Success",
+          content: {
+            "application/json": {
+              schema: zodToJsonSchema(
+                z.array(z.object({ startCursor: z.string(), endCusor: z.string() }))
+              ),
+            },
+          },
+        },
+        400: PUT_RESPONSES[400],
+      },
     },
   })
   .addPath("/health", {
