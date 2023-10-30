@@ -44,7 +44,45 @@ export async function findCursorsForMissingBlocks(req: Request): Promise<Respons
 
   try {
     const { table, chain } = parametersResult;
-    return new Response("Not implemented", { status: 400 });
+
+    const query = `
+SELECT from AS from_block_number, c1.cursor AS from_cursor, to AS to_block_number, c2.cursor AS to_cursor
+FROM blocks b1, blocks b2, ${table} t1, ${table} t2, cursors c1, cursors c2 (
+    SELECT b1.block_number AS from, MIN(b2.block_number) AS to
+    FROM blocks b1, blocks b2, (
+        SELECT MAX(block_number) AS block_number
+        FROM blocks
+        WHERE chain = '${chain}'
+    ) maximum
+    WHERE b1.block_number + 1 NOT IN (SELECT block_number FROM blocks WHERE chain = '${chain}')
+        AND b1.block_number <> maximum.block_number
+        AND b1.chain = '${chain}'
+        AND b1.chain = '${chain}'
+        AND b2.block_number > b1.block_number
+    GROUP BY b1.block_number) AS block_ranges,
+WHERE b1.block_number = block_ranges.FROM AND b2.block_number = block_ranges.to AND b1.chain = '${chain}' and b2.chain = '${chain}'
+    AND t1.block_id = b1.block_id AND t2.block_id = b2.block_id AND t1.chain = '${table}' AND t2.chain = '${chain}'
+    AND c1.block_id = b1.block_id AND c2.block_id = b2.block_id AND c1.chain = '${table}' AND c2.chain = '${chain}'`;
+
+    const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
+    const data = await response.json<
+      Array<{
+        from_block_number: number;
+        from_cursor: string;
+        to_block_number: number;
+        to_cursor: string;
+      }>
+    >();
+
+    const dto = data.map((record) => ({
+      from: { block: record.from_block_number, cursor: record.from_cursor },
+      to: { block: record.to_block_number, cursor: record.to_cursor },
+    }));
+
+    return new Response(JSON.stringify(dto), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch {
     return new Response("Bad request", { status: 400 });
   }

@@ -9,7 +9,8 @@ class ClickhouseStore {
       this.chainsPromise = readOnlyClient
         .query({ query: "SELECT DISTINCT chain FROM blocks", format: "JSONEachRow" })
         .then((response) => response.json<Array<{ chain: string }>>())
-        .then((chains) => chains.map(({ chain }) => chain));
+        .then((chains) => chains.map(({ chain }) => chain))
+        .catch(() => []);
     }
 
     return this.chainsPromise;
@@ -22,7 +23,8 @@ class ClickhouseStore {
         .query({ query: "SHOW TABLES", format: "JSONEachRow" })
         .then((response) => response.json<Array<{ name: string }>>())
         .then((names) => names.map(({ name }) => name))
-        .then((names) => names.filter((table) => !hiddenTables.includes(table)));
+        .then((names) => names.filter((table) => !hiddenTables.includes(table)))
+        .catch(() => []);
     }
 
     return this.publicTablesPromise;
