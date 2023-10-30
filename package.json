@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@clickhouse/client-web": "latest",
-    "@substreams/sink-entity-changes": "latest",
+    "@substreams/sink-entity-changes": "v0.3.2",
     "commander": "latest",
     "dotenv": "latest",
     "graphql": "^16.8.1",

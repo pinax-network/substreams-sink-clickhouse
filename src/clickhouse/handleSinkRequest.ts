@@ -1,7 +1,7 @@
+import { getValuesInEntityChange } from "@substreams/sink-entity-changes";
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
 import { config } from "../config.js";
-import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
