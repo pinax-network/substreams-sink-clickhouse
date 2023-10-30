@@ -52,9 +52,8 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   if (new Date().getTime() > nextUpdateTime) {
     await promise;
 
+    const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
     promise = new Promise<void>(async (resolve) => {
-      const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
-
       if (moduleHashes.length > 0) {
         await client.insert({
           values: insertions.moduleHashes,
