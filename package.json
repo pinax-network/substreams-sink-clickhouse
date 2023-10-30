@@ -31,7 +31,6 @@
     "dotenv": "latest",
     "graphql": "^16.8.1",
     "openapi3-ts": "latest",
-    "p-queue": "latest",
     "prom-client": "latest",
     "tslog": "latest",
     "tweetnacl": "latest",
