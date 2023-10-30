@@ -13,7 +13,14 @@ test("getValuesInEntityChange", () => {
       { name: "value e", newValue: { bool: true } },
       { name: "value f", newValue: { bytes: "eeff" } },
       { name: "value g", newValue: { undefined: undefined } },
-      { name: "value h", newValue: { array: [1, 2, 3, 4] } },
+      {
+        name: "value h",
+        newValue: {
+          array: {
+            value: [{ int32: 1 }, { int32: 2 }, { int32: 3 }, { int32: 4 }],
+          } as any,
+        },
+      },
     ],
   };
 
