@@ -160,14 +160,16 @@ export default new OpenApiBuilder()
       tags: [TAGS.USAGE],
       summary: "Finds the latest cursor for a given chain and table",
       parameters: [
-        { name: "chain", in: "query", required: false, schema: { enum: await store.chains } },
-        { name: "table", in: "query", required: false, schema: { enum: await store.publicTables } },
+        { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
+        { name: "table", in: "query", required: true, schema: { enum: await store.publicTables } },
       ],
       responses: {
         200: {
           description: "Success",
           content: {
-            "application/json": { schema: zodToJsonSchema(z.object({ cursor: z.string() })) },
+            "application/json": {
+              schema: zodToJsonSchema(z.object({ cursor: z.string(), timestamp: z.string() })),
+            },
           },
         },
         400: PUT_RESPONSES[400],

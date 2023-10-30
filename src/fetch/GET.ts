@@ -3,6 +3,7 @@ import swaggerFavicon from "../../swagger/favicon.png";
 import swaggerHtml from "../../swagger/index.html";
 import { registry } from "../prometheus.js";
 import { blocks } from "./blocks.js";
+import { findCursorsForMissingBlocks, findLatestCursor } from "./cursors.js";
 import health from "./health.js";
 import openapi from "./openapi.js";
 
@@ -15,6 +16,8 @@ export default async function (req: Request) {
   if (pathname === "/metrics") return new Response(await registry.metrics(), { headers: { "Content-Type": registry.contentType } });
   if (pathname === "/openapi") return new Response(openapi, { headers: { "Content-Type": "application/json" } });
   if (pathname === "/blocks") return blocks();
+  if (pathname === "/cursors/latest") return findLatestCursor(req);
+  if (pathname === "/cursors/missing") return findCursorsForMissingBlocks(req);
 
   return new Response("Not found", { status: 400 });
 }
