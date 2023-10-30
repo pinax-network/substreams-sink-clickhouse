@@ -92,13 +92,13 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
       resolve();
     });
 
-    nextUpdateTime = new Date().getTime() + 2000;
+    nextUpdateTime = new Date().getTime() + config.insertionDelay;
     insertions = {
-      entityChanges: {}, //Array(insertions.entityChanges.length),
-      moduleHashes: [], //Array(insertions.moduleHashes.length),
-      finalBlocks: [], //Array(insertions.finalBlocks.length),
+      entityChanges: {},
+      moduleHashes: [],
+      finalBlocks: [],
       cursors: [],
-      blocks: [], //Array(insertions.blocks.length),
+      blocks: [],
     };
   }
 
