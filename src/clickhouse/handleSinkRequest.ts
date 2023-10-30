@@ -40,7 +40,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   }
 
   if (
-    // insertions.entityChanges.length > config.maxBufferSize ||
     insertions.moduleHashes.length > config.maxBufferSize ||
     insertions.finalBlocks.length > config.maxBufferSize ||
     insertions.blocks.length > config.maxBufferSize
@@ -111,18 +110,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 function handleModuleHashes(manifest: Manifest) {
   const { moduleHash, type, moduleName, chain } = manifest;
   if (!knownModuleHashes.has(moduleHash)) {
-    // queue.add(() =>
-    //   client.insert({
-    //   values: {
-    //     module_hash: moduleHash,
-    //     chain,
-    //     type,
-    //     module_name: moduleName,
-    //   },
-    //   table: "module_hashes",
-    //   format: "JSONEachRow",
-    // })
-    // );
     insertions.moduleHashes.push({ module_hash: moduleHash, chain, type, module_name: moduleName });
     knownModuleHashes.add(moduleHash);
   }
@@ -135,13 +122,6 @@ function handleFinalBlocks(manifest: Manifest, clock: Clock) {
   if (!finalBlockOnly) return; // Only insert final blocks
 
   if (!knownBlockIdFinal.has(block_id)) {
-    // queue.add(() =>
-    //   client.insert({
-    //     values: { block_id },
-    //     table: "final_blocks",
-    //     format: "JSONEachRow",
-    //   })
-    // );
     insertions.finalBlocks.push({ block_id });
     knownBlockIdFinal.add(block_id);
   }
@@ -155,35 +135,12 @@ function handleBlocks(manifest: Manifest, clock: Clock) {
   const chain = manifest.chain;
 
   if (!knownBlockId.has(block_id)) {
-    // queue.add(() =>
-    //   client.insert({
-    //     values: {
-    //       block_id,
-    //       block_number,
-    //       chain,
-    //       timestamp,
-    //     },
-    //     table: "blocks",
-    //     format: "JSONEachRow",
-    //   })
-    // );
     insertions.blocks.push({ block_id, block_number, chain, timestamp });
     knownBlockId.add(block_id);
   }
 }
 
 function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
-  // client.insert({
-  //   values: {
-  //     cursor,
-  //     block_id: clock.id,
-  //     chain: manifest.chain,
-  //     module_hash: manifest.moduleHash,
-  //   },
-  //   table: "cursors",
-  //   format: "JSONEachRow",
-  // });
-
   insertions.cursors.push({
     cursor,
     block_id: clock.id,
@@ -236,7 +193,6 @@ function insertEntityChange(
   values["chain"] = metadata.manifest.chain; // Chain Index
 
   prometheus.entity_changes_inserted.inc();
-  // return queue.add(() => client.insert({ values, table, format: "JSONStringsEachRow" }));
   insertions.entityChanges[table] ??= [];
   insertions.entityChanges[table].push(values);
 }
