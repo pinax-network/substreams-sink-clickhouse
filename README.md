@@ -216,6 +216,8 @@ Upload a schema file on [http://localhost:3000](http://localhost:3000).
 
 _Use PUT `/schema/sql` or PUT `/schema/graphql` with `Content-Type: application/octet-stream`._
 
+Pass in a file url in `schema-url`. This will overwrite the body behavior.
+
 **Curl**
 
 ```bash
