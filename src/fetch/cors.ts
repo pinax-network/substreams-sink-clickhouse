@@ -1,9 +1,5 @@
 import { BunFile } from "bun";
 
-export const BadRequest = toText("Bad Request", 400);
-export const NotFound = toText("Not Found", 404);
-export const InternalServerError = toText("Internal Server Error", 500);
-
 export const CORS_HEADERS = new Headers({
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -11,6 +7,10 @@ export const CORS_HEADERS = new Headers({
 });
 export const JSON_HEADERS = new Headers({ "Content-Type": "application/json" });
 export const TEXT_HEADERS = new Headers({ "Content-Type": "text/plain" });
+
+export const BadRequest = toText("Bad Request", 400);
+export const NotFound = toText("Not Found", 404);
+export const InternalServerError = toText("Internal Server Error", 500);
 
 export function appendHeaders(...args: Headers[]) {
   const headers = new Headers(CORS_HEADERS); // CORS as default headers
