@@ -4,18 +4,19 @@ import { ClickhouseTableBuilder } from "../graphql/builders/clickhouse-table-bui
 import { TableTranslator } from "../graphql/table-translator.js";
 import { logger } from "../logger.js";
 import { TableInitSchema } from "../schemas.js";
+import { toJSON, toText } from "./cors.js";
 
 const clickhouseBuilder = new ClickhouseTableBuilder();
 
 export async function handleSchemaRequest(req: Request, type: "sql" | "graphql") {
   const body = await req.text();
   if (!body) {
-    return new Response("missing body", { status: 400 });
+    return toText("missing body", 400);
   }
 
   const result = TableInitSchema.safeParse(body);
   if (!result.success) {
-    return new Response(result.error.toString(), { status: 400 });
+    return toText("Bad request: " + result.error.toString(), 400);
   }
 
   let tableSchemas: string[] = [];
@@ -29,10 +30,9 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 
   try {
     await initializeTables(tableSchemas);
-    return new Response(JSON.stringify({ status: "OK", schema: tableSchemas.join("\n\n") }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return toJSON({ status: "OK", schema: tableSchemas.join("\n\n") });
   } catch (err) {
-    return new Response(`Could not create the tables: ${err}`, { status: 500 });
+    logger.error(err);
+    return toText("Could not create the tables", 500);
   }
 }

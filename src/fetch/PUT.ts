@@ -1,4 +1,5 @@
 import { validateBearerAuth } from "./bearerAuth.js";
+import { NotFound } from "./cors.js";
 import init from "./init.js";
 import { handleSchemaRequest } from "./schema.js";
 
@@ -13,5 +14,5 @@ export default async function (req: Request): Promise<Response> {
   if (pathname === "/schema/sql") return handleSchemaRequest(req, "sql");
   if (pathname === "/schema/graphql") return handleSchemaRequest(req, "graphql");
 
-  return new Response("Not found", { status: 400 });
+  return NotFound;
 }

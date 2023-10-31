@@ -1,7 +1,9 @@
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
+import { logger } from "../logger.js";
 import { sink_request_errors, sink_requests } from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
 import signatureEd25519 from "../webhook/signatureEd25519.js";
+import { toText } from "./cors.js";
 import { query } from "./query.js";
 
 export default async function (req: Request) {
@@ -22,13 +24,14 @@ export default async function (req: Request) {
     const body = BodySchema.parse(JSON.parse(text));
 
     if ("message" in body) {
-      if (body.message === "PING") return new Response("OK");
-      return new Response("invalid body", { status: 400 });
+      if (body.message === "PING") return toText("OK");
+      return toText("invalid body", 400);
     }
 
     return handleSinkRequest(body);
   } catch (err) {
+    logger.error(err);
     sink_request_errors?.inc();
-    return new Response("invalid request: " + JSON.stringify(err), { status: 400 });
+    return toText("invalid request", 400);
   }
 }
