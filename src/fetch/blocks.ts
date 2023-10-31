@@ -1,5 +1,7 @@
 import { z } from "zod";
 import client from "../clickhouse/createClient.js";
+import { logger } from "../logger.js";
+import { InternalServerError, toJSON } from "./cors.js";
 
 type BlockViewType = Array<{
   count: string;
@@ -41,8 +43,9 @@ export async function blocks(): Promise<Response> {
 
     const dto: BlockResponseSchema = { max, min, distinctCount, delta, missing, count };
 
-    return new Response(JSON.stringify(dto), { headers: { "Content-Type": "application/json" } });
+    return toJSON(dto);
   } catch (err) {
-    return new Response(err instanceof Error ? err.message : JSON.stringify(err), { status: 500 });
+    logger.error(err);
+    return InternalServerError;
   }
 }
