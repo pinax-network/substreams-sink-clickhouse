@@ -1,6 +1,6 @@
+import { getValuesInEntityChange } from "@substreams/sink-entity-changes";
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import { config } from "../config.js";
-import { getValuesInEntityChange } from "../entity-changes.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
@@ -109,9 +109,11 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 // Module Hashes index
 function handleModuleHashes(manifest: Manifest) {
   const { moduleHash, type, moduleName, chain } = manifest;
-  if (!knownModuleHashes.has(moduleHash)) {
+  const moduleHashKey = `${moduleHash}-${chain}`;
+
+  if (!knownModuleHashes.has(moduleHashKey)) {
     insertions.moduleHashes.push({ module_hash: moduleHash, chain, type, module_name: moduleName });
-    knownModuleHashes.add(moduleHash);
+    knownModuleHashes.add(moduleHashKey);
   }
 }
 

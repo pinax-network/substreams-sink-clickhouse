@@ -1,11 +1,17 @@
 import client from "../clickhouse/createClient.js";
+import { logger } from "../logger.js";
+import { BadRequest, toText } from "./cors.js";
 
-export default async function (req: Request) {
+export default async function () {
   try {
     const response = await client.ping();
-    if (response.success === false) throw new Error(response.error.message);
-    return new Response("OK");
-  } catch (e: any) {
-    return new Response(e.message, { status: 400 });
+    if (!response.success) {
+      throw new Error(response.error.message);
+    }
+
+    return toText("OK");
+  } catch (e) {
+    logger.error(e);
+    return BadRequest;
   }
 }

@@ -43,20 +43,3 @@ export async function initializeTables(tableSchemas: string[]): Promise<void> {
 
   logger.info("Complete.");
 }
-
-export async function readSchema(schemaUrl: string): Promise<string> {
-  logger.info(`Reading '${schemaUrl}'.`);
-
-  try {
-    const file = Bun.file(schemaUrl);
-    if (await file.exists()) {
-      return file.text();
-    }
-
-    const response = await fetch(new URL(schemaUrl));
-    return response.text();
-  } catch {
-    logger.error("could not find the requested schema. Is it valid?");
-    process.exit(1);
-  }
-}

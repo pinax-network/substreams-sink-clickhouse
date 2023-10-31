@@ -1,15 +1,17 @@
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
+import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
 import signatureEd25519 from "../webhook/signatureEd25519.js";
+import { toText } from "./cors.js";
+import hash from "./hash.js";
 import { query } from "./query.js";
 
 export default async function (req: Request) {
   const { pathname } = new URL(req.url);
 
-  if (pathname === "/query") {
-    return query(req);
-  }
+  if (pathname === "/query") return query(req);
+  if (pathname === "/hash") return hash(req);
 
   // validate Ed25519 signature
   const text = await req.text();
@@ -22,13 +24,14 @@ export default async function (req: Request) {
     const body = BodySchema.parse(JSON.parse(text));
 
     if ("message" in body) {
-      if (body.message === "PING") return new Response("OK");
-      return new Response("invalid body", { status: 400 });
+      if (body.message === "PING") return toText("OK");
+      return toText("invalid body", 400);
     }
 
     return handleSinkRequest(body);
   } catch (err) {
-    prometheus.request_errors.inc();
-    return new Response("invalid request: " + JSON.stringify(err), { status: 400 });
+    logger.error(err);
+    prometheus.request_errors?.inc();
+    return toText("invalid request", 400);
   }
 }
