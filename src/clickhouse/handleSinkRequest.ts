@@ -52,45 +52,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     await promise;
 
     const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
-    promise = new Promise<void>(async (resolve) => {
-      if (moduleHashes.length > 0) {
-        await client.insert({
-          values: insertions.moduleHashes,
-          table: "module_hashes",
-          format: "JSONEachRow",
-        });
-      }
-
-      if (finalBlocks.length > 0) {
-        await client.insert({
-          values: insertions.finalBlocks,
-          table: "final_blocks",
-          format: "JSONEachRow",
-        });
-      }
-
-      if (blocks.length > 0) {
-        await client.insert({ values: insertions.blocks, table: "blocks", format: "JSONEachRow" });
-      }
-
-      if (cursors.length > 0) {
-        await client.insert({
-          values: insertions.cursors,
-          table: "cursors",
-          format: "JSONEachRow",
-        });
-      }
-
-      if (Object.keys(entityChanges).length > 0) {
-        for (const [table, values] of Object.entries(insertions.entityChanges)) {
-          if (values.length > 0) {
-            await client.insert({ table, values, format: "JSONStringsEachRow" });
-          }
-        }
-      }
-
-      resolve();
-    });
 
     nextUpdateTime = new Date().getTime() + config.insertionDelay;
     insertions = {
@@ -100,6 +61,46 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
       cursors: [],
       blocks: [],
     };
+
+    promise = new Promise<void>(async (resolve) => {
+      if (moduleHashes.length > 0) {
+        await client.insert({
+          values: moduleHashes,
+          table: "module_hashes",
+          format: "JSONEachRow",
+        });
+      }
+
+      if (finalBlocks.length > 0) {
+        await client.insert({
+          values: finalBlocks,
+          table: "final_blocks",
+          format: "JSONEachRow",
+        });
+      }
+
+      if (blocks.length > 0) {
+        await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
+      }
+
+      if (cursors.length > 0) {
+        await client.insert({
+          values: cursors,
+          table: "cursors",
+          format: "JSONEachRow",
+        });
+      }
+
+      if (Object.keys(entityChanges).length > 0) {
+        for (const [table, values] of Object.entries(entityChanges)) {
+          if (values.length > 0) {
+            await client.insert({ table, values, format: "JSONStringsEachRow" });
+          }
+        }
+      }
+
+      resolve();
+    });
   }
 
   logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length}`);
