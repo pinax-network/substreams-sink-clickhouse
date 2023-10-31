@@ -181,8 +181,8 @@ export default new OpenApiBuilder()
       tags: [TAGS.USAGE],
       summary: "Finds the missing blocks and returns the start and end cursors",
       parameters: [
-        { name: "chain", in: "query", required: false, schema: { enum: await store.chains } },
-        { name: "table", in: "query", required: false, schema: { enum: await store.publicTables } },
+        { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
+        { name: "table", in: "query", required: true, schema: { enum: await store.publicTables } },
       ],
       responses: {
         200: {
@@ -190,7 +190,12 @@ export default new OpenApiBuilder()
           content: {
             "application/json": {
               schema: zodToJsonSchema(
-                z.array(z.object({ startCursor: z.string(), endCusor: z.string() }))
+                z.array(
+                  z.object({
+                    from: z.object({ block: z.number(), cursor: z.string() }),
+                    to: z.object({ block: z.number(), cursor: z.string() }),
+                  })
+                )
               ),
             },
           },
