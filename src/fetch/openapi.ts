@@ -55,6 +55,20 @@ export default new OpenApiBuilder()
       responses: PUT_RESPONSES,
     },
   })
+  .addPath("/hash", {
+    post: {
+      tags: [TAGS.USAGE],
+      summary: "Generate a hash for a specified password",
+      requestBody: {
+        required: true,
+        description: "The password to hash",
+        content: { "text/plain": { schema: { type: "string" } } },
+      },
+      responses: {
+        200: { description: "Success", content: { "text/plain": { schema: { type: "string" } } } },
+      },
+    },
+  })
   .addPath("/schema/sql", {
     put: {
       tags: [TAGS.USAGE],
