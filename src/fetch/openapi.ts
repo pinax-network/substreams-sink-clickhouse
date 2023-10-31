@@ -59,8 +59,12 @@ export default new OpenApiBuilder()
     put: {
       tags: [TAGS.USAGE],
       summary: "Initialize the sink according to a SQL schema",
-      description: "Supports `CREATE TABLE` statements",
+      description:
+        "Supports `CREATE TABLE` statements<br/>If an url is passed in, the body will not be executed.",
       security: [{ "auth-key": [] }],
+      parameters: [
+        { required: false, in: "query", name: "schema-url", schema: { type: "string" } },
+      ],
       requestBody: {
         content: {
           "text/plain": {
@@ -86,12 +90,15 @@ export default new OpenApiBuilder()
       tags: [TAGS.USAGE],
       summary: "Initialize the sink according to a GraphQL schema",
       description:
-        "Supports TheGraph's `@entity` statements. See https://thegraph.com/docs/en/querying/graphql-api/#entities",
+        "Supports TheGraph's `@entity` statements. See https://thegraph.com/docs/en/querying/graphql-api/#entities<br/>If an url is passed in, the body will not be executed.",
       externalDocs: {
         description: "Valid data types",
         url: "https://thegraph.com/docs/en/developing/creating-a-subgraph/#built-in-scalar-types",
       },
       security: [{ "auth-key": [] }],
+      parameters: [
+        { required: false, in: "query", name: "schema-url", schema: { type: "string" } },
+      ],
       requestBody: {
         content: {
           "text/plain": {
