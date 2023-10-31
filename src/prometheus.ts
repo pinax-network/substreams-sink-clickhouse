@@ -2,6 +2,12 @@ import client, { Counter, Gauge } from "prom-client";
 
 export const registry = new client.Registry();
 
+export async function metrics() {
+  const headers = new Headers();
+  headers.set("Content-Type", registry.contentType);
+  return new Response(await registry.metrics(), { status: 200, headers });
+}
+
 export function registerCounter(name: string, help: string) {
   try {
     registry.registerMetric(new client.Counter({ name, help }));

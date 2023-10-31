@@ -39,7 +39,9 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 // Module Hashes index
 function handleModuleHashes(queue: PQueue, manifest: Manifest) {
   const { moduleHash, type, moduleName, chain } = manifest;
-  if (!knownModuleHashes.has(moduleHash)) {
+  const moduleHashKey = `${moduleHash}-${chain}`;
+
+  if (!knownModuleHashes.has(moduleHashKey)) {
     queue.add(() =>
       client.insert({
         values: {
@@ -52,7 +54,7 @@ function handleModuleHashes(queue: PQueue, manifest: Manifest) {
         format: "JSONEachRow",
       })
     );
-    knownModuleHashes.add(moduleHash);
+    knownModuleHashes.add(moduleHashKey);
   }
 }
 

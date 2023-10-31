@@ -60,6 +60,17 @@ The user **must** build custom [views](https://clickhouse.com/docs/en/guides/dev
 
 </details>
 
+<details>
+<summary><b>Argon2 authentication</b></summary>
+
+Password protected endpoints. Set `AUTH_KEY` in [`.env`](#environment-variables) to enable authentication.
+
+No `AUTH_KEY` will skip authentication checks.
+
+Generate a hash with [`POST http://localhost:3000/hash`](http://localhost:3000/#operations-Usage-post_hash) and set password in `Authorization` header: `Bearer <password>`.
+
+</details>
+
 ## Usage
 
 Swagger Docs available on [http://localhost:3000](http://localhost:3000).
@@ -204,6 +215,8 @@ Initializes the database according to a SQL or a GraphQL file. See [example sche
 Upload a schema file on [http://localhost:3000](http://localhost:3000).
 
 _Use PUT `/schema/sql` or PUT `/schema/graphql` with `Content-Type: application/octet-stream`._
+
+Pass in a file url in `schema-url`. This will overwrite the body behavior.
 
 **Curl**
 
