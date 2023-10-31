@@ -1,19 +1,18 @@
 // https://bun.sh/guides/util/hash-a-password
 import { config } from "../config.js";
-import { logger } from "../logger.js";
 import { InvalidRequest, NoAuthorization, Unauthorized, getBearer } from "./bearer.js";
 
-export function beforeHandle(request: Request) {
+export function beforeHandle(request: Request): Response | undefined {
   if (!config.authKey) return;
 
-  const bearer = getBearer(request);
-  if (!bearer) return NoAuthorization;
+  const password = getBearer(request);
+  if (!password) return NoAuthorization;
 
   try {
-    const verify = Bun.password.verifySync(config.authKey, bearer);
-    if (!verify) return Unauthorized;
-  } catch (e) {
-    logger.error(e);
+    if (!Bun.password.verifySync(password, config.authKey, "argon2id")) {
+      return Unauthorized;
+    }
+  } catch {
     return InvalidRequest;
   }
 }
