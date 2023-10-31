@@ -6,9 +6,7 @@ const PREFIX = "Bearer";
 const REALM = "sign";
 
 export const NoAuthorization = toText("Unauthorized", 400, new Headers({ "WWW-Authenticate": `${PREFIX} realm="${REALM}"` }));
-
-export const Unauthorized = toText("Unauthorized", 400, new Headers({ "WWW-Authenticate": `${PREFIX} error="invalid_token"` }));
-
+export const Unauthorized = toText("Unauthorized", 401, new Headers({ "WWW-Authenticate": `${PREFIX} error="invalid_token"` }));
 export const InvalidRequest = toText("Bad Request", 400, new Headers({ "WWW-Authenticate": `${PREFIX} error="invalid_request"` }));
 
 export function getBearerToken(headerToken: string) {
