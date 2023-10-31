@@ -9,16 +9,16 @@ import { BadRequest, toJSON, toText } from "./cors.js";
 const clickhouseBuilder = new ClickhouseTableBuilder();
 
 export async function handleSchemaRequest(req: Request, type: "sql" | "graphql") {
-  const rawSchema = await getSchemaFromRequest(req);
-  if (rawSchema instanceof Response) {
-    return rawSchema;
+  const schema = await getSchemaFromRequest(req);
+  if (schema instanceof Response) {
+    return schema;
   }
 
   let tableSchemas: string[] = [];
   if (type === "sql") {
-    tableSchemas = splitSchemaByTableCreation(rawSchema);
+    tableSchemas = splitSchemaByTableCreation(schema);
   } else if (type === "graphql") {
-    tableSchemas = TableTranslator.translate(rawSchema, clickhouseBuilder);
+    tableSchemas = TableTranslator.translate(schema, clickhouseBuilder);
   }
 
   logger.info(`Found ${tableSchemas.length} table(s)`);
@@ -39,11 +39,11 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 //    b. remote file
 //   2. body (as raw sql)
 async function getSchemaFromRequest(req: Request): Promise<Response | string> {
-  const url = new URL(req.url);
-  const schemaUrl = url.searchParams.get("schema-url");
+  try {
+    const url = new URL(req.url);
+    const schemaUrl = url.searchParams.get("schema-url");
 
-  if (schemaUrl) {
-    try {
+    if (schemaUrl) {
       const file = Bun.file(schemaUrl);
       if (await file.exists()) {
         return file.text();
@@ -51,22 +51,17 @@ async function getSchemaFromRequest(req: Request): Promise<Response | string> {
 
       const response = await fetch(new URL(schemaUrl));
       return response.text();
-    } catch (e) {
-      logger.error(e);
-    } finally {
-      return BadRequest;
     }
+
+    const body = await req.text();
+    if (!body) {
+      return toText("missing body", 400);
+    }
+
+    return TableInitSchema.parse(body);
+  } catch (e) {
+    logger.error(e);
   }
 
-  const body = await req.text();
-  if (!body) {
-    return toText("missing body", 400);
-  }
-
-  const result = TableInitSchema.safeParse(body);
-  if (!result.success) {
-    return toText("Bad request: " + result.error.toString(), 400);
-  }
-
-  return body;
+  return BadRequest;
 }
