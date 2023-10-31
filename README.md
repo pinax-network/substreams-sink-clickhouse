@@ -60,6 +60,17 @@ The user **must** build custom [views](https://clickhouse.com/docs/en/guides/dev
 
 </details>
 
+<details>
+<summary><b>Argon2 authentication</b></summary>
+
+Password protected endpoints. Set `AUTH_KEY` in [`.env`](#environment-variables) to enable authentication.
+
+No `AUTH_KEY` will skip authentication checks.
+
+Generate a hash with [`POST http://localhost:3000/hash`](http://localhost:3000/#operations-Usage-post_hash) and set password in `Authorization` header: `Bearer <password>`.
+
+</details>
+
 ## Usage
 
 Swagger Docs available on [http://localhost:3000](http://localhost:3000).
