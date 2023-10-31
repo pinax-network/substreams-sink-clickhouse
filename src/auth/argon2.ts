@@ -9,7 +9,7 @@ export function beforeHandle(request: Request): Response | undefined {
   if (!password) return NoAuthorization;
 
   try {
-    if (!Bun.password.verifySync(password, config.authKey, "argon2id")) {
+    if (!Bun.password.verifySync(password, config.authKey)) {
       return Unauthorized;
     }
   } catch {
