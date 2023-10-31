@@ -1,6 +1,6 @@
 // https://bun.sh/guides/util/hash-a-password
 import { config } from "../config.js";
-import { InvalidRequest, NoAuthorization, Unauthorized, getBearer } from "./bearer.js";
+import { InvalidAuthRequest, NoAuthorization, Unauthorized, getBearer } from "./bearer.js";
 
 export function beforeHandle(request: Request): Response | undefined {
   if (!config.authKey) return;
@@ -13,6 +13,6 @@ export function beforeHandle(request: Request): Response | undefined {
       return Unauthorized;
     }
   } catch {
-    return InvalidRequest;
+    return InvalidAuthRequest;
   }
 }
