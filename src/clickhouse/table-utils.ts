@@ -25,5 +25,15 @@ export function getTableName(schema: string) {
 }
 
 export function augmentCreateTableStatement(statement: string, columns: string[]): string {
-  return statement;
+  if (columns.length === 0) {
+    return statement;
+  }
+
+  const [createSection] = statement.split("(");
+  const body = statement.replace(createSection, "").replace("(", "");
+
+  return `
+${createSection.trim()} (
+${columns.map((column) => ` ${column}, `).join("\n")}
+${body}`;
 }
