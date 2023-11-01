@@ -7,7 +7,8 @@ import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 import client from "./createClient.js";
 
-const queue = new PQueue({ concurrency: 1 });
+let timeLimitReached = true;
+const queue = new PQueue({ concurrency: 2 });
 
 // TO-DO: moves these to a separate file `src/clickhouse/stores.ts`
 const knownModuleHashes = new Set<string>();
@@ -15,7 +16,6 @@ const knownBlockId = new Set<string>();
 const knownBlockIdFinal = new Set<string>();
 const knownTables = new Map<string, boolean>();
 
-let nextUpdateTime: number = 0;
 let insertions: Record<
   "moduleHashes" | "finalBlocks" | "blocks" | "cursors",
   Array<Record<string, unknown>>
@@ -41,32 +41,16 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     handleEntityChange(change, metadata);
   }
 
-  // Limit the insertion batches to a maximum size
-  if (
-    insertions.moduleHashes.length > config.maxBufferSize ||
-    insertions.finalBlocks.length > config.maxBufferSize ||
-    insertions.blocks.length > config.maxBufferSize
-  ) {
-    queue.add(
-      () =>
-        new Promise((resolve) => {
-          const waitTime = nextUpdateTime - new Date().getTime();
-          setTimeout(resolve, waitTime);
-        })
-    );
-
-    // Wait for the next insertion window before continuing
-    await queue.onEmpty();
+  if (batchSizeLimitReached()) {
+    // Wait for the next insertion window
+    await queue.onIdle();
   }
 
-  // Insert the current batch
-  if (new Date().getTime() > nextUpdateTime) {
+  if (timeLimitReached) {
     // If the previous batch is not fully inserted, wait for it to be.
-    await queue.onEmpty();
+    await queue.onIdle();
 
     const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
-
-    nextUpdateTime = new Date().getTime() + config.insertionDelay;
     insertions = {
       entityChanges: {},
       moduleHashes: [],
@@ -74,6 +58,12 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
       cursors: [],
       blocks: [],
     };
+
+    // Plan the next insertion in `config.insertionDelay` ms
+    timeLimitReached = false;
+    queue
+      .add(() => new Promise((resolve) => setTimeout(resolve, config.insertionDelay)))
+      .then(() => (timeLimitReached = true));
 
     // Start an async job to insert every record stored in the current batch.
     // This job should be finished by the time the next batch comes along.
@@ -118,6 +108,14 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 
   logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length}`);
   return new Response("OK");
+}
+
+function batchSizeLimitReached() {
+  return (
+    insertions.moduleHashes.length >= config.maxBufferSize ||
+    insertions.finalBlocks.length >= config.maxBufferSize ||
+    insertions.blocks.length >= config.maxBufferSize
+  );
 }
 
 // Module Hashes index
