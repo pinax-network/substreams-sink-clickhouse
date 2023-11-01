@@ -23,3 +23,7 @@ export function getTableName(schema: string) {
     .reverse()[0] // Keep only the last part: 'TableName'
     .trim();
 }
+
+export function augmentCreateTableStatement(statement: string, columns: string[]): string {
+  return statement;
+}

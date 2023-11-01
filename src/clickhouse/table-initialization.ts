@@ -1,6 +1,6 @@
 import { logger } from "../logger.js";
 import client from "./createClient.js";
-import { getTableName } from "./table-utils.js";
+import { augmentCreateTableStatement, getTableName } from "./table-utils.js";
 import tables from "./tables/index.js";
 
 export function initializeDefaultTables(): Promise<unknown> {
@@ -12,11 +12,14 @@ export function initializeDefaultTables(): Promise<unknown> {
   );
 }
 
+const extraColumns = [
+  "id          String",
+  "chain       LowCardinality(String)",
+  "block_id    FixedString(64)",
+  "module_hash FixedString(40)",
+];
+
 const metadataQueries = (tableName: string) => [
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS id           String;`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS block_id     FixedString(64);`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS module_hash  FixedString(40);`,
-  `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS chain        LowCardinality(String);`,
   `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS manifest_index (chain, module_hash) TYPE minmax`,
   `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS block_index (chain, block_id) TYPE minmax`,
 ];
@@ -29,7 +32,9 @@ export async function initializeTables(tableSchemas: string[]): Promise<void> {
       const tableName = getTableName(schema);
       logger.info(`Executing '${tableName}'`);
 
-      await client.command({ query: schema });
+      const augmentedSchema = augmentCreateTableStatement(schema, extraColumns);
+      await client.command({ query: augmentedSchema });
+
       for (const query of metadataQueries(tableName)) {
         await client.command({ query });
       }
