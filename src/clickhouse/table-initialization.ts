@@ -43,7 +43,7 @@ export async function initializeTables(tableSchemas: string[]): Promise<Array<st
     }
   } catch (err) {
     logger.error("Could not initialize the tables.");
-    logger.error("Request: " + tableSchemas);
+    logger.error("Request: " + executedSchemas);
     logger.error(err);
     throw err;
   }
