@@ -23,3 +23,4 @@ const app = Bun.serve({
 });
 
 logger.info(`Server listening on http://${app.hostname}:${app.port}`);
+if ( config.authKey ) logger.info(`Auth Key: ${config.authKey}`)
