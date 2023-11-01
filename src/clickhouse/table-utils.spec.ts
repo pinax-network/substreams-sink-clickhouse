@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { getTableName, splitSchemaByTableCreation } from "./table-utils.js";
+import {
+  augmentCreateTableStatement,
+  getTableName,
+  splitSchemaByTableCreation,
+} from "./table-utils.js";
 
 test("splitSchemaByTableCreation", () => {
   const schema = `
@@ -57,4 +61,45 @@ test("getTableName", () => {
 
   const tableName = getTableName(differentName);
   expect(tableName).toBe("finishes_with_on");
+});
+
+test("augmentCreateTableStatement", () => {
+  const queries = [
+    {
+      input: `create table foo (id UInt32) engine = MergeTree order by ()`,
+      expectedToInclude: ["create table foo (", ") engine = MergeTree order by ()"],
+    },
+    {
+      input: `create table default.foo (str String) engine = MergeTree order by ()`,
+      expectedToInclude: ["create table default.foo (", ") engine = MergeTree order by ()"],
+    },
+    {
+      input: `CREATE TABLE foo ON cluster (id FixedString(12)) ORDER BY ()`,
+      expectedToInclude: ["CREATE TABLE foo ON cluster (", ") ORDER BY ()"],
+    },
+  ];
+
+  for (const { input, expectedToInclude } of queries) {
+    // test 1
+    let augmentedTable = augmentCreateTableStatement(input, []);
+    expect(augmentedTable).toBe(input);
+    for (const expected of expectedToInclude) {
+      expect(augmentedTable).toInclude(expected);
+    }
+
+    // test 2
+    augmentedTable = augmentCreateTableStatement(input, ["test UInt128"]);
+    expect(augmentedTable).toInclude(" test UInt128, ");
+    for (const expected of expectedToInclude) {
+      expect(augmentedTable).toInclude(expected);
+    }
+
+    // test 3
+    augmentedTable = augmentCreateTableStatement(input, ["test UInt128", "test2 FixedString(10)"]);
+    expect(augmentedTable).toInclude(" test UInt128, ");
+    expect(augmentedTable).toInclude(" test2 FixedString(10), ");
+    for (const expected of expectedToInclude) {
+      expect(augmentedTable).toInclude(expected);
+    }
+  }
 });

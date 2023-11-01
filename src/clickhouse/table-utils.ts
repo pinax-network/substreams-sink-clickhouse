@@ -23,3 +23,17 @@ export function getTableName(schema: string) {
     .reverse()[0] // Keep only the last part: 'TableName'
     .trim();
 }
+
+export function augmentCreateTableStatement(statement: string, columns: string[]): string {
+  if (columns.length === 0) {
+    return statement;
+  }
+
+  const [createSection] = statement.split("(");
+  const body = statement.replace(createSection, "").replace("(", "");
+
+  return `
+${createSection.trim()} (
+${columns.map((column) => ` ${column}, `).join("\n")}
+${body}`;
+}
