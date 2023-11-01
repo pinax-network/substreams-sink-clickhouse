@@ -66,7 +66,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
       .then(() => (timeLimitReached = true));
 
     // Start an async job to insert every record stored in the current batch.
-    // This job should be finished by the time the next batch comes along.
+    // This job will be awaited before starting the next batch.
     queue.add(async () => {
       if (moduleHashes.length > 0) {
         await client.insert({
