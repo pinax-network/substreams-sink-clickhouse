@@ -1,10 +1,13 @@
 import { getValuesInEntityChange } from "@substreams/sink-entity-changes";
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
+import PQueue from "p-queue";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 import client from "./createClient.js";
+
+const queue = new PQueue({ concurrency: 1 });
 
 // TO-DO: moves these to a separate file `src/clickhouse/stores.ts`
 const knownModuleHashes = new Set<string>();
@@ -13,7 +16,6 @@ const knownBlockIdFinal = new Set<string>();
 const knownTables = new Map<string, boolean>();
 
 let nextUpdateTime: number = 0;
-let promise: Promise<unknown> = Promise.resolve();
 let insertions: Record<
   "moduleHashes" | "finalBlocks" | "blocks" | "cursors",
   Array<Record<string, unknown>>
@@ -39,17 +41,28 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     handleEntityChange(change, metadata);
   }
 
+  // Limit the insertion batches to a maximum size
   if (
     insertions.moduleHashes.length > config.maxBufferSize ||
     insertions.finalBlocks.length > config.maxBufferSize ||
     insertions.blocks.length > config.maxBufferSize
   ) {
-    const waitTime = nextUpdateTime - new Date().getTime();
-    await new Promise((resolve) => setTimeout(resolve, waitTime));
+    queue.add(
+      () =>
+        new Promise((resolve) => {
+          const waitTime = nextUpdateTime - new Date().getTime();
+          setTimeout(resolve, waitTime);
+        })
+    );
+
+    // Wait for the next insertion window before continuing
+    await queue.onEmpty();
   }
 
+  // Insert the current batch
   if (new Date().getTime() > nextUpdateTime) {
-    await promise;
+    // If the previous batch is not fully inserted, wait for it to be.
+    await queue.onEmpty();
 
     const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
 
@@ -62,7 +75,9 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
       blocks: [],
     };
 
-    promise = new Promise<void>(async (resolve) => {
+    // Start an async job to insert every record stored in the current batch.
+    // This job should be finished by the time the next batch comes along.
+    queue.add(async () => {
       if (moduleHashes.length > 0) {
         await client.insert({
           values: moduleHashes,
@@ -98,8 +113,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
           }
         }
       }
-
-      resolve();
     });
   }
 
