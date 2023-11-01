@@ -1,5 +1,6 @@
 // https://bun.sh/guides/util/hash-a-password
 import { config } from "../config.js";
+import { logger } from "../logger.js";
 import { InvalidAuthRequest, NoAuthorization, Unauthorized, getBearer } from "./bearer.js";
 
 export function beforeHandle(request: Request): Response | undefined {
@@ -12,7 +13,8 @@ export function beforeHandle(request: Request): Response | undefined {
     if (!Bun.password.verifySync(password, config.authKey)) {
       return Unauthorized;
     }
-  } catch {
+  } catch (e: any) {
+    logger.error(e);
     return InvalidAuthRequest;
   }
 }
