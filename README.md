@@ -71,6 +71,17 @@ Generate a hash with [`POST http://localhost:3000/hash`](http://localhost:3000/#
 
 </details>
 
+<details>
+<summary><b>Batch insertions</b></summary>
+
+While the data coming from `substreams-sink-webhook` is fast, it is not suited to be directly inserted into ClickHouse. The sink receives many entity changes per second (> 100/s) but [ClickHouse is designed to handle one insertion per second](https://clickhouse.com/docs/en/cloud/bestpractices/bulk-inserts#:~:text=Regardless%20of%20the%20size%20of,one%20insert%20query%20per%20second.). Therefore, the entity changes are locally batched before being sent to ClickHouse. This behavior can be customized via the `--max-buffer-size` and `--insertion-delay` flags (See [usage](#usage)).
+
+The data is buffered in memory while the insertion logic is handled by a [p-queue](https://github.com/sindresorhus/p-queue). The control flow for any incoming entity change is described by the following diagram.
+
+<img src="./docs/handle-sink-request-queue-flow.png" style="max-width: 400px;">
+
+</details>
+
 ## Usage
 
 Swagger Docs available on [http://localhost:3000](http://localhost:3000).
