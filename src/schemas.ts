@@ -10,7 +10,7 @@ export const oneOrZero = z.coerce.number().pipe(z.literal(0).or(z.literal(1)));
 
 export const ConfigSchema = z.object({
   publicKey: z.string(),
-  authKey: z.optional(z.string()),
+  authKey: z.optional(z.string().transform((str) => str.replaceAll("\\$", "$"))),
   port: positiveNumber,
   verbose: boolean,
   host: z.string(),
