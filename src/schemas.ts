@@ -20,8 +20,8 @@ export const ConfigSchema = z.object({
   password: z.string(),
   asyncInsert: oneOrZero,
   waitForAsyncInsert: oneOrZero,
-  queueLimit: positiveNumber,
-  queueConcurrency: positiveNumber,
+  maxBufferSize: positiveNumber,
+  insertionDelay: positiveNumber,
 });
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 

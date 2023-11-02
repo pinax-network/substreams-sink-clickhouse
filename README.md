@@ -92,8 +92,8 @@ Options:
   --password <string>           Password associated with the specified username (default: "", env: PASSWORD)
   --async-insert <number>       https://clickhouse.com/docs/en/operations/settings/settings#async-insert (choices: "0", "1", default: 1, env: ASYNC_INSERT)
   --wait-for-insert <boolean>   https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert (choices: "0", "1", default: 0, env: WAIT_FOR_INSERT)
-  --queue-limit <number>        Insert delay to each response when the pqueue exceeds this value (default: 10, env: QUEUE_LIMIT)
-  --queue-concurrency <number>  https://github.com/sindresorhus/p-queue#concurrency (default: 10, env: QUEUE_CONCURRENCY)
+  --max-buffer-size <number>    Maximum insertion batch size (default: 10_000, env: MAX_BUFFER_SIZE)
+  --insertion-delay <number>    Delay between batch insertions (in ms) (default: 2000, env: INSERTION_DELAY)
   -h, --help                    display help for command
 ```
 
@@ -119,8 +119,8 @@ USERNAME=default
 PASSWORD=
 
 # Sink
-QUEUE_LIMIT=10
-QUEUE_CONCURRENCY=10
+MAX_BUFFER_SIZE=10000
+INSERTION_DELAY=2000
 VERBOSE=true
 ```
 
