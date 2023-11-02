@@ -19,11 +19,6 @@ const extraColumns = [
   "module_hash FixedString(40)",
 ];
 
-const metadataQueries = (tableName: string) => [
-  `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS manifest_index (chain, module_hash) TYPE minmax`,
-  `ALTER TABLE ${tableName} ADD INDEX IF NOT EXISTS block_index (chain, block_id) TYPE minmax`,
-];
-
 export async function initializeTables(tableSchemas: string[]): Promise<Array<string>> {
   const executedSchemas = [];
   logger.info("Executing schema");
@@ -37,9 +32,6 @@ export async function initializeTables(tableSchemas: string[]): Promise<Array<st
       executedSchemas.push(augmentedSchema);
 
       await client.command({ query: augmentedSchema });
-      for (const query of metadataQueries(tableName)) {
-        await client.command({ query });
-      }
     }
   } catch (err) {
     logger.error("Could not initialize the tables.");

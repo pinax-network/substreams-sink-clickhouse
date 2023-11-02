@@ -196,14 +196,13 @@ erDiagram
 
 **Indexes**
 
-| Table          | Fields                                       |
-| -------------- | -------------------------------------------- |
-| USER_DIMENSION | `(chain, module_hash)` `(chain, block_id)`   |
-| blocks         | `(block_id, block_number, chain, timestamp)` |
-| module_hashes  | `module_hash`                                |
-| cursors        | `(cursor, module_hash, block_id)`            |
-| unparsed_json  | `(source, chain, module_hash, block_id)`     |
-| final_blocks   | `block_id`                                   |
+| Table         | Fields                                       |
+| ------------- | -------------------------------------------- |
+| blocks        | `(block_id, block_number, chain, timestamp)` |
+| module_hashes | `module_hash`                                |
+| cursors       | `(cursor, module_hash, block_id)`            |
+| unparsed_json | `(source, chain, module_hash, block_id)`     |
+| final_blocks  | `block_id`                                   |
 
 ### Database initialization
 
