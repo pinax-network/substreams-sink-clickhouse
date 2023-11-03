@@ -167,16 +167,26 @@ async function handleEntityChange(
   change: EntityChange,
   metadata: { clock: Clock; manifest: Manifest }
 ) {
+  let table = change.entity;
+  let values = getValuesInEntityChange(change);
   const tableExists = await existsTable(change.entity);
 
-  let values = getValuesInEntityChange(change);
   const jsonData = JSON.stringify(values);
-  const table = tableExists ? change.entity : "unparsed_json";
-  logger.info(["handleEntityChange", table, change.operation, change.id, JSON.stringify(metadata.clock), JSON.stringify(metadata.manifest), jsonData].join(" | "));
+  const clock = JSON.stringify(metadata.clock);
+  const manifest = JSON.stringify(metadata.manifest);
 
   if (!tableExists) {
+    if (!config.allowUnparsed) {
+      throw new Error(
+        `could not find table '${change.entity}'. Did you mean to store unparsed data?`
+      );
+    }
+
+    table = "unparsed_json";
     values = { raw_data: jsonData, source: change.entity };
   }
+
+  logger.info(["handleEntityChange", table, change.operation, change.id, clock, manifest, jsonData].join(" | "));
 
   switch (change.operation) {
     case "OPERATION_CREATE":

@@ -56,7 +56,7 @@ They are converted to SQL following these rules before being executed. The avail
 
 No schema is required to store data in ClickHouse. Everything can be stored in `unparsed_json` (see [database structure](#database-structure)).
 
-The user **must** build custom [views](https://clickhouse.com/docs/en/guides/developer/cascading-materialized-views) to transform the data according to their needs. Further details are available in [ClickHouse's documentation](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views).
+The user **should** build custom [views](https://clickhouse.com/docs/en/guides/developer/cascading-materialized-views) to transform the data according to their needs. Further details are available in [ClickHouse's documentation](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views). It is also suggested to clean the `unparsed_json` table once it has been processed.
 
 </details>
 
@@ -105,6 +105,7 @@ Options:
   --wait-for-insert <boolean>   https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert (choices: "0", "1", default: 0, env: WAIT_FOR_INSERT)
   --max-buffer-size <number>    Maximum insertion batch size (default: 10_000, env: MAX_BUFFER_SIZE)
   --insertion-delay <number>    Delay between batch insertions (in ms) (default: 2000, env: INSERTION_DELAY)
+  --allow-unparsed <boolean>    Enable storage in 'unparsed_json' table (default: false, env: ALLOW_UNPARSED)
   -h, --help                    display help for command
 ```
 

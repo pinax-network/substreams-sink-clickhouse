@@ -22,6 +22,7 @@ export const ConfigSchema = z.object({
   waitForAsyncInsert: oneOrZero,
   maxBufferSize: positiveNumber,
   insertionDelay: positiveNumber,
+  allowUnparsed: boolean,
 });
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 
