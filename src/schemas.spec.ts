@@ -20,6 +20,7 @@ const config = ConfigSchema.parse({
   asyncInsert: "1",
   maxBufferSize: "10000",
   insertionDelay: "2000",
+  allowUnparsed: true,
 });
 
 describe("ConfigSchema", () => {
@@ -34,4 +35,5 @@ describe("ConfigSchema", () => {
     ));
   test("waitForAsyncInsert", () => expect(config.waitForAsyncInsert).toBe(0));
   test("asyncInsert", () => expect(config.asyncInsert).toBe(1));
+  test("allowUnparsed", () => expect(config.allowUnparsed).toBeTrue());
 });
