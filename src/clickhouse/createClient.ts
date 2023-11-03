@@ -8,7 +8,6 @@ function createClient(readonly = false) {
     clickhouse_settings: {
       wait_for_async_insert: config.waitForAsyncInsert, // 0
       async_insert: config.asyncInsert, // 1
-      allow_experimental_object_type: 1,
       readonly: readonly ? "1" : "0",
     },
     application: APP_NAME,
