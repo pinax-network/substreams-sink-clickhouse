@@ -56,7 +56,32 @@ They are converted to SQL following these rules before being executed. The avail
 
 No schema is required to store data in ClickHouse. Everything can be stored in `unparsed_json` (see [database structure](#database-structure)).
 
-The user **should** build custom [views](https://clickhouse.com/docs/en/guides/developer/cascading-materialized-views) to transform the data according to their needs. Further details are available in [ClickHouse's documentation](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views). It is also suggested to clean the `unparsed_json` table once it has been processed.
+The user **must** build custom [views](https://clickhouse.com/docs/en/guides/developer/cascading-materialized-views) to transform the data according to their needs. Further details are available in [ClickHouse's documentation](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views).
+
+### Example:
+
+This `MaterializedView` will store every key found in the substreams provided data in the `substreams_keys` table.
+
+```sql
+CREATE TABLE substreams_keys (
+	source String,
+	keys   Array(String),
+)
+ENGINE MergeTree
+ORDER BY (source)
+```
+
+```sql
+CREATE MATERIALIZED VIEW substreams_keys_mv
+TO substreams_keys
+AS
+SELECT source, JSONExtractKeys(raw_data) AS keys
+FROM unparsed_json
+```
+
+```bash
+substreams-sink-clickhouse --allow-unparsed true
+```
 
 </details>
 
@@ -217,7 +242,7 @@ Use `POST /init` on [http://localhost:3000](http://localhost:3000).
 
 ### Schema initialization
 
-_This step can be skipped. If so, the data will be stored as-is in the `unparsed_json` table. It should then be parsed by the user with ClickHouse's tools. See this [article](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views)._
+_This step can be skipped. If so, the data will be stored as-is in the `unparsed_json` table. It should then be parsed by the user with ClickHouse's tools. See this [article](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views) and [features/no-schema](#features)._
 
 Initializes the database according to a SQL or a GraphQL file. See [example schema files](#schema-examples).
 
