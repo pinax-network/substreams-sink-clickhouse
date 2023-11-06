@@ -13,11 +13,9 @@ export async function findLatestCursor(req: Request): Promise<Response> {
     const { table, chain } = parametersResult;
 
     const query = `
-    SELECT cursors.cursor AS cursor, timestamp 
-    FROM cursors
-    JOIN ${table} ON ${table}.block_id = cursors.block_id
-    JOIN blocks   ON ${table}.block_id = blocks.block_id
-    WHERE ${table}.chain = '${chain}'
+    SELECT cursor, timestamp 
+    FROM ${table} 
+    WHERE chain = '${chain}'
     ORDER BY timestamp DESC
     LIMIT 1`;
 
