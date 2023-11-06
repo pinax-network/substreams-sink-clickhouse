@@ -222,6 +222,7 @@ erDiagram
         cursor        String
         module_hash   FixedString(40)
         block_id      FixedString(64)
+        block_number  String
         chain         LowCardinality(String)
     }
 ```
