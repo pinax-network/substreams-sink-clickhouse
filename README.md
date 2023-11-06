@@ -180,18 +180,24 @@ erDiagram
     USER_DIMENSION {
         user_data unknown
         id String
-        block_id FixedString(64)
-        module_hash FixedString(40)
         chain LowCardinality(String)
-    }
+        block_id FixedString(64)
+        block_number UInt32
+        module_hash FixedString(40)
+        timestamp DateTime(3_UTC)
+        cursor String
+   }
 
     unparsed_json {
-        raw_data JSON
+        raw_data String
         source LowCardinality(String)
         id String
-        block_id FixedString(64)
-        module_hash FixedString(40)
         chain LowCardinality(String)
+        block_id FixedString(64)
+        block_number UInt32
+        module_hash FixedString(40)
+        timestamp DateTime(3_UTC)
+        cursor String
     }
 
     blocks {
