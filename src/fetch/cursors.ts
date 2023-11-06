@@ -42,33 +42,37 @@ export async function findCursorsForMissingBlocks(req: Request): Promise<Respons
   try {
     const { table, chain } = parametersResult;
 
+    const moduleHash = await getModuleHash(table, chain);
+    if (!moduleHash) {
+      throw new Error("Could not find module hash");
+    }
+
     // This query finds every block that does not have a next block (beginning of a missing range).
     // It then pairs it with the first existing block after it (end of missing range).
     // If the start block is the last one in the database (max value), it is ignored.
-    // When every range is found, they are joined with the specified ${table} and cursors,
+    // When every range is found, they are joined with the 'cursors' table
     // to find which cursor is associated with the min and max boundaries.
+    // The module_hash and the chain are used to determine the correct values to use.
     const query = `
-SELECT from AS from_block_number, c1.cursor AS from_cursor, to AS to_block_number, c2.cursor AS to_cursor 
-FROM ( 
-    SELECT b1.block_number AS from, MIN(b2.block_number) AS to
-    FROM blocks b1, blocks b2, (
+SELECT block_ranges.from AS from_block_number, c1.cursor AS from_cursor, block_ranges.to AS to_block_number, c2.cursor AS to_cursor
+FROM (
+    SELECT c1.block_number AS from, MIN(c2.block_number) AS to
+    FROM cursors c1, cursors c2, (
         SELECT MAX(block_number) AS block_number
-        FROM blocks
-        WHERE chain = '${chain}'
+        FROM cursors
+        WHERE chain = '${chain}' AND module_hash = '${moduleHash}'
     ) AS maximum
-    WHERE b1.block_number + 1 NOT IN (SELECT block_number FROM blocks WHERE chain = '${chain}')
-        AND b1.block_number <> maximum.block_number
-        AND b1.chain = '${chain}'
-        AND b1.chain = '${chain}'
-        AND b2.block_number > b1.block_number
-    GROUP BY b1.block_number 
+    WHERE c1.block_number + 1 NOT IN (SELECT block_number FROM cursors WHERE chain = '${chain}' AND module_hash = '${moduleHash}')
+    AND c1.chain = '${chain}'
+    AND c2.chain = '${chain}'
+    AND c1.block_number <> maximum.block_number
+    AND c2.block_number > c1.block_number
+    AND c1.module_hash = '${moduleHash}'
+    AND c2.module_hash = '${moduleHash}'
+    GROUP BY c1.block_number
 ) AS block_ranges
-JOIN blocks   b1 ON b1.block_number = block_ranges.from AND b1.chain = '${chain}'
-JOIN blocks   b2 ON b2.block_number = block_ranges.to   AND b2.chain = '${chain}'
-JOIN ${table} t1 ON t1.block_id = b1.block_id           AND t1.chain = '${chain}'
-JOIN ${table} t2 ON t2.block_id = b2.block_id           AND t2.chain = '${chain}'
-JOIN cursors  c1 ON c1.block_id = t1.block_id           AND c1.chain = '${chain}'
-JOIN cursors  c2 ON c2.block_id = t2.block_id           AND c2.chain = '${chain}'`;
+JOIN cursors c1 ON block_ranges.from = c1.block_number AND c1.chain = '${chain}' AND c1.module_hash = '${moduleHash}'
+JOIN cursors c2 ON block_ranges.to   = c2.block_number AND c2.chain = '${chain}' AND c2.module_hash = '${moduleHash}'`;
 
     const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
     const data = await response.json<
@@ -88,8 +92,8 @@ JOIN cursors  c2 ON c2.block_id = t2.block_id           AND c2.chain = '${chain}
     return toJSON(dto);
   } catch (err) {
     logger.error(err);
-    return BadRequest;
   }
+  return BadRequest;
 }
 
 async function verifyParameters(
@@ -116,4 +120,11 @@ async function verifyParameters(
   }
 
   return { chain, table };
+}
+
+async function getModuleHash(table: string, chain: string): Promise<string | null> {
+  const query = `SELECT module_hash FROM ${table} WHERE chain = '${chain}'`;
+  const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
+  const data = await response.json<Array<{ module_hash: string }>>();
+  return data[0]?.module_hash ?? null;
 }

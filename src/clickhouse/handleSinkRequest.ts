@@ -156,6 +156,7 @@ function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
   insertions.cursors.push({
     cursor,
     block_id: clock.id,
+    block_number: clock.number,
     chain: manifest.chain,
     module_hash: manifest.moduleHash,
   });

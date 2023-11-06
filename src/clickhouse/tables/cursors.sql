@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS cursors (
     cursor        String,
     module_hash   FixedString(40),
     block_id      FixedString(64),
+    block_number  UInt32,
     chain         LowCardinality(String),
 )
 ENGINE = ReplacingMergeTree
