@@ -13,10 +13,13 @@ export function initializeDefaultTables(): Promise<unknown> {
 }
 
 const extraColumns = [
-  "id          String",
-  "chain       LowCardinality(String)",
-  "block_id    FixedString(64)",
-  "module_hash FixedString(40)",
+  "id           String",
+  "chain        LowCardinality(String)",
+  "block_id     FixedString(64)",
+  "block_number UInt32",
+  "module_hash  FixedString(40)",
+  "timestamp    DateTime64(3, 'UTC')",
+  "cursor       String",
 ];
 
 export async function initializeTables(tableSchemas: string[]): Promise<Array<string>> {

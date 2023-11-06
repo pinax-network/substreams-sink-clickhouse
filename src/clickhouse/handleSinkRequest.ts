@@ -96,11 +96,9 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
         });
       }
 
-      if (Object.keys(entityChanges).length > 0) {
-        for (const [table, values] of Object.entries(entityChanges)) {
-          if (values.length > 0) {
-            await client.insert({ table, values, format: "JSONStringsEachRow" });
-          }
+      for (const [table, values] of Object.entries(entityChanges)) {
+        if (values.length > 0) {
+          await client.insert({ table, values, format: "JSONEachRow" });
         }
       }
     });
@@ -165,7 +163,7 @@ function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
 
 async function handleEntityChange(
   change: EntityChange,
-  metadata: { clock: Clock; manifest: Manifest }
+  metadata: { clock: Clock; manifest: Manifest; cursor: string }
 ) {
   let table = change.entity;
   let values = getValuesInEntityChange(change);
@@ -208,13 +206,16 @@ async function handleEntityChange(
 function insertEntityChange(
   table: string,
   values: Record<string, unknown>,
-  metadata: { id: string; clock: Clock; manifest: Manifest }
+  metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string }
 ) {
   // EntityChange
   values["id"] = metadata.id; // Entity ID
   values["block_id"] = metadata.clock.id; // Block Index
+  values["block_number"] = metadata.clock.number; // Block number
   values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
   values["chain"] = metadata.manifest.chain; // Chain Index
+  values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
+  values["cursor"] = metadata.cursor; // Block cursor for current substreams
 
   prometheus.entity_changes_inserted.inc();
   insertions.entityChanges[table] ??= [];
