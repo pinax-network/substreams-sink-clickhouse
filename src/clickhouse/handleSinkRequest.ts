@@ -6,7 +6,8 @@ import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 import { sqlite } from "../sqlite/sqlite.js";
-import { existsTable, isKnownModuleHash } from "./store.js";
+import client from "./createClient.js";
+import { existsTable } from "./store.js";
 
 let bufferedItems = 0;
 let timeLimitReached = true;
@@ -16,21 +17,17 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   prometheus.sink_requests?.inc();
   const { manifest, clock, cursor } = metadata;
 
-  sqlite.start();
-
   // Indexes
   bufferedItems++;
-  handleModuleHashes(manifest);
-  handleBlocks(manifest, clock);
-  handleFinalBlocks(manifest, clock);
-  handleCursors(manifest, clock, cursor);
+  // handleModuleHashes(manifest);
+  // handleBlocks(manifest, clock);
+  // handleFinalBlocks(manifest, clock);
+  // handleCursors(manifest, clock, cursor);
 
   // EntityChanges
   for (const change of data.entityChanges) {
     handleEntityChange(change, metadata);
   }
-
-  sqlite.stop();
 
   if (batchSizeLimitReached()) {
     // Wait for the next insertion window
@@ -49,45 +46,79 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 
     // Start an async job to insert every record stored in the current batch.
     // This job will be awaited before starting the next batch.
-    queue.add(async () => {
+    queue.add(async () =>
       sqlite.commitBuffer(async (data) => {
-        console.log(Object.keys(data).length);
-      });
-      return Promise.resolve();
+        console.log(data.length);
 
-      // TODO: load data from sqlite
-      // TODO: store the results back into Clickhouse
-      //
-      // if (moduleHashes.length > 0) {
-      //   await client.insert({
-      //     values: moduleHashes,
-      //     table: "module_hashes",
-      //     format: "JSONEachRow",
-      //   });
-      // }
-      // if (finalBlocks.length > 0) {
-      //   await client.insert({
-      //     values: finalBlocks,
-      //     table: "final_blocks",
-      //     format: "JSONEachRow",
-      //   });
-      // }
-      // if (blocks.length > 0) {
-      //   await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
-      // }
-      // if (cursors.length > 0) {
-      //   await client.insert({
-      //     values: cursors,
-      //     table: "cursors",
-      //     format: "JSONEachRow",
-      //   });
-      // }
-      // for (const [table, values] of Object.entries(entityChanges)) {
-      //   if (values.length > 0) {
-      //     await client.insert({ table, values, format: "JSONEachRow" });
-      //   }
-      // }
-    });
+        const blocks = Array(data.length);
+        const moduleHashes = Array(data.length);
+        const cursors = Array(data.length);
+        const entityChanges: Record<string, Array<string>> = {};
+        const finalBlocks = [];
+
+        let i = 0;
+        for (const record of data) {
+          blocks[i] = {
+            block_id: record.block_id,
+            block_number: record.block_number,
+            chain: record.chain,
+            timestamp: record.timestamp,
+          };
+          moduleHashes[i] = {
+            module_hash: record.module_hash,
+            module_name: record.module_name,
+            chain: record.type,
+            type: record.type,
+          };
+          cursors[i] = {
+            cursor: record.cursor,
+            module_hash: record.module_hash,
+            block_id: record.block_id,
+            block_number: record.block_number,
+            chain: record.chain,
+          };
+
+          entityChanges[record.source] ??= [];
+          entityChanges[record.source].push(JSON.parse(record.entity_changes));
+
+          if (record.is_final) {
+            finalBlocks[i] = { block_id: record.block_id };
+          }
+
+          i++;
+        }
+
+        if (moduleHashes.length > 0) {
+          await client.insert({
+            values: moduleHashes,
+            table: "module_hashes",
+            format: "JSONEachRow",
+          });
+        }
+        if (finalBlocks.length > 0) {
+          await client.insert({
+            values: finalBlocks,
+            table: "final_blocks",
+            format: "JSONEachRow",
+          });
+        }
+        if (blocks.length > 0) {
+          await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
+        }
+        if (cursors.length > 0) {
+          await client.insert({
+            values: cursors,
+            table: "cursors",
+            format: "JSONEachRow",
+          });
+        }
+        for (const [table, values] of Object.entries(entityChanges)) {
+          if (values.length > 0) {
+            await client.insert({ table, values, format: "JSONEachRow" });
+          }
+        }
+      })
+    );
   }
 
   logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length}`);
@@ -98,39 +129,39 @@ function batchSizeLimitReached() {
   return bufferedItems >= config.maxBufferSize;
 }
 
-// Module Hashes index
-function handleModuleHashes(manifest: Manifest) {
-  const { moduleHash, type, moduleName, chain } = manifest;
-  const moduleHashKey = `${moduleHash}-${chain}`;
+// // Module Hashes index
+// function handleModuleHashes(manifest: Manifest) {
+//   const { moduleHash, type, moduleName, chain } = manifest;
+//   const moduleHashKey = `${moduleHash}-${chain}`;
 
-  if (!isKnownModuleHash(moduleHashKey)) {
-    sqlite.insertModuleHash(moduleHash, moduleName, chain, type);
-  }
-}
+//   if (!isKnownModuleHash(moduleHashKey)) {
+//     sqlite.insertModuleHash(moduleHash, moduleName, chain, type);
+//   }
+// }
 
-// Final Block Index
-function handleFinalBlocks(manifest: Manifest, clock: Clock) {
-  if (manifest.finalBlockOnly) {
-    const block_id = clock.id;
-    sqlite.insertFinalBlock(block_id);
-  }
-}
+// // Final Block Index
+// function handleFinalBlocks(manifest: Manifest, clock: Clock) {
+//   if (manifest.finalBlockOnly) {
+//     const block_id = clock.id;
+//     sqlite.insertFinalBlock(block_id);
+//   }
+// }
 
-// Block Index
-function handleBlocks(manifest: Manifest, clock: Clock) {
-  const block_id = clock.id;
-  const block_number = clock.number;
-  const timestamp = Number(new Date(clock.timestamp));
-  const chain = manifest.chain;
+// // Block Index
+// function handleBlocks(manifest: Manifest, clock: Clock) {
+//   const block_id = clock.id;
+//   const block_number = clock.number;
+//   const timestamp = Number(new Date(clock.timestamp));
+//   const chain = manifest.chain;
 
-  sqlite.insertBlock(block_id, block_number, chain, timestamp);
-}
+//   sqlite.insertBlock(block_id, block_number, chain, timestamp);
+// }
 
-function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
-  const { moduleHash, chain } = manifest;
-  const { id: blockId, number: blockNumber } = clock;
-  sqlite.insertCursor(cursor, moduleHash, blockId, blockNumber, chain);
-}
+// function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
+//   const { moduleHash, chain } = manifest;
+//   const { id: blockId, number: blockNumber } = clock;
+//   sqlite.insertCursor(cursor, moduleHash, blockId, blockNumber, chain);
+// }
 
 async function handleEntityChange(
   change: EntityChange,
@@ -183,13 +214,26 @@ function insertEntityChange(
   values: Record<string, unknown>,
   metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string }
 ) {
-  sqlite.insertEntityChanges(
+  values["id"] = metadata.id; // Entity ID
+  values["block_id"] = metadata.clock.id; // Block Index
+  values["block_number"] = metadata.clock.number; // Block number
+  values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
+  values["chain"] = metadata.manifest.chain; // Chain Index
+  values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
+  values["cursor"] = metadata.cursor; // Block cursor for current substreams
+
+  sqlite.insert(
     JSON.stringify(values),
     table,
-    metadata.id,
+    metadata.manifest.chain,
     metadata.clock.id,
+    metadata.clock.number,
+    metadata.manifest.finalBlockOnly,
     metadata.manifest.moduleHash,
-    metadata.manifest.chain
+    metadata.manifest.moduleName,
+    metadata.manifest.type,
+    Number(new Date(metadata.clock.timestamp)),
+    metadata.cursor
   );
 
   prometheus.entity_changes_inserted.inc();

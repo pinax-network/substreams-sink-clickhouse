@@ -1,90 +1,66 @@
+import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
-import { tables } from "./tables/index.js";
+import tableSQL from "./table.sql";
 
-const insertions = {
-  blocks: "INSERT INTO blocks (batch_number, block_id, block_number, chain, timestamp) VALUES (?, ?, ?, ?, ?);",
-  cursors: "INSERT INTO cursors (batch_number, cursor, module_hash, block_id, block_number, chain) VALUES (?, ?, ?, ?, ?, ?);",
-  moduleHashes: "INSERT INTO module_hashes (batch_number, module_hash, module_name, chain, type) VALUES (?, ?, ?, ?, ?);",
-  finalBlocks: "INSERT INTO final_blocks (batch_number, block_id) VALUES (?, ?);",
-  entityChanges: "INSERT INTO entity_changes (batch_number, raw_data, source, id, block_id, module_hash, chain) VALUES (?, ?, ?, ?, ?, ?, ?);",
+type TableFields = {
+  batch_number: number;
+  entity_changes: string;
+  source: string;
+  chain: string;
+  block_id: string;
+  block_number: number;
+  is_final: boolean;
+  module_hash: string;
+  module_name: string;
+  type: string;
+  timestamp: number;
+  cursor: string;
 };
+
+const selectSQL = `SELECT * FROM data_buffer WHERE batch_number <= ?;`;
+const deleteSQL = `DELETE FROM data_buffer WHERE batch_number < ?;`;
+const insertSQL = `
+INSERT INTO data_buffer (
+  batch_number,
+  entity_changes, source,
+  chain, block_id, block_number, is_final,
+  module_hash, module_name, type,
+  timestamp, cursor
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+
+const tableSchema = await file(tableSQL).text();
 
 class SQLite {
   private db: Database;
   private batchNumber;
 
-  private blocksStatement: Statement;
-  private cursorsStatement: Statement;
-  private moduleHashStatement: Statement;
-  private finalBlocksStatement: Statement;
-  private entityChangesStatement: Statement;
+  private selectStatement: Statement<TableFields, [number]>;
+  private deleteStatement: Statement;
+  private insertStatement: Statement;
 
   public constructor() {
     this.db = new Database("buffer.sqlite");
     this.db.run("PRAGMA synchronous = OFF");
     this.db.run("PRAGMA journal_mode = MEMORY");
+
+    this.db.run(tableSchema);
+
     this.batchNumber = this.initialBatchNumber;
-
-    for (const table of tables) {
-      this.db.query(table).run();
-    }
-
-    this.blocksStatement = this.db.prepare(insertions.blocks);
-    this.cursorsStatement = this.db.prepare(insertions.cursors);
-    this.moduleHashStatement = this.db.prepare(insertions.moduleHashes);
-    this.finalBlocksStatement = this.db.prepare(insertions.finalBlocks);
-    this.entityChangesStatement = this.db.prepare(insertions.entityChanges);
+    this.selectStatement = this.db.prepare(selectSQL);
+    this.deleteStatement = this.db.prepare(deleteSQL);
+    this.insertStatement = this.db.prepare(insertSQL);
   }
 
-  public start() {
-    this.db.run("BEGIN TRANSACTION;");
+  public insert(entityChanges: string, source: string, chain: string, blockId: string, blockNumber: number, isFinal: boolean, moduleHash: string, moduleName: string, type: string, timestamp: number, cursor: string) {
+    this.insertStatement.run(this.batchNumber, entityChanges, source, chain, blockId, blockNumber, isFinal ? 1 : 0, moduleHash, moduleName, type, timestamp, cursor);
   }
 
-  public stop() {
-    if (this.db.inTransaction) {
-      this.db.run("END TRANSACTION;");
-    }
-  }
-
-  public insertBlock(blockId: string, blockNumber: number, chain: string, timestamp: number) {
-    this.blocksStatement.run(this.batchNumber, blockId, blockNumber, chain, timestamp);
-  }
-
-  public insertCursor(cursor: string, moduleHash: string, blockId: string, blockNumber: number, chain: string) {
-    this.cursorsStatement.run(this.batchNumber, cursor, moduleHash, blockId, blockNumber, chain);
-  }
-
-  public insertEntityChanges(data: string, source: string, id: string, blockId: string, moduleHash: string, chain: string) {
-    this.entityChangesStatement.run(this.batchNumber, data, source, id, blockId, moduleHash, chain);
-  }
-
-  public insertFinalBlock(blockId: string) {
-    this.finalBlocksStatement.run(this.batchNumber, blockId);
-  }
-
-  public insertModuleHash(moduleHash: string, moduleName: string, chain: string, type: string) {
-    this.moduleHashStatement.run(this.batchNumber, moduleHash, moduleName, chain, type);
-  }
-
-  public async commitBuffer(onData: (data: Record<string, unknown>) => Promise<void>) {
+  public async commitBuffer(onData: (data: TableFields[]) => Promise<void>) {
     this.batchNumber++;
 
-    const blocks = this.db.query("SELECT * FROM blocks WHERE batch_number <= ?").all(this.batchNumber);
-    const cursors = this.db.query("SELECT * FROM cursors WHERE batch_number <= ?").all(this.batchNumber);
-    const entityChanges = this.db.query("SELECT * FROM entity_changes WHERE batch_number <= ?").all(this.batchNumber);
-    const finalBlocks = this.db.query("SELECT * FROM final_blocks WHERE batch_number <= ?").all(this.batchNumber);
-    const moduleHashes = this.db.query("SELECT * FROM module_hashes WHERE batch_number <= ?").all(this.batchNumber);
-
-    console.log(blocks.length, cursors.length, entityChanges.length, finalBlocks.length, moduleHashes.length);
-
-    await onData({});
-
-    //  TODO: Delete commited batch :)
-    this.db.run("DELETE FROM blocks WHERE batch_number < " + this.batchNumber + ";");
-    this.db.run("DELETE FROM cursors WHERE batch_number < " + this.batchNumber + ";");
-    this.db.run("DELETE FROM entity_changes WHERE batch_number < " + this.batchNumber + ";");
-    this.db.run("DELETE FROM final_blocks WHERE batch_number < " + this.batchNumber + ";");
-    this.db.run("DELETE FROM module_hashes WHERE batch_number < " + this.batchNumber + ";");
+    const data = this.selectStatement.all(this.batchNumber);
+    await onData(data);
+    this.deleteStatement.run(this.batchNumber);
   }
 
   private get initialBatchNumber() {
