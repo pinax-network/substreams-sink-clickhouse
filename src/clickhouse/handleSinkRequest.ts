@@ -5,6 +5,7 @@ import { config } from "../config.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
+import { sqlite } from "../sqlite/sqlite.js";
 import client from "./createClient.js";
 
 let timeLimitReached = true;
@@ -15,17 +16,6 @@ const knownModuleHashes = new Set<string>();
 const knownBlockId = new Set<string>();
 const knownBlockIdFinal = new Set<string>();
 const knownTables = new Map<string, boolean>();
-
-let insertions: Record<
-  "moduleHashes" | "finalBlocks" | "blocks" | "cursors",
-  Array<Record<string, unknown>>
-> & { entityChanges: Record<string, unknown[]> } = {
-  entityChanges: {},
-  moduleHashes: [],
-  finalBlocks: [],
-  cursors: [],
-  blocks: [],
-};
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   prometheus.sink_requests?.inc();
@@ -50,14 +40,14 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     // If the previous batch is not fully inserted, wait for it to be.
     await queue.onIdle();
 
-    const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
-    insertions = {
-      entityChanges: {},
-      moduleHashes: [],
-      finalBlocks: [],
-      cursors: [],
-      blocks: [],
-    };
+    // const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
+    // insertions = {
+    //   entityChanges: {},
+    //   moduleHashes: [],
+    //   finalBlocks: [],
+    //   cursors: [],
+    //   blocks: [],
+    // };
 
     // Plan the next insertion in `config.insertionDelay` ms
     timeLimitReached = false;
@@ -68,39 +58,38 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     // Start an async job to insert every record stored in the current batch.
     // This job will be awaited before starting the next batch.
     queue.add(async () => {
-      if (moduleHashes.length > 0) {
-        await client.insert({
-          values: moduleHashes,
-          table: "module_hashes",
-          format: "JSONEachRow",
-        });
-      }
-
-      if (finalBlocks.length > 0) {
-        await client.insert({
-          values: finalBlocks,
-          table: "final_blocks",
-          format: "JSONEachRow",
-        });
-      }
-
-      if (blocks.length > 0) {
-        await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
-      }
-
-      if (cursors.length > 0) {
-        await client.insert({
-          values: cursors,
-          table: "cursors",
-          format: "JSONEachRow",
-        });
-      }
-
-      for (const [table, values] of Object.entries(entityChanges)) {
-        if (values.length > 0) {
-          await client.insert({ table, values, format: "JSONEachRow" });
-        }
-      }
+      // TODO: load data from sqlite
+      // TODO: store the results back into Clickhouse
+      //
+      // if (moduleHashes.length > 0) {
+      //   await client.insert({
+      //     values: moduleHashes,
+      //     table: "module_hashes",
+      //     format: "JSONEachRow",
+      //   });
+      // }
+      // if (finalBlocks.length > 0) {
+      //   await client.insert({
+      //     values: finalBlocks,
+      //     table: "final_blocks",
+      //     format: "JSONEachRow",
+      //   });
+      // }
+      // if (blocks.length > 0) {
+      //   await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
+      // }
+      // if (cursors.length > 0) {
+      //   await client.insert({
+      //     values: cursors,
+      //     table: "cursors",
+      //     format: "JSONEachRow",
+      //   });
+      // }
+      // for (const [table, values] of Object.entries(entityChanges)) {
+      //   if (values.length > 0) {
+      //     await client.insert({ table, values, format: "JSONEachRow" });
+      //   }
+      // }
     });
   }
 
@@ -108,11 +97,13 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   return new Response("OK");
 }
 
+// TODO
 function batchSizeLimitReached() {
   return (
-    insertions.moduleHashes.length >= config.maxBufferSize ||
-    insertions.finalBlocks.length >= config.maxBufferSize ||
-    insertions.blocks.length >= config.maxBufferSize
+    // insertions.moduleHashes.length >= config.maxBufferSize ||
+    // insertions.finalBlocks.length >= config.maxBufferSize ||
+    // insertions.blocks.length >= config.maxBufferSize
+    false
   );
 }
 
@@ -122,7 +113,7 @@ function handleModuleHashes(manifest: Manifest) {
   const moduleHashKey = `${moduleHash}-${chain}`;
 
   if (!knownModuleHashes.has(moduleHashKey)) {
-    insertions.moduleHashes.push({ module_hash: moduleHash, chain, type, module_name: moduleName });
+    sqlite.insertModuleHash(moduleHash, moduleName, chain, type);
     knownModuleHashes.add(moduleHashKey);
   }
 }
@@ -134,7 +125,7 @@ function handleFinalBlocks(manifest: Manifest, clock: Clock) {
   if (!finalBlockOnly) return; // Only insert final blocks
 
   if (!knownBlockIdFinal.has(block_id)) {
-    insertions.finalBlocks.push({ block_id });
+    sqlite.insertFinalBlock(block_id);
     knownBlockIdFinal.add(block_id);
   }
 }
@@ -147,19 +138,15 @@ function handleBlocks(manifest: Manifest, clock: Clock) {
   const chain = manifest.chain;
 
   if (!knownBlockId.has(block_id)) {
-    insertions.blocks.push({ block_id, block_number, chain, timestamp });
+    sqlite.insertBlock(block_id, block_number, chain, timestamp);
     knownBlockId.add(block_id);
   }
 }
 
 function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
-  insertions.cursors.push({
-    cursor,
-    block_id: clock.id,
-    block_number: clock.number,
-    chain: manifest.chain,
-    module_hash: manifest.moduleHash,
-  });
+  const { moduleHash, chain } = manifest;
+  const { id: blockId, number: blockNumber } = clock;
+  sqlite.insertCursor(cursor, moduleHash, blockId, blockNumber, chain);
 }
 
 async function handleEntityChange(
@@ -185,11 +172,15 @@ async function handleEntityChange(
     values = { raw_data: jsonData, source: change.entity };
   }
 
-  logger.info(["handleEntityChange", table, change.operation, change.id, clock, manifest, jsonData].join(" | "));
+  logger.info(
+    ["handleEntityChange", table, change.operation, change.id, clock, manifest, jsonData].join(
+      " | "
+    )
+  );
 
   switch (change.operation) {
     case "OPERATION_CREATE":
-      return insertEntityChange(table, values, { ...metadata, id: change.id });
+      return insertEntityChange(table, values, { ...metadata, id: change.id }, change.entity);
 
     case "OPERATION_UPDATE":
       return updateEntityChange();
@@ -207,20 +198,19 @@ async function handleEntityChange(
 function insertEntityChange(
   table: string,
   values: Record<string, unknown>,
-  metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string }
+  metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string },
+  source: string
 ) {
-  // EntityChange
-  values["id"] = metadata.id; // Entity ID
-  values["block_id"] = metadata.clock.id; // Block Index
-  values["block_number"] = metadata.clock.number; // Block number
-  values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
-  values["chain"] = metadata.manifest.chain; // Chain Index
-  values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
-  values["cursor"] = metadata.cursor; // Block cursor for current substreams
+  sqlite.insertEntityChanges(
+    JSON.stringify(values),
+    source,
+    metadata.id,
+    metadata.clock.id,
+    metadata.manifest.moduleHash,
+    metadata.manifest.chain
+  );
 
   prometheus.entity_changes_inserted.inc();
-  insertions.entityChanges[table] ??= [];
-  insertions.entityChanges[table].push(values);
 }
 
 // TODO: implement function

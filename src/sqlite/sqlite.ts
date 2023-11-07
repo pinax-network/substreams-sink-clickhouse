@@ -75,7 +75,7 @@ class SQLite {
         )`
       )
       .get();
-    return response?.batch_number ?? 0;
+    return (response?.batch_number ?? 0) + 1;
   }
 }
 
