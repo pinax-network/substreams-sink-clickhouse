@@ -15,14 +15,7 @@ const queue = new PQueue({ concurrency: 2 });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   prometheus.sink_requests?.inc();
-  const { manifest, clock, cursor } = metadata;
-
-  // Indexes
   bufferedItems++;
-  // handleModuleHashes(manifest);
-  // handleBlocks(manifest, clock);
-  // handleFinalBlocks(manifest, clock);
-  // handleCursors(manifest, clock, cursor);
 
   // EntityChanges
   for (const change of data.entityChanges) {
@@ -37,6 +30,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   if (timeLimitReached) {
     // If the previous batch is not fully inserted, wait for it to be.
     await queue.onIdle();
+    bufferedItems = 0;
 
     // Plan the next insertion in `config.insertionDelay` ms
     timeLimitReached = false;
@@ -47,46 +41,8 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     // Start an async job to insert every record stored in the current batch.
     // This job will be awaited before starting the next batch.
     queue.add(async () =>
-      sqlite.commitBuffer(async (data) => {
-        console.log(data.length);
-
-        const blocks = Array(data.length);
-        const moduleHashes = Array(data.length);
-        const cursors = Array(data.length);
-        const entityChanges: Record<string, Array<string>> = {};
-        const finalBlocks = [];
-
-        let i = 0;
-        for (const record of data) {
-          blocks[i] = {
-            block_id: record.block_id,
-            block_number: record.block_number,
-            chain: record.chain,
-            timestamp: record.timestamp,
-          };
-          moduleHashes[i] = {
-            module_hash: record.module_hash,
-            module_name: record.module_name,
-            chain: record.type,
-            type: record.type,
-          };
-          cursors[i] = {
-            cursor: record.cursor,
-            module_hash: record.module_hash,
-            block_id: record.block_id,
-            block_number: record.block_number,
-            chain: record.chain,
-          };
-
-          entityChanges[record.source] ??= [];
-          entityChanges[record.source].push(JSON.parse(record.entity_changes));
-
-          if (record.is_final) {
-            finalBlocks[i] = { block_id: record.block_id };
-          }
-
-          i++;
-        }
+      sqlite.commitBuffer(async (blocks, cursors, finalBlocks, moduleHashes, entityChanges) => {
+        console.log(blocks.length);
 
         if (moduleHashes.length > 0) {
           await client.insert({
@@ -128,40 +84,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 function batchSizeLimitReached() {
   return bufferedItems >= config.maxBufferSize;
 }
-
-// // Module Hashes index
-// function handleModuleHashes(manifest: Manifest) {
-//   const { moduleHash, type, moduleName, chain } = manifest;
-//   const moduleHashKey = `${moduleHash}-${chain}`;
-
-//   if (!isKnownModuleHash(moduleHashKey)) {
-//     sqlite.insertModuleHash(moduleHash, moduleName, chain, type);
-//   }
-// }
-
-// // Final Block Index
-// function handleFinalBlocks(manifest: Manifest, clock: Clock) {
-//   if (manifest.finalBlockOnly) {
-//     const block_id = clock.id;
-//     sqlite.insertFinalBlock(block_id);
-//   }
-// }
-
-// // Block Index
-// function handleBlocks(manifest: Manifest, clock: Clock) {
-//   const block_id = clock.id;
-//   const block_number = clock.number;
-//   const timestamp = Number(new Date(clock.timestamp));
-//   const chain = manifest.chain;
-
-//   sqlite.insertBlock(block_id, block_number, chain, timestamp);
-// }
-
-// function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
-//   const { moduleHash, chain } = manifest;
-//   const { id: blockId, number: blockNumber } = clock;
-//   sqlite.insertCursor(cursor, moduleHash, blockId, blockNumber, chain);
-// }
 
 async function handleEntityChange(
   change: EntityChange,
