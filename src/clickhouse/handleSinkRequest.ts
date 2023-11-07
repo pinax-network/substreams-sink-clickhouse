@@ -6,20 +6,15 @@ import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 import { sqlite } from "../sqlite/sqlite.js";
-import client from "./createClient.js";
+import { existsTable, isKnownModuleHash } from "./store.js";
 
 let timeLimitReached = true;
 const queue = new PQueue({ concurrency: 2 });
 
-// TO-DO: moves these to a separate file `src/clickhouse/stores.ts`
-const knownModuleHashes = new Set<string>();
-const knownBlockId = new Set<string>();
-const knownBlockIdFinal = new Set<string>();
-const knownTables = new Map<string, boolean>();
-
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   prometheus.sink_requests?.inc();
   const { manifest, clock, cursor } = metadata;
+
   // Indexes
   handleModuleHashes(manifest);
   handleBlocks(manifest, clock);
@@ -112,21 +107,16 @@ function handleModuleHashes(manifest: Manifest) {
   const { moduleHash, type, moduleName, chain } = manifest;
   const moduleHashKey = `${moduleHash}-${chain}`;
 
-  if (!knownModuleHashes.has(moduleHashKey)) {
+  if (!isKnownModuleHash(moduleHashKey)) {
     sqlite.insertModuleHash(moduleHash, moduleName, chain, type);
-    knownModuleHashes.add(moduleHashKey);
   }
 }
 
 // Final Block Index
 function handleFinalBlocks(manifest: Manifest, clock: Clock) {
-  const block_id = clock.id;
-  const finalBlockOnly = manifest.finalBlockOnly === "true";
-  if (!finalBlockOnly) return; // Only insert final blocks
-
-  if (!knownBlockIdFinal.has(block_id)) {
+  if (manifest.finalBlockOnly) {
+    const block_id = clock.id;
     sqlite.insertFinalBlock(block_id);
-    knownBlockIdFinal.add(block_id);
   }
 }
 
@@ -137,10 +127,7 @@ function handleBlocks(manifest: Manifest, clock: Clock) {
   const timestamp = Number(new Date(clock.timestamp));
   const chain = manifest.chain;
 
-  if (!knownBlockId.has(block_id)) {
-    sqlite.insertBlock(block_id, block_number, chain, timestamp);
-    knownBlockId.add(block_id);
-  }
+  sqlite.insertBlock(block_id, block_number, chain, timestamp);
 }
 
 function handleCursors(manifest: Manifest, clock: Clock, cursor: string) {
@@ -180,7 +167,7 @@ async function handleEntityChange(
 
   switch (change.operation) {
     case "OPERATION_CREATE":
-      return insertEntityChange(table, values, { ...metadata, id: change.id }, change.entity);
+      return insertEntityChange(table, values, { ...metadata, id: change.id });
 
     case "OPERATION_UPDATE":
       return updateEntityChange();
@@ -198,12 +185,11 @@ async function handleEntityChange(
 function insertEntityChange(
   table: string,
   values: Record<string, unknown>,
-  metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string },
-  source: string
+  metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string }
 ) {
   sqlite.insertEntityChanges(
     JSON.stringify(values),
-    source,
+    table,
     metadata.id,
     metadata.clock.id,
     metadata.manifest.moduleHash,
@@ -227,26 +213,4 @@ function deleteEntityChange(): Promise<void> {
   return Promise.resolve();
 
   // return client.delete({ values, table: change.entity });
-}
-
-// in memory TABLE name cache
-// if true => true
-// if false => false
-// if undefined => check EXISTS if true or false
-async function existsTable(table: string) {
-  // Return cached value if known (reduces number of EXISTS queries)
-  if (knownTables.has(table)) return knownTables.get(table);
-
-  // Check if table EXISTS
-  const response = await client.query({
-    query: "EXISTS " + table,
-    format: "JSONEachRow",
-  });
-
-  // handle EXISTS response
-  const data = await response.json<Array<{ result: 0 | 1 }>>();
-  const exists = data[0]?.result === 1;
-  knownTables.set(table, exists);
-  logger.info(`EXISTS [${table}=${exists}]`);
-  return exists;
 }
