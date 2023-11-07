@@ -21,6 +21,8 @@ class SQLite {
 
   public constructor() {
     this.db = new Database("buffer.sqlite");
+    this.db.run("PRAGMA synchronous = OFF");
+    this.db.run("PRAGMA journal_mode = MEMORY");
     this.batchNumber = this.initialBatchNumber;
 
     for (const table of tables) {
@@ -32,6 +34,16 @@ class SQLite {
     this.moduleHashStatement = this.db.prepare(insertions.moduleHashes);
     this.finalBlocksStatement = this.db.prepare(insertions.finalBlocks);
     this.entityChangesStatement = this.db.prepare(insertions.entityChanges);
+  }
+
+  public start() {
+    this.db.run("BEGIN TRANSACTION;");
+  }
+
+  public stop() {
+    if (this.db.inTransaction) {
+      this.db.run("END TRANSACTION;");
+    }
   }
 
   public insertBlock(blockId: string, blockNumber: number, chain: string, timestamp: number) {

@@ -16,6 +16,8 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   prometheus.sink_requests?.inc();
   const { manifest, clock, cursor } = metadata;
 
+  sqlite.start();
+
   // Indexes
   bufferedItems++;
   handleModuleHashes(manifest);
@@ -27,6 +29,8 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   for (const change of data.entityChanges) {
     handleEntityChange(change, metadata);
   }
+
+  sqlite.stop();
 
   if (batchSizeLimitReached()) {
     // Wait for the next insertion window
