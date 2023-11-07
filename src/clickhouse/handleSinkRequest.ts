@@ -8,6 +8,7 @@ import { Clock, Manifest, PayloadBody } from "../schemas.js";
 import { sqlite } from "../sqlite/sqlite.js";
 import { existsTable, isKnownModuleHash } from "./store.js";
 
+let bufferedItems = 0;
 let timeLimitReached = true;
 const queue = new PQueue({ concurrency: 2 });
 
@@ -16,6 +17,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   const { manifest, clock, cursor } = metadata;
 
   // Indexes
+  bufferedItems++;
   handleModuleHashes(manifest);
   handleBlocks(manifest, clock);
   handleFinalBlocks(manifest, clock);
@@ -35,15 +37,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     // If the previous batch is not fully inserted, wait for it to be.
     await queue.onIdle();
 
-    // const { moduleHashes, finalBlocks, blocks, cursors, entityChanges } = insertions;
-    // insertions = {
-    //   entityChanges: {},
-    //   moduleHashes: [],
-    //   finalBlocks: [],
-    //   cursors: [],
-    //   blocks: [],
-    // };
-
     // Plan the next insertion in `config.insertionDelay` ms
     timeLimitReached = false;
     queue
@@ -53,6 +46,11 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     // Start an async job to insert every record stored in the current batch.
     // This job will be awaited before starting the next batch.
     queue.add(async () => {
+      sqlite.commitBuffer(async (data) => {
+        console.log(Object.keys(data).length);
+      });
+      return Promise.resolve();
+
       // TODO: load data from sqlite
       // TODO: store the results back into Clickhouse
       //
@@ -92,14 +90,8 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   return new Response("OK");
 }
 
-// TODO
 function batchSizeLimitReached() {
-  return (
-    // insertions.moduleHashes.length >= config.maxBufferSize ||
-    // insertions.finalBlocks.length >= config.maxBufferSize ||
-    // insertions.blocks.length >= config.maxBufferSize
-    false
-  );
+  return bufferedItems >= config.maxBufferSize;
 }
 
 // Module Hashes index
