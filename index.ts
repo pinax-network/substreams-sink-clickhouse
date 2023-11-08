@@ -13,8 +13,12 @@ import { logger } from "./src/logger.js";
 if (config.verbose) logger.enable();
 
 if (config.resume) {
-  await ping();
-  await saveKnownEntityChanges();
+  try {
+    await ping();
+    await saveKnownEntityChanges();
+  } catch (err) {
+    logger.error(err);
+  }
 }
 
 const app = Bun.serve({

@@ -12,6 +12,7 @@ import { existsTable } from "./store.js";
 let bufferedItems = 0;
 let timeLimitReached = true;
 const queue = new PQueue({ concurrency: 2 });
+const insertQueue = new PQueue({ concurrency: 1 });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   if (bufferedItems % config.transactionSize === 0) {
@@ -53,8 +54,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 
 export function saveKnownEntityChanges() {
   return sqlite.commitBuffer(async (blocks, cursors, finalBlocks, moduleHashes, entityChanges) => {
-    console.log(blocks.length);
-
     if (moduleHashes.length > 0) {
       await client.insert({
         values: moduleHashes,
@@ -154,18 +153,20 @@ function insertEntityChange(
   values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
   values["cursor"] = metadata.cursor; // Block cursor for current substreams
 
-  sqlite.insert(
-    JSON.stringify(values),
-    table,
-    metadata.manifest.chain,
-    metadata.clock.id,
-    metadata.clock.number,
-    metadata.manifest.finalBlockOnly,
-    metadata.manifest.moduleHash,
-    metadata.manifest.moduleName,
-    metadata.manifest.type,
-    Number(new Date(metadata.clock.timestamp)),
-    metadata.cursor
+  insertQueue.add(() =>
+    sqlite.insert(
+      JSON.stringify(values),
+      table,
+      metadata.manifest.chain,
+      metadata.clock.id,
+      metadata.clock.number,
+      metadata.manifest.finalBlockOnly,
+      metadata.manifest.moduleHash,
+      metadata.manifest.moduleName,
+      metadata.manifest.type,
+      Number(new Date(metadata.clock.timestamp)),
+      metadata.cursor
+    )
   );
 
   prometheus.entity_changes_inserted.inc();

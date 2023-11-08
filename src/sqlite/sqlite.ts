@@ -57,7 +57,7 @@ class SQLite {
   }
 
   public triggerTransaction() {
-    if (!this.db.inTransaction) {
+    if (this.db.inTransaction) {
       this.db.run("END TRANSACTION;");
     }
     this.db.run("BEGIN TRANSACTION;");
