@@ -56,16 +56,11 @@ class SQLite {
     this.insertStatement = this.db.prepare(insertSQL);
   }
 
-  public startTransaction() {
+  public triggerTransaction() {
     if (!this.db.inTransaction) {
-      this.db.run("BEGIN TRANSACTION");
+      this.db.run("END TRANSACTION;");
     }
-  }
-
-  public endTransaction() {
-    if (this.db.inTransaction) {
-      this.db.run("END TRANSACTION");
-    }
+    this.db.run("BEGIN TRANSACTION;");
   }
 
   public insert(entityChanges: string, source: string, chain: string, blockId: string, blockNumber: number, isFinal: boolean, moduleHash: string, moduleName: string, type: string, timestamp: number, cursor: string) {

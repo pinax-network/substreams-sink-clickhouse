@@ -15,8 +15,7 @@ const queue = new PQueue({ concurrency: 2 });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   if (bufferedItems % config.transactionSize === 0) {
-    sqlite.endTransaction();
-    sqlite.startTransaction();
+    sqlite.triggerTransaction();
   }
 
   prometheus.sink_requests?.inc();
@@ -35,7 +34,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   if (timeLimitReached) {
     // If the previous batch is not fully inserted, wait for it to be.
     await queue.onIdle();
-    sqlite.endTransaction();
     bufferedItems = 0;
 
     // Plan the next insertion in `config.insertionDelay` ms
