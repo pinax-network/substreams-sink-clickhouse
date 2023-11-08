@@ -131,6 +131,7 @@ Options:
   --max-buffer-size <number>    Maximum insertion batch size (default: 10_000, env: MAX_BUFFER_SIZE)
   --insertion-delay <number>    Delay between batch insertions (in ms) (default: 2000, env: INSERTION_DELAY)
   --allow-unparsed <boolean>    Enable storage in 'unparsed_json' table (default: false, env: ALLOW_UNPARSED)
+  --transaction-size <number>   Number of insert statements in a SQLite transaction (default: 50, env: TRANSACTION_SIZE)
   -h, --help                    display help for command
 ```
 
