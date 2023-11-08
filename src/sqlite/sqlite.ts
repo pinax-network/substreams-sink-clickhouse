@@ -39,8 +39,8 @@ class SQLite {
 
   public constructor() {
     this.db = new Database("buffer.sqlite");
-    this.db.run("PRAGMA synchronous = OFF");
-    this.db.run("PRAGMA journal_mode = MEMORY");
+    this.db.run("PRAGMA synchronous = OFF;");
+    this.db.run("PRAGMA journal_mode = MEMORY;");
 
     this.db.run(tableSchema);
     this.batchNumber = this.initialBatchNumber;

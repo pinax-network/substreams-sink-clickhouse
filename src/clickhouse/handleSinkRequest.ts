@@ -14,7 +14,7 @@ let timeLimitReached = true;
 const queue = new PQueue({ concurrency: 2 });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
-  if (bufferedItems % 30 === 0) {
+  if (bufferedItems % config.transactionSize === 0) {
     sqlite.endTransaction();
     sqlite.startTransaction();
   }
