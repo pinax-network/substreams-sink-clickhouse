@@ -96,15 +96,7 @@ class SQLite {
         .query<{ batch_number: number }, any>(
           `SELECT MAX(batch_number) AS batch_number
         FROM (
-            SELECT batch_number FROM blocks
-            UNION ALL
-            SELECT batch_number FROM module_hashes
-            UNION ALL
-            SELECT batch_number FROM cursors
-            UNION ALL
-            SELECT batch_number FROM final_blocks
-            UNION ALL
-            SELECT batch_number FROM entity_changes
+            SELECT batch_number FROM data_buffer
             UNION ALL
             SELECT 0 AS batch_number
         )`

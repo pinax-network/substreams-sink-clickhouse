@@ -46,45 +46,51 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 
     // Start an async job to insert every record stored in the current batch.
     // This job will be awaited before starting the next batch.
-    queue.add(async () =>
-      sqlite.commitBuffer(async (blocks, cursors, finalBlocks, moduleHashes, entityChanges) => {
-        console.log(blocks.length);
-
-        if (moduleHashes.length > 0) {
-          await client.insert({
-            values: moduleHashes,
-            table: "module_hashes",
-            format: "JSONEachRow",
-          });
-        }
-        if (finalBlocks.length > 0) {
-          await client.insert({
-            values: finalBlocks,
-            table: "final_blocks",
-            format: "JSONEachRow",
-          });
-        }
-        if (blocks.length > 0) {
-          await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
-        }
-        if (cursors.length > 0) {
-          await client.insert({
-            values: cursors,
-            table: "cursors",
-            format: "JSONEachRow",
-          });
-        }
-        for (const [table, values] of Object.entries(entityChanges)) {
-          if (values.length > 0) {
-            await client.insert({ table, values, format: "JSONEachRow" });
-          }
-        }
-      })
-    );
+    queue.add(saveKnownEntityChanges);
   }
 
   logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length}`);
   return new Response("OK");
+}
+
+export function saveKnownEntityChanges() {
+  return sqlite.commitBuffer(async (blocks, cursors, finalBlocks, moduleHashes, entityChanges) => {
+    console.log(blocks.length);
+
+    if (moduleHashes.length > 0) {
+      await client.insert({
+        values: moduleHashes,
+        table: "module_hashes",
+        format: "JSONEachRow",
+      });
+    }
+
+    if (finalBlocks.length > 0) {
+      await client.insert({
+        values: finalBlocks,
+        table: "final_blocks",
+        format: "JSONEachRow",
+      });
+    }
+
+    if (blocks.length > 0) {
+      await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
+    }
+
+    if (cursors.length > 0) {
+      await client.insert({
+        values: cursors,
+        table: "cursors",
+        format: "JSONEachRow",
+      });
+    }
+
+    for (const [table, values] of Object.entries(entityChanges)) {
+      if (values.length > 0) {
+        await client.insert({ table, values, format: "JSONEachRow" });
+      }
+    }
+  });
 }
 
 function batchSizeLimitReached() {

@@ -24,6 +24,7 @@ export const ConfigSchema = z.object({
   insertionDelay: positiveNumber,
   allowUnparsed: boolean,
   transactionSize: positiveNumber,
+  resume: boolean,
 });
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 
