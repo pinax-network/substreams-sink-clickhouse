@@ -1,6 +1,6 @@
 {
   "name": "substreams-sink-clickhouse",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Substreams Clickhouse sink module",
   "type": "module",
   "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse",
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@clickhouse/client-web": "latest",
-    "@substreams/sink-entity-changes": "v0.3.3",
+    "@substreams/sink-entity-changes": "v0.3.4",
     "commander": "latest",
     "dotenv": "latest",
     "graphql": "^16.8.1",
