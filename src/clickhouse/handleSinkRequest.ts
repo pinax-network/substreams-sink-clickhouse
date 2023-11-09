@@ -84,7 +84,15 @@ export function saveKnownEntityChanges() {
 
     for (const [table, values] of Object.entries(entityChanges)) {
       if (values.length > 0) {
-        await client.insert({ table, values, format: "JSONEachRow" });
+        // This check ensures that old stale data coming from SQLite
+        // is not inserted after the ClickHouse schema was modified.
+        if (await store.existsTable(table)) {
+          await client.insert({ table, values, format: "JSONEachRow" });
+        } else {
+          logger.info(
+            `Skipped (${values.length}) records assigned to table '${table}' because it does not exist.`
+          );
+        }
       }
     }
   });
@@ -100,7 +108,7 @@ async function handleEntityChange(
 ) {
   let table = change.entity;
   let values = getValuesInEntityChange(change);
-  const tableExists = await store.existsTable(change.entity);
+  const tableExists = await store.existsTable(table);
 
   const jsonData = JSON.stringify(values);
   const clock = JSON.stringify(metadata.clock);
@@ -108,13 +116,11 @@ async function handleEntityChange(
 
   if (!tableExists) {
     if (!config.allowUnparsed) {
-      throw new Error(
-        `could not find table '${change.entity}'. Did you mean to store unparsed data?`
-      );
+      throw new Error(`could not find table '${table}'. Did you mean to store unparsed data?`);
     }
 
+    values = { raw_data: jsonData, source: table };
     table = "unparsed_json";
-    values = { raw_data: jsonData, source: change.entity };
   }
 
   const log = ["handleEntityChange", table, change.operation, change.id, clock, manifest, jsonData];
