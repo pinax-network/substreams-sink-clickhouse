@@ -5,7 +5,6 @@ class ClickhouseStore {
   private chainsPromise: Promise<string[]> | null = null;
   private publicTablesPromise: Promise<string[]> | null = null;
 
-  private knownModuleHashes = new Set<string>();
   private knownTables = new Map<string, boolean>();
 
   public get chains() {
