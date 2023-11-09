@@ -7,7 +7,7 @@ import * as prometheus from "../prometheus.js";
 import { Clock, Manifest, PayloadBody } from "../schemas.js";
 import { sqlite } from "../sqlite/sqlite.js";
 import client from "./createClient.js";
-import { existsTable } from "./store.js";
+import { store } from "./stores.js";
 
 let bufferedItems = 0;
 let timeLimitReached = true;
@@ -100,7 +100,7 @@ async function handleEntityChange(
 ) {
   let table = change.entity;
   let values = getValuesInEntityChange(change);
-  const tableExists = await existsTable(change.entity);
+  const tableExists = await store.existsTable(change.entity);
 
   const jsonData = JSON.stringify(values);
   const clock = JSON.stringify(metadata.clock);
@@ -117,11 +117,8 @@ async function handleEntityChange(
     values = { raw_data: jsonData, source: change.entity };
   }
 
-  logger.info(
-    ["handleEntityChange", table, change.operation, change.id, clock, manifest, jsonData].join(
-      " | "
-    )
-  );
+  const log = ["handleEntityChange", table, change.operation, change.id, clock, manifest, jsonData];
+  logger.info(log.join(" | "));
 
   switch (change.operation) {
     case "OPERATION_CREATE":
