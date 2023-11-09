@@ -23,6 +23,7 @@ const config = ConfigSchema.parse({
   allowUnparsed: true,
   transactionSize: 50,
   resume: true,
+  buffer: "buffer.sqlite",
 });
 
 describe("ConfigSchema", () => {
@@ -40,4 +41,5 @@ describe("ConfigSchema", () => {
   test("allowUnparsed", () => expect(config.allowUnparsed).toBeTrue());
   test("transactionSize", () => expect(config.transactionSize).toBe(50));
   test("resume", () => expect(config.resume).toBeTrue());
+  test("buffer", () => expect(config.buffer).toBe("buffer.sqlite"));
 });

@@ -25,6 +25,7 @@ export const ConfigSchema = z.object({
   allowUnparsed: boolean,
   transactionSize: positiveNumber,
   resume: boolean,
+  buffer: z.string(),
 });
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 

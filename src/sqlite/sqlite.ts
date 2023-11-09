@@ -1,5 +1,6 @@
 import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
+import { config } from "../config.js";
 import tableSQL from "./table.sql";
 
 const selectSQL = {
@@ -38,7 +39,7 @@ class SQLite {
   private insertStatement: Statement;
 
   public constructor() {
-    this.db = new Database("buffer.sqlite");
+    this.db = new Database(config.buffer);
     this.db.run("PRAGMA synchronous = OFF;");
     this.db.run("PRAGMA journal_mode = MEMORY;");
 

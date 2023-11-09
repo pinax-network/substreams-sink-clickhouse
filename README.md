@@ -133,6 +133,7 @@ Options:
   --allow-unparsed <boolean>    Enable storage in 'unparsed_json' table (default: false, env: ALLOW_UNPARSED)
   --transaction-size <number>   Number of insert statements in a SQLite transaction (default: 50, env: TRANSACTION_SIZE)
   --resume <boolean>            Save the cached data from the previous process into ClickHouse (default: true, env: RESUME)
+  --buffer <string>             SQLite database to use as an insertion buffer. Use ':memory:' to make in volatile. (default: buffer.sqlite, env: BUFFER)
   -h, --help                    display help for command
 ```
 
