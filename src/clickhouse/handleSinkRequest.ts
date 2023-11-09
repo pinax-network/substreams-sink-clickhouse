@@ -11,8 +11,8 @@ import { store } from "./stores.js";
 
 let bufferedItems = 0;
 let timeLimitReached = true;
-const queue = new PQueue({ concurrency: 2 });
-const insertQueue = new PQueue({ concurrency: 1 });
+const clickhouseQueue = new PQueue({ concurrency: 2 });
+const sqliteQueue = new PQueue({ concurrency: 1 });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   if (bufferedItems % config.transactionSize === 0) {
@@ -29,23 +29,23 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 
   if (batchSizeLimitReached()) {
     // Wait for the next insertion window
-    await queue.onIdle();
+    await clickhouseQueue.onIdle();
   }
 
   if (timeLimitReached) {
     // If the previous batch is not fully inserted, wait for it to be.
-    await queue.onIdle();
+    await clickhouseQueue.onIdle();
     bufferedItems = 0;
 
     // Plan the next insertion in `config.insertionDelay` ms
     timeLimitReached = false;
-    queue
+    clickhouseQueue
       .add(() => new Promise((resolve) => setTimeout(resolve, config.insertionDelay)))
       .then(() => (timeLimitReached = true));
 
     // Start an async job to insert every record stored in the current batch.
     // This job will be awaited before starting the next batch.
-    queue.add(saveKnownEntityChanges);
+    clickhouseQueue.add(saveKnownEntityChanges);
   }
 
   logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length}`);
@@ -150,7 +150,7 @@ function insertEntityChange(
   values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
   values["cursor"] = metadata.cursor; // Block cursor for current substreams
 
-  insertQueue.add(() =>
+  sqliteQueue.add(() =>
     sqlite.insert(
       JSON.stringify(values),
       table,
