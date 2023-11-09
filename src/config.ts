@@ -43,7 +43,7 @@ export const opts = program
   .addOption(new Option("--allow-unparsed <boolean>", "Enable storage in 'unparsed_json' table").choices(["true", "false"]).env("ALLOW_UNPARSED").default(DEFAULT_ALLOW_UNPARSED))
   .addOption(new Option("--transaction-size <number>", "Number of insert statements in a SQLite transaction").env("TRANSACTION_SIZE").default(DEFAULT_TRANSACTION_SIZE))
   .addOption(new Option("--resume <boolean>", "Save the cached data from the previous process into ClickHouse").choices(["true", "false"]).env("RESUME").default(DEFAULT_RESUME))
-  .addOption(new Option("--buffer <string>", "SQLite database to use as an insertion buffer. Use ':memory:' to make in volatile.").env("BUFFER").default("DEFAULT_BUFFER"))
+  .addOption(new Option("--buffer <string>", "SQLite database to use as an insertion buffer. Use ':memory:' to make it volatile.").env("BUFFER").default("DEFAULT_BUFFER"))
   .parse()
   .opts();
 
