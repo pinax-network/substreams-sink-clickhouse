@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { saveKnownEntityChanges } from "./src/clickhouse/handleSinkRequest.js";
+import { ping } from "./src/clickhouse/ping.js";
 import { config } from "./src/config.js";
 import GET from "./src/fetch/GET.js";
 import OPTIONS from "./src/fetch/OPTIONS.js";
@@ -9,6 +11,15 @@ import { NotFound } from "./src/fetch/cors.js";
 import { logger } from "./src/logger.js";
 
 if (config.verbose) logger.enable();
+
+if (config.resume) {
+  try {
+    await ping();
+    await saveKnownEntityChanges();
+  } catch (err) {
+    logger.error(err);
+  }
+}
 
 const app = Bun.serve({
   hostname: config.hostname,
@@ -23,4 +34,4 @@ const app = Bun.serve({
 });
 
 logger.info(`Server listening on http://${app.hostname}:${app.port}`);
-if ( config.authKey ) logger.info(`Auth Key: ${config.authKey}`)
+if (config.authKey) logger.info(`Auth Key: ${config.authKey}`);

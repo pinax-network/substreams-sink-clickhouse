@@ -131,6 +131,9 @@ Options:
   --max-buffer-size <number>    Maximum insertion batch size (default: 10_000, env: MAX_BUFFER_SIZE)
   --insertion-delay <number>    Delay between batch insertions (in ms) (default: 2000, env: INSERTION_DELAY)
   --allow-unparsed <boolean>    Enable storage in 'unparsed_json' table (default: false, env: ALLOW_UNPARSED)
+  --transaction-size <number>   Number of insert statements in a SQLite transaction (default: 50, env: TRANSACTION_SIZE)
+  --resume <boolean>            Save the cached data from the previous process into ClickHouse (default: true, env: RESUME)
+  --buffer <string>             SQLite database to use as an insertion buffer. Use ':memory:' to make it volatile. (default: buffer.sqlite, env: BUFFER)
   -h, --help                    display help for command
 ```
 

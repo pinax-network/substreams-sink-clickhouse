@@ -23,6 +23,9 @@ export const ConfigSchema = z.object({
   maxBufferSize: positiveNumber,
   insertionDelay: positiveNumber,
   allowUnparsed: boolean,
+  transactionSize: positiveNumber,
+  resume: boolean,
+  buffer: z.string(),
 });
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 
@@ -39,7 +42,7 @@ export const ManifestSchema = z.object({
   type: z.string(),
   moduleHash: z.string(),
   chain: z.string(),
-  finalBlockOnly: z.string(), // https://github.com/colinhacks/zod/issues/1630#issue-1474879296
+  finalBlockOnly: boolean,
 });
 export type Manifest = z.infer<typeof ManifestSchema>;
 
