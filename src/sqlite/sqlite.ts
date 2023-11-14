@@ -79,7 +79,9 @@ class SQLite {
 
     const sources = this.selectSourcesStatement.all(this.batchNumber);
     for (const { source } of sources) {
-      entityChanges[source] = this.selecEntityChangesStatement.all(this.batchNumber, source).map((response) => JSON.parse(response.entity_changes));
+      if (source.length > 0) {
+        entityChanges[source] = this.selecEntityChangesStatement.all(this.batchNumber, source).map((response) => JSON.parse(response.entity_changes));
+      }
     }
 
     await onData(blocks, cursors, finalBlocks, moduleHashes, entityChanges);

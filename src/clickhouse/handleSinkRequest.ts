@@ -19,12 +19,16 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     sqlite.triggerTransaction();
   }
 
-  prometheus.sink_requests?.inc();
+  prometheus.sink_requests.inc();
   bufferedItems++;
 
   // EntityChanges
-  for (const change of data.entityChanges) {
-    handleEntityChange(change, metadata);
+  if (data.entityChanges.length > 0) {
+    for (const change of data.entityChanges) {
+      handleEntityChange(change, metadata);
+    }
+  } else {
+    handleNoEntityChange(metadata);
   }
 
   if (batchSizeLimitReached()) {
@@ -100,6 +104,26 @@ export function saveKnownEntityChanges() {
 
 function batchSizeLimitReached() {
   return bufferedItems >= config.maxBufferSize;
+}
+
+function handleNoEntityChange(metadata: { clock: Clock; manifest: Manifest; cursor: string }) {
+  const { clock, manifest, cursor } = metadata;
+
+  sqliteQueue.add(() =>
+    sqlite.insert(
+      "",
+      "",
+      manifest.chain,
+      clock.id,
+      clock.number,
+      manifest.finalBlockOnly,
+      manifest.moduleHash,
+      manifest.moduleName,
+      manifest.type,
+      Number(new Date(clock.timestamp)),
+      cursor
+    )
+  );
 }
 
 async function handleEntityChange(
