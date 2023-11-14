@@ -22,6 +22,7 @@
     "dev": "bun --watch index.ts",
     "pretest": "bunx tsc --noEmit",
     "test": "bun test",
+    "bench": "bun src/**/*.bench.ts",
     "build": "bun build --compile ./index.ts --outfile substreams-sink-clickhouse"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "bun-types": "latest",
+    "mitata": "^0.1.6",
     "typescript": "latest"
   }
 }

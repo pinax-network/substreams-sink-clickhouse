@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { config } from "../config.js";
 import * as argon2 from "./argon2.js";
 
-const passwordHash =
-  "$argon2id$v=19$m=65536,t=2,p=1$53yGw9x/71TwPK/jEX056kYMTLq+DIFAkCg2wIo+N7A$VGxk8EPwP8sLib1NDoo9YNh1eKLNCr2sy3uZywh5ayk";
+const passwordHash = "$argon2id$v=19$m=65536,t=2,p=1$53yGw9x/71TwPK/jEX056kYMTLq+DIFAkCg2wIo+N7A$VGxk8EPwP8sLib1NDoo9YNh1eKLNCr2sy3uZywh5ayk";
 
 describe("argon2", () => {
   let authKey: string | undefined = "";
