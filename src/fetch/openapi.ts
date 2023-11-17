@@ -13,8 +13,9 @@ const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>
 
 const TAGS = {
   USAGE: "Usage",
+  MAINTENANCE: "Maintenance",
+  QUERIES: "Queries",
   HEALTH: "Health",
-  MONITORING: "Monitoring",
   DOCS: "Documentation",
 } as const;
 
@@ -54,20 +55,6 @@ export default new OpenApiBuilder()
       summary: "Initialize database & manifest",
       security: [{ "auth-key": [] }],
       responses: PUT_RESPONSES,
-    },
-  })
-  .addPath("/hash", {
-    post: {
-      tags: [TAGS.USAGE],
-      summary: "Generate a hash for a specified password",
-      requestBody: {
-        required: true,
-        description: "The password to hash",
-        content: { "text/plain": { schema: { type: "string" } } },
-      },
-      responses: {
-        200: { description: "Success", content: { "text/plain": { schema: { type: "string" } } } },
-      },
     },
   })
   .addPath("/schema/sql", {
@@ -162,9 +149,23 @@ export default new OpenApiBuilder()
       responses: PUT_RESPONSES,
     },
   })
+  .addPath("/hash", {
+    post: {
+      tags: [TAGS.USAGE],
+      summary: "Generate a hash for a specified password",
+      requestBody: {
+        required: true,
+        description: "The password to hash",
+        content: { "text/plain": { schema: { type: "string" } } },
+      },
+      responses: {
+        200: { description: "Success", content: { "text/plain": { schema: { type: "string" } } } },
+      },
+    },
+  })
   .addPath("/pause", {
     put: {
-      tags: [TAGS.USAGE],
+      tags: [TAGS.MAINTENANCE],
       security: [{ "auth-key": [] }],
       summary: "Blocks all incoming requests to `/webhook` until unpaused",
       responses: { 200: { description: "Success" } },
@@ -172,29 +173,23 @@ export default new OpenApiBuilder()
   })
   .addPath("/unpause", {
     put: {
-      tags: [TAGS.USAGE],
+      tags: [TAGS.MAINTENANCE],
       security: [{ "auth-key": [] }],
       summary: "Resumes listening to requests on `/webhook`",
       responses: { 200: { description: "Success" } },
     },
   })
-  .addPath("/query", {
-    post: {
-      tags: [TAGS.USAGE],
-      summary: "Execute queries against the database in read-only mode",
-      requestBody: {
-        content: {
-          "text/plain": {
-            schema: { type: "string", examples: ["SELECT COUNT() FROM blocks"] },
-          },
-        },
-      },
-      responses: { 200: { description: "query result", content: { "application/json": {} } } },
+  .addPath("/caches", {
+    delete: {
+      tags: [TAGS.MAINTENANCE],
+      security: [{ "auth-key": [] }],
+      summary: "Clears table and chain caches",
+      responses: { 200: { description: "Success" } },
     },
   })
   .addPath("/cursors/latest", {
     get: {
-      tags: [TAGS.USAGE],
+      tags: [TAGS.QUERIES],
       summary: "Finds the latest cursor for a given chain and table",
       parameters: [
         { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
@@ -215,7 +210,7 @@ export default new OpenApiBuilder()
   })
   .addPath("/cursors/missing", {
     get: {
-      tags: [TAGS.USAGE],
+      tags: [TAGS.QUERIES],
       summary: "Finds the missing blocks and returns the start and end cursors",
       parameters: [
         { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
@@ -241,23 +236,9 @@ export default new OpenApiBuilder()
       },
     },
   })
-  .addPath("/health", {
-    get: {
-      tags: [TAGS.HEALTH],
-      summary: "Performs health checks and checks if the database is accessible",
-      responses: { 200: PUT_RESPONSES[200] },
-    },
-  })
-  .addPath("/metrics", {
-    get: {
-      tags: [TAGS.MONITORING],
-      summary: "Prometheus metrics",
-      responses: { 200: { description: "Prometheus metrics" } },
-    },
-  })
   .addPath("/blocks", {
     get: {
-      tags: [TAGS.MONITORING],
+      tags: [TAGS.QUERIES],
       summary: "Gives a summary of known blocks, including min, max and unique block numbers",
       responses: {
         200: {
@@ -270,6 +251,34 @@ export default new OpenApiBuilder()
         },
         500: { description: "Internal server errror" },
       },
+    },
+  })
+  .addPath("/query", {
+    post: {
+      tags: [TAGS.QUERIES],
+      summary: "Execute queries against the database in read-only mode",
+      requestBody: {
+        content: {
+          "text/plain": {
+            schema: { type: "string", examples: ["SELECT COUNT() FROM blocks"] },
+          },
+        },
+      },
+      responses: { 200: { description: "query result", content: { "application/json": {} } } },
+    },
+  })
+  .addPath("/health", {
+    get: {
+      tags: [TAGS.HEALTH],
+      summary: "Performs health checks and checks if the database is accessible",
+      responses: { 200: PUT_RESPONSES[200] },
+    },
+  })
+  .addPath("/metrics", {
+    get: {
+      tags: [TAGS.HEALTH],
+      summary: "Prometheus metrics",
+      responses: { 200: { description: "Prometheus metrics" } },
     },
   })
   .addPath("/openapi", {
