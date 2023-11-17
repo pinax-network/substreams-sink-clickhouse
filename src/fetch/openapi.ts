@@ -165,6 +165,7 @@ export default new OpenApiBuilder()
   .addPath("/pause", {
     put: {
       tags: [TAGS.USAGE],
+      security: [{ "auth-key": [] }],
       summary: "Blocks all incoming requests to `/webhook` until unpaused",
       responses: { 200: { description: "Success" } },
     },
@@ -172,6 +173,7 @@ export default new OpenApiBuilder()
   .addPath("/unpause", {
     put: {
       tags: [TAGS.USAGE],
+      security: [{ "auth-key": [] }],
       summary: "Resumes listening to requests on `/webhook`",
       responses: { 200: { description: "Success" } },
     },

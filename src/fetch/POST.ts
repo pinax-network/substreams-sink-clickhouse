@@ -1,4 +1,5 @@
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
+import { store } from "../clickhouse/stores.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
@@ -12,6 +13,10 @@ export default async function (req: Request) {
 
   if (pathname === "/query") return query(req);
   if (pathname === "/hash") return hash(req);
+
+  if (store.paused) {
+    return toText("sink is paused", 400);
+  }
 
   // validate Ed25519 signature
   const text = await req.text();
