@@ -1,3 +1,4 @@
+import { store } from "../clickhouse/stores.js";
 import { initializeTables } from "../clickhouse/table-initialization.js";
 import { splitSchemaByTableCreation } from "../clickhouse/table-utils.js";
 import { ClickhouseTableBuilder } from "../graphql/builders/clickhouse-table-builder.js";
@@ -25,6 +26,7 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 
   try {
     const executedSchemas = await initializeTables(tableSchemas);
+    store.reset();
     return toJSON({ status: "OK", schema: executedSchemas.join("\n\n") });
   } catch (err) {
     logger.error(err);

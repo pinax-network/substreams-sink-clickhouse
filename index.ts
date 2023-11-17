@@ -3,6 +3,7 @@
 import { saveKnownEntityChanges } from "./src/clickhouse/handleSinkRequest.js";
 import { ping } from "./src/clickhouse/ping.js";
 import { config } from "./src/config.js";
+import DELETE from "./src/fetch/DELETE.js";
 import GET from "./src/fetch/GET.js";
 import OPTIONS from "./src/fetch/OPTIONS.js";
 import POST from "./src/fetch/POST.js";
@@ -29,6 +30,7 @@ const app = Bun.serve({
     if (req.method === "POST") return POST(req);
     if (req.method === "PUT") return PUT(req);
     if (req.method === "OPTIONS") return OPTIONS(req);
+    if (req.method === "DELETE") return DELETE(req);
     return NotFound;
   },
 });

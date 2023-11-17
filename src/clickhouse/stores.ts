@@ -59,6 +59,12 @@ class ClickhouseStore {
     logger.info(`EXISTS [${table}=${exists}]`);
     return exists;
   }
+
+  public reset() {
+    this.chainsPromise = null;
+    this.publicTablesPromise = null;
+    this.knownTables.clear();
+  }
 }
 
 export const store = new ClickhouseStore();
