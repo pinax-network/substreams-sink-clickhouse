@@ -14,11 +14,12 @@ import { logger } from "./src/logger.js";
 if (config.verbose) logger.enable();
 
 if (config.resume) {
-  try {
-    await ping();
+  const pingResult = await ping();
+  if (pingResult.success) {
+    logger.info("Writing unsinked data to ClickHouse");
     await saveKnownEntityChanges();
-  } catch (err) {
-    logger.error(err);
+  } else {
+    logger.error("Resume failed | Error: " + pingResult.error.message);
   }
 }
 
