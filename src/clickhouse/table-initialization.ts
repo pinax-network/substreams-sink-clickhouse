@@ -1,15 +1,26 @@
 import { logger } from "../logger.js";
+import { Result } from "../types.js";
 import client from "./createClient.js";
 import { augmentCreateTableStatement, getTableName } from "./table-utils.js";
 import tables from "./tables/index.js";
 
-export function initializeDefaultTables(): Promise<unknown> {
-  return Promise.all(
+export async function initializeDefaultTables(): Promise<Result> {
+  const promiseResults = await Promise.allSettled(
     tables.map(([table, query]) => {
       logger.info(`CREATE TABLE [${table}]`);
       return client.command({ query });
     })
   );
+
+  const reasons = (
+    promiseResults.filter((promise) => promise.status === "rejected") as PromiseRejectedResult[]
+  ).map((promise) => promise.reason);
+
+  if (reasons.length > 0) {
+    return { success: false, error: new Error(reasons.join(" | ")) };
+  }
+
+  return { success: true };
 }
 
 const extraColumns = [

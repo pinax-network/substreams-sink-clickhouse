@@ -6,13 +6,20 @@ import { logger } from "../logger.js";
 import { BadRequest, toText } from "./cors.js";
 
 export default async function () {
-  try {
-    await ping();
-    await createDatabase(config.database);
-    await initializeDefaultTables();
-    return toText("OK");
-  } catch (e) {
-    logger.error(e);
-    return BadRequest;
+  const initializationSteps = [
+    { step: ping, failureMessage: "Ping request failed" },
+    { step: () => createDatabase(config.database), failureMessage: "Create database failed" },
+    { step: initializeDefaultTables, failureMessage: "Initialize default tables failed" },
+  ];
+
+  for (const { step, failureMessage } of initializationSteps) {
+    const result = await step();
+
+    if (!result.success) {
+      logger.error(`/init | ${failureMessage} | ${result.error}`);
+      return BadRequest;
+    }
   }
+
+  return toText("OK");
 }
