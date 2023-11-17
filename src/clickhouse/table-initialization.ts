@@ -37,9 +37,7 @@ export async function initializeTables(tableSchemas: string[]): Promise<Array<st
       await client.command({ query: augmentedSchema });
     }
   } catch (err) {
-    logger.error("Could not initialize the tables.");
-    logger.error("Request: " + executedSchemas);
-    logger.error(err);
+    logger.error("Could not initialize the tables.", "Request: " + executedSchemas, err);
     throw err;
   }
 
