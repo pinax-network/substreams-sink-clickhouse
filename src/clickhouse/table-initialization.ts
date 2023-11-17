@@ -1,5 +1,5 @@
 import { logger } from "../logger.js";
-import { Result } from "../types.js";
+import { Err, Ok, Result } from "../result.js";
 import client from "./createClient.js";
 import { augmentCreateTableStatement, getTableName } from "./table-utils.js";
 import tables from "./tables/index.js";
@@ -17,10 +17,10 @@ export async function initializeDefaultTables(): Promise<Result> {
   ).map((promise) => promise.reason);
 
   if (reasons.length > 0) {
-    return { success: false, error: new Error(reasons.join(" | ")) };
+    return Err(new Error(reasons.join(" | ")));
   }
 
-  return { success: true };
+  return Ok();
 }
 
 const extraColumns = [
@@ -35,7 +35,7 @@ const extraColumns = [
 
 export async function initializeTables(tableSchemas: string[]): Promise<Array<string>> {
   const executedSchemas = [];
-  logger.info("Executing schema");
+  logger.info(`Executing ${tableSchemas.length} schema(s)`);
 
   try {
     for (const schema of tableSchemas) {

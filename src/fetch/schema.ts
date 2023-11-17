@@ -4,22 +4,23 @@ import { splitSchemaByTableCreation } from "../clickhouse/table-utils.js";
 import { ClickhouseTableBuilder } from "../graphql/builders/clickhouse-table-builder.js";
 import { TableTranslator } from "../graphql/table-translator.js";
 import { logger } from "../logger.js";
+import { Err, Ok, Result } from "../result.js";
 import { TableInitSchema } from "../schemas.js";
 import { BadRequest, toJSON, toText } from "./cors.js";
 
 const clickhouseBuilder = new ClickhouseTableBuilder();
 
 export async function handleSchemaRequest(req: Request, type: "sql" | "graphql") {
-  const schema = await getSchemaFromRequest(req);
-  if (schema instanceof Response) {
-    return schema;
+  const schemaResult = await getSchemaFromRequest(req);
+  if (!schemaResult.success) {
+    return schemaResult.error;
   }
 
   let tableSchemas: string[] = [];
   if (type === "sql") {
-    tableSchemas = splitSchemaByTableCreation(schema);
+    tableSchemas = splitSchemaByTableCreation(schemaResult.payload);
   } else if (type === "graphql") {
-    tableSchemas = TableTranslator.translate(schema, clickhouseBuilder);
+    tableSchemas = TableTranslator.translate(schemaResult.payload, clickhouseBuilder);
   }
 
   logger.info(`Found ${tableSchemas.length} table(s)`);
@@ -40,7 +41,7 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 //    a. local file system
 //    b. remote file
 //   2. body (as raw sql)
-async function getSchemaFromRequest(req: Request): Promise<Response | string> {
+async function getSchemaFromRequest(req: Request): Promise<Result<string, Response>> {
   try {
     const url = new URL(req.url);
     const schemaUrl = url.searchParams.get("schema-url");
@@ -48,22 +49,22 @@ async function getSchemaFromRequest(req: Request): Promise<Response | string> {
     if (schemaUrl) {
       const file = Bun.file(schemaUrl);
       if (await file.exists()) {
-        return file.text();
+        return Ok(await file.text());
       }
 
       const response = await fetch(new URL(schemaUrl));
-      return response.text();
+      return Ok(await response.text());
     }
 
     const body = await req.text();
     if (!body) {
-      return toText("missing body", 400);
+      return Err(toText("missing body", 400));
     }
 
-    return TableInitSchema.parse(body);
+    return Ok(TableInitSchema.parse(body));
   } catch (e) {
     logger.error(e);
   }
 
-  return BadRequest;
+  return Err(BadRequest);
 }
