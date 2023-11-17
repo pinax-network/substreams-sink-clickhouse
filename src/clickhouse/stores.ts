@@ -2,6 +2,8 @@ import { logger } from "../logger.js";
 import { readOnlyClient } from "./createClient.js";
 
 class ClickhouseStore {
+  public paused = false;
+
   private chainsPromise: Promise<string[]> | null = null;
   private publicTablesPromise: Promise<string[]> | null = null;
 

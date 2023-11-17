@@ -162,6 +162,20 @@ export default new OpenApiBuilder()
       responses: PUT_RESPONSES,
     },
   })
+  .addPath("/pause", {
+    put: {
+      tags: [TAGS.USAGE],
+      summary: "Blocks all incoming requests to `/webhook` until unpaused",
+      responses: { 200: { description: "Success" } },
+    },
+  })
+  .addPath("/unpause", {
+    put: {
+      tags: [TAGS.USAGE],
+      summary: "Resumes listening to requests on `/webhook`",
+      responses: { 200: { description: "Success" } },
+    },
+  })
   .addPath("/query", {
     post: {
       tags: [TAGS.USAGE],
