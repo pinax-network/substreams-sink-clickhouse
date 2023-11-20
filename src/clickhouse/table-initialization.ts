@@ -1,15 +1,26 @@
 import { logger } from "../logger.js";
+import { Err, Ok, Result } from "../result.js";
 import client from "./createClient.js";
 import { augmentCreateTableStatement, getTableName } from "./table-utils.js";
 import tables from "./tables/index.js";
 
-export function initializeDefaultTables(): Promise<unknown> {
-  return Promise.all(
+export async function initializeDefaultTables(): Promise<Result> {
+  const promiseResults = await Promise.allSettled(
     tables.map(([table, query]) => {
       logger.info(`CREATE TABLE [${table}]`);
       return client.command({ query });
     })
   );
+
+  const reasons = (
+    promiseResults.filter((promise) => promise.status === "rejected") as PromiseRejectedResult[]
+  ).map((promise) => promise.reason);
+
+  if (reasons.length > 0) {
+    return Err(new Error(reasons.join(" | ")));
+  }
+
+  return Ok();
 }
 
 const extraColumns = [
@@ -22,9 +33,9 @@ const extraColumns = [
   "cursor       String",
 ];
 
-export async function initializeTables(tableSchemas: string[]): Promise<Array<string>> {
+export async function initializeTables(tableSchemas: string[]): Promise<Result<Array<string>>> {
   const executedSchemas = [];
-  logger.info("Executing schema");
+  logger.info(`Executing ${tableSchemas.length} schema(s)`);
 
   try {
     for (const schema of tableSchemas) {
@@ -37,12 +48,10 @@ export async function initializeTables(tableSchemas: string[]): Promise<Array<st
       await client.command({ query: augmentedSchema });
     }
   } catch (err) {
-    logger.error("Could not initialize the tables.");
-    logger.error("Request: " + executedSchemas);
-    logger.error(err);
-    throw err;
+    logger.error("Could not initialize the tables", "Request: " + executedSchemas, err);
+    return Err(new Error(JSON.stringify(err)));
   }
 
   logger.info("Complete.");
-  return executedSchemas;
+  return Ok(executedSchemas);
 }

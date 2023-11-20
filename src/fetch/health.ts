@@ -1,5 +1,4 @@
-import client from "../clickhouse/createClient.js";
-import { logger } from "../logger.js";
+import { ping } from "../clickhouse/ping.js";
 import { BadRequest, toText } from "./cors.js";
 
 function now() {
@@ -8,26 +7,21 @@ function now() {
 
 // cache the timestamp and value for 1 seconds
 let timestamp = now();
-let value = true; // true = OK, false = ERROR
+let cachedHealthValue = true;
 
-export default async function () {
-  // return cached response if timestamp is less than 1 second old
-  if ( now() - timestamp < 1 ) {
-    return value ? toText("OK") : BadRequest;
+export default async function (): Promise<Response> {
+  if (now() - timestamp < 1) {
+    return cachedHealthValue ? toText("OK") : BadRequest;
   }
 
-  try {
-    const response = await client.ping();
-    if (!response.success) {
-      throw new Error(response.error.message);
-    }
-    timestamp = now();
-    value = true;
-    return toText("OK");
-  } catch (e) {
-    logger.error(e);
-    timestamp = now();
-    value = false;
+  const pingResult = await ping();
+  timestamp = now();
+
+  if (!pingResult.success) {
+    cachedHealthValue = false;
     return BadRequest;
   }
+
+  cachedHealthValue = true;
+  return toText("OK");
 }

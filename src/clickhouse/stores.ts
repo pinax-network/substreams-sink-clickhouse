@@ -64,6 +64,7 @@ class ClickhouseStore {
     this.chainsPromise = null;
     this.publicTablesPromise = null;
     this.knownTables.clear();
+    logger.info("Cache has been cleared");
   }
 }
 
