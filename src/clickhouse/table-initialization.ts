@@ -33,7 +33,7 @@ const extraColumns = [
   "cursor       String",
 ];
 
-export async function initializeTables(tableSchemas: string[]): Promise<Array<string>> {
+export async function initializeTables(tableSchemas: string[]): Promise<Result<Array<string>>> {
   const executedSchemas = [];
   logger.info(`Executing ${tableSchemas.length} schema(s)`);
 
@@ -48,10 +48,10 @@ export async function initializeTables(tableSchemas: string[]): Promise<Array<st
       await client.command({ query: augmentedSchema });
     }
   } catch (err) {
-    logger.error("Could not initialize the tables.", "Request: " + executedSchemas, err);
-    throw err;
+    logger.error("Could not initialize the tables", "Request: " + executedSchemas, err);
+    return Err(new Error(JSON.stringify(err)));
   }
 
   logger.info("Complete.");
-  return executedSchemas;
+  return Ok(executedSchemas);
 }

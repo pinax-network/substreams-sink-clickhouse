@@ -25,14 +25,13 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 
   logger.info(`Found ${tableSchemas.length} table(s)`);
 
-  try {
-    const executedSchemas = await initializeTables(tableSchemas);
-    store.reset();
-    return toJSON({ status: "OK", schema: executedSchemas.join("\n\n") });
-  } catch (err) {
-    logger.error(err);
+  const executedSchemas = await initializeTables(tableSchemas);
+  if (!executedSchemas.success) {
     return toText("Could not create the tables", 500);
   }
+
+  store.reset();
+  return toJSON({ status: "OK", schema: executedSchemas.payload.join("\n") });
 }
 
 // This looks for a table schema in the request object.
