@@ -19,7 +19,7 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     sqlite.triggerTransaction();
   }
 
-  prometheus.sink_requests.inc();
+  prometheus.incrementSinkRequests(metadata.manifest.chain, metadata.manifest.moduleHash);
   bufferedItems++;
 
   // EntityChanges
@@ -196,7 +196,7 @@ function insertEntityChange(
     )
   );
 
-  prometheus.entity_changes_inserted.inc();
+  prometheus.incrementInsertedEntityChanges(metadata.manifest.chain, metadata.manifest.moduleHash);
 }
 
 // TODO: implement function
