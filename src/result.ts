@@ -9,7 +9,7 @@ export function Ok<
   P extends string | number | object | undefined = undefined,
   R = P extends undefined ? OkResult : OkResult<P>
 >(payload?: P): R {
-  if (payload === undefined) {
+  if (payload !== undefined) {
     return { success: true, payload } as R;
   }
   return { success: true } as R;
