@@ -29,8 +29,8 @@ export async function findLatestCursor(req: Request): Promise<Response> {
     return toText(`Bad request: no cursor found for '${table}' on '${chain}'.`, 400);
   } catch (err) {
     logger.error(err);
-    return BadRequest;
   }
+  return BadRequest;
 }
 
 export async function findCursorsForMissingBlocks(req: Request): Promise<Response> {
