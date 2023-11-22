@@ -157,7 +157,7 @@ async function handleEntityChange(
 
     // Updates are inserted as new rows in ClickHouse. This allows for the full history.
     // If the user wants to override old data, they can specify it in their schema
-    // by setting the timestamp in the sorting key and by using a ReplacingMergeTree.
+    // by using a ReplacingMergeTree.
     case "OPERATION_UPDATE":
       prometheus.entity_changes_updated.inc();
       return insertEntityChange(table, values, { ...metadata, id: change.id });
