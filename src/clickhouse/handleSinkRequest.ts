@@ -152,12 +152,18 @@ async function handleEntityChange(
 
   switch (change.operation) {
     case "OPERATION_CREATE":
+      prometheus.entity_changes_inserted.inc();
       return insertEntityChange(table, values, { ...metadata, id: change.id });
 
+    // Updates are inserted as new rows in ClickHouse. This allows for the full history.
+    // If the user wants to override old data, they can specify it in their schema
+    // by setting the timestamp in the sorting key and by using a ReplacingMergeTree.
     case "OPERATION_UPDATE":
-      return updateEntityChange();
+      prometheus.entity_changes_updated.inc();
+      return insertEntityChange(table, values, { ...metadata, id: change.id });
 
     case "OPERATION_DELETE":
+      prometheus.entity_changes_deleted.inc();
       return deleteEntityChange();
 
     default:
@@ -195,21 +201,10 @@ function insertEntityChange(
       metadata.cursor
     )
   );
-
-  prometheus.entity_changes_inserted.inc();
-}
-
-// TODO: implement function
-function updateEntityChange(): Promise<void> {
-  prometheus.entity_changes_updated.inc();
-  return Promise.resolve();
-
-  // return client.update();
 }
 
 // TODO: implement function
 function deleteEntityChange(): Promise<void> {
-  prometheus.entity_changes_deleted.inc();
   return Promise.resolve();
 
   // return client.delete({ values, table: change.entity });
