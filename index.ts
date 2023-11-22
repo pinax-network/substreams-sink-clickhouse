@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-import { saveKnownEntityChanges } from "./src/clickhouse/handleSinkRequest.js";
-import { ping } from "./src/clickhouse/ping.js";
 import { config } from "./src/config.js";
 import DELETE from "./src/fetch/DELETE.js";
 import GET from "./src/fetch/GET.js";
@@ -10,18 +8,10 @@ import POST from "./src/fetch/POST.js";
 import PUT from "./src/fetch/PUT.js";
 import { NotFound } from "./src/fetch/cors.js";
 import { logger } from "./src/logger.js";
+import { resume } from "./src/resume.js";
 
 if (config.verbose) logger.enable();
-
-if (config.resume) {
-  const pingResult = await ping();
-  if (pingResult.success) {
-    logger.info("Writing unsinked data to ClickHouse");
-    await saveKnownEntityChanges();
-  } else {
-    logger.error("Resume failed | Error: " + pingResult.error.message);
-  }
-}
+if (config.resume) resume();
 
 const app = Bun.serve({
   hostname: config.hostname,
