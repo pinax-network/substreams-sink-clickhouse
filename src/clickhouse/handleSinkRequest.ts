@@ -121,8 +121,7 @@ function handleNoEntityChange(metadata: { clock: Clock; manifest: Manifest; curs
       manifest.moduleName,
       manifest.type,
       Number(new Date(clock.timestamp)),
-      cursor,
-      false
+      cursor
     )
   );
 }
@@ -163,9 +162,17 @@ async function handleEntityChange(
       prometheus.entity_changes_updated.inc();
       return insertEntityChange(table, values, { ...metadata, id: change.id });
 
+    // Deleted entity changes are not actually removed from the database.
+    // They are stored in the 'deleted_entity_changes' table with their timestamp.
+    // Again, this allows to keep the full history while also providing the required information
+    // to correctly filter out unwanted data if necessary.
     case "OPERATION_DELETE":
       prometheus.entity_changes_deleted.inc();
-      return deleteEntityChange(table, { ...metadata, id: change.id });
+      return insertEntityChange(
+        "deleted_entity_changes",
+        { source: table },
+        { ...metadata, id: change.id }
+      );
 
     default:
       prometheus.entity_changes_unsupported.inc();
@@ -199,30 +206,7 @@ function insertEntityChange(
       metadata.manifest.moduleName,
       metadata.manifest.type,
       Number(new Date(metadata.clock.timestamp)),
-      metadata.cursor,
-      false
+      metadata.cursor
     )
   );
-}
-
-function deleteEntityChange(
-  source: string,
-  metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string }
-) {
-  sqliteQueue.add(() => {
-    sqlite.insert(
-      "",
-      source,
-      metadata.manifest.chain,
-      metadata.clock.id,
-      metadata.clock.number,
-      metadata.manifest.finalBlockOnly,
-      metadata.manifest.moduleHash,
-      metadata.manifest.moduleName,
-      metadata.manifest.type,
-      Number(new Date(metadata.clock.timestamp)),
-      metadata.cursor,
-      true
-    );
-  });
 }
