@@ -8,10 +8,10 @@ export async function metrics() {
   return new Response(await registry.metrics(), { status: 200, headers });
 }
 
-export function registerCounter(name: string, help: string, labels?: string[]) {
+export function registerCounter<T extends string = string>(name: string, help: string, labels?: T[]) {
   try {
-    registry.registerMetric(new client.Counter({ name, help, labelNames: labels ?? []}));
-    return registry.getSingleMetric(name) as Counter;
+    registry.registerMetric(new client.Counter({ name, help, labelNames: labels ?? [] }));
+    return registry.getSingleMetric(name) as Counter<T>;
   } catch (error) {}
 }
 
