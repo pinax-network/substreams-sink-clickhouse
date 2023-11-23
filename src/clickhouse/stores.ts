@@ -1,6 +1,8 @@
 import { logger } from "../logger.js";
 import { readOnlyClient } from "./createClient.js";
 
+const hiddenTables = ["blocks", "module_hashes", "cursors", "final_blocks", "unparsed_json", "deleted_entity_changes"];
+
 class ClickhouseStore {
   public paused = false;
 
@@ -23,7 +25,6 @@ class ClickhouseStore {
 
   public get publicTables() {
     if (!this.publicTablesPromise) {
-      const hiddenTables = ["blocks", "module_hashes", "cursors", "final_blocks"];
       this.publicTablesPromise = readOnlyClient
         .query({ query: "SHOW TABLES", format: "JSONEachRow" })
         .then((response) => response.json<Array<{ name: string }>>())
