@@ -1,8 +1,6 @@
 export type Result<T = undefined, E = Error> = OkResult<T> | ErrResult<E>;
 
-type OkResult<P = undefined> = undefined extends P
-  ? { success: true }
-  : { success: true; payload: P };
+type OkResult<P = undefined> = { success: true } & (undefined extends P ? {} : { payload: P });
 type ErrResult<E = Error> = { success: false; error: E };
 
 export function Ok<
@@ -17,4 +15,14 @@ export function Ok<
 
 export function Err<E = Error>(error: E): ErrResult<E> {
   return { success: false, error };
+}
+
+export function UnknownErr(err: unknown): ErrResult {
+  if (err instanceof Error) {
+    return Err(err);
+  } else if (typeof err === "string") {
+    return Err(new Error(err));
+  } else {
+    return Err(new Error(JSON.stringify(err)));
+  }
 }

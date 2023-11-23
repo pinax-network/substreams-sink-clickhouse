@@ -1,16 +1,17 @@
 import { readOnlyClient } from "../clickhouse/createClient.js";
 import { store } from "../clickhouse/stores.js";
 import { logger } from "../logger.js";
+import { Err, Ok, Result } from "../result.js";
 import { BadRequest, toJSON, toText } from "./cors.js";
 
 export async function findLatestCursor(req: Request): Promise<Response> {
   const parametersResult = await verifyParameters(req);
-  if (parametersResult instanceof Response) {
-    return parametersResult;
+  if (!parametersResult.success) {
+    return parametersResult.error;
   }
 
   try {
-    const { table, chain } = parametersResult;
+    const { table, chain } = parametersResult.payload;
 
     const query = `
     SELECT cursor, timestamp 
@@ -35,16 +36,16 @@ export async function findLatestCursor(req: Request): Promise<Response> {
 
 export async function findCursorsForMissingBlocks(req: Request): Promise<Response> {
   const parametersResult = await verifyParameters(req);
-  if (parametersResult instanceof Response) {
-    return parametersResult;
+  if (!parametersResult.success) {
+    return parametersResult.error;
   }
 
   try {
-    const { table, chain } = parametersResult;
+    const { table, chain } = parametersResult.payload;
 
     const moduleHash = await getModuleHash(table, chain);
     if (!moduleHash) {
-      throw new Error("Could not find module hash");
+      return toText("Could not find module hash associated with table and chain", 500);
     }
 
     // This query finds every block that does not have a next block (beginning of a missing range).
@@ -93,33 +94,32 @@ JOIN cursors c2 ON block_ranges.to   = c2.block_number AND c2.chain = '${chain}'
   } catch (err) {
     logger.error(err);
   }
+
   return BadRequest;
 }
 
-async function verifyParameters(
-  req: Request
-): Promise<{ chain: string; table: string } | Response> {
+async function verifyParameters(req: Request): Promise<Result<{ chain: string; table: string }, Response>> {
   const url = new URL(req.url);
   const chain = url.searchParams.get("chain");
   const table = url.searchParams.get("table");
 
   if (!chain) {
-    return toText("Missing parameter: chain", 400);
+    return Err(toText("Missing parameter: chain", 400));
   }
 
   if (!table) {
-    return toText("Missing parameter: table", 400);
+    return Err(toText("Missing parameter: table", 400));
   }
 
   if (!(await store.chains).includes(chain)) {
-    return toText("Invalid parameter: chain=" + chain, 400);
+    return Err(toText("Invalid parameter: chain=" + chain, 400));
   }
 
   if (!(await store.publicTables).includes(table)) {
-    return toText("Invalid parameter: table=" + table, 400);
+    return Err(toText("Invalid parameter: table=" + table, 400));
   }
 
-  return { chain, table };
+  return Ok({ chain, table });
 }
 
 async function getModuleHash(table: string, chain: string): Promise<string | null> {
