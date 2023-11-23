@@ -1,6 +1,7 @@
 import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
 import { config } from "../config.js";
+import { Err, Ok, Result } from "../result.js";
 import tableSQL from "./table.sql";
 
 const selectSQL = {
@@ -68,24 +69,36 @@ class SQLite {
     this.insertStatement.run(this.batchNumber, entityChanges, source, chain, blockId, blockNumber, isFinal ? 1 : 0, moduleHash, moduleName, type, timestamp, cursor);
   }
 
-  public async commitBuffer(onData: (blocks: unknown[], cursors: unknown[], finalBlocks: unknown[], moduleHashes: unknown[], entityChanges: Record<string, unknown[]>) => Promise<void>) {
-    this.batchNumber++;
+  public async commitBuffer(onData: (blocks: unknown[], cursors: unknown[], finalBlocks: unknown[], moduleHashes: unknown[], entityChanges: Record<string, unknown[]>) => Promise<void>): Promise<Result> {
+    try {
+      this.batchNumber++;
 
-    const blocks = this.selectBlocksStatement.all(this.batchNumber);
-    const cursors = this.selectCursorsStatement.all(this.batchNumber);
-    const finalBlocks = this.selectFinalBlocksStatement.all(this.batchNumber);
-    const moduleHashes = this.selectModuleHashesStatement.all(this.batchNumber);
-    const entityChanges: Record<string, Array<unknown>> = {};
+      const blocks = this.selectBlocksStatement.all(this.batchNumber);
+      const cursors = this.selectCursorsStatement.all(this.batchNumber);
+      const finalBlocks = this.selectFinalBlocksStatement.all(this.batchNumber);
+      const moduleHashes = this.selectModuleHashesStatement.all(this.batchNumber);
+      const entityChanges: Record<string, Array<unknown>> = {};
 
-    const sources = this.selectSourcesStatement.all(this.batchNumber);
-    for (const { source } of sources) {
-      if (source.length > 0) {
-        entityChanges[source] = this.selecEntityChangesStatement.all(this.batchNumber, source).map((response) => JSON.parse(response.entity_changes));
+      const sources = this.selectSourcesStatement.all(this.batchNumber);
+      for (const { source } of sources) {
+        if (source.length > 0) {
+          entityChanges[source] = this.selecEntityChangesStatement.all(this.batchNumber, source).map((response) => JSON.parse(response.entity_changes));
+        }
+      }
+
+      await onData(blocks, cursors, finalBlocks, moduleHashes, entityChanges);
+      this.deleteStatement.run(this.batchNumber);
+    } catch (err) {
+      if (err instanceof Error) {
+        return Err(err);
+      } else if (typeof err === "string") {
+        return Err(new Error(err));
+      } else {
+        return Err(new Error(JSON.stringify(err)));
       }
     }
 
-    await onData(blocks, cursors, finalBlocks, moduleHashes, entityChanges);
-    this.deleteStatement.run(this.batchNumber);
+    return Ok();
   }
 
   private get initialBatchNumber() {
