@@ -19,7 +19,10 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     sqlite.triggerTransaction();
   }
 
-  prometheus.sink_requests.inc();
+  prometheus.sink_requests.inc({
+    chain: metadata.manifest.chain,
+    module_hash: metadata.manifest.moduleHash,
+  });
   bufferedItems++;
 
   // EntityChanges
@@ -196,7 +199,10 @@ function insertEntityChange(
     )
   );
 
-  prometheus.entity_changes_inserted.inc();
+  prometheus.entity_changes_inserted.inc({
+    chain: metadata.manifest.chain,
+    module_hash: metadata.manifest.moduleHash,
+  });
 }
 
 // TODO: implement function
