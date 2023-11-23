@@ -19,7 +19,10 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     sqlite.triggerTransaction();
   }
 
-  prometheus.sink_requests.inc();
+  prometheus.sink_requests.inc({
+    chain: metadata.manifest.chain,
+    module_hash: metadata.manifest.moduleHash,
+  });
   bufferedItems++;
 
   // EntityChanges
@@ -120,6 +123,7 @@ async function handleEntityChange(
   const jsonData = JSON.stringify(values);
   const clock = JSON.stringify(metadata.clock);
   const manifest = JSON.stringify(metadata.manifest);
+  const environment = { chain: metadata.manifest.chain, module_hash: metadata.manifest.moduleHash };
 
   if (!tableExists) {
     if (!config.allowUnparsed) {
@@ -135,14 +139,14 @@ async function handleEntityChange(
 
   switch (change.operation) {
     case "OPERATION_CREATE":
-      prometheus.entity_changes_inserted.inc();
+      prometheus.entity_changes_inserted.inc(environment);
       return insertEntityChange(table, values, { ...metadata, id: change.id });
 
     // Updates are inserted as new rows in ClickHouse. This allows for the full history.
     // If the user wants to override old data, they can specify it in their schema
     // by using a ReplacingMergeTree.
     case "OPERATION_UPDATE":
-      prometheus.entity_changes_updated.inc();
+      prometheus.entity_changes_updated.inc(environment);
       return insertEntityChange(table, values, { ...metadata, id: change.id });
 
     // Deleted entity changes are not actually removed from the database.
@@ -150,7 +154,7 @@ async function handleEntityChange(
     // Again, this allows to keep the full history while also providing the required information
     // to correctly filter out unwanted data if necessary.
     case "OPERATION_DELETE":
-      prometheus.entity_changes_deleted.inc();
+      prometheus.entity_changes_deleted.inc(environment);
       return insertEntityChange("deleted_entity_changes", { source: table }, { ...metadata, id: change.id });
 
     default:
