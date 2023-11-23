@@ -93,9 +93,7 @@ export function saveKnownEntityChanges() {
         if (await store.existsTable(table)) {
           await client.insert({ table, values, format: "JSONEachRow" });
         } else {
-          logger.info(
-            `Skipped (${values.length}) records assigned to table '${table}' because it does not exist.`
-          );
+          logger.info(`Skipped (${values.length}) records assigned to table '${table}' because it does not exist.`);
         }
       }
     }
@@ -108,22 +106,7 @@ function batchSizeLimitReached() {
 
 function handleNoEntityChange(metadata: { clock: Clock; manifest: Manifest; cursor: string }) {
   const { clock, manifest, cursor } = metadata;
-
-  sqliteQueue.add(() =>
-    sqlite.insert(
-      "",
-      "",
-      manifest.chain,
-      clock.id,
-      clock.number,
-      manifest.finalBlockOnly,
-      manifest.moduleHash,
-      manifest.moduleName,
-      manifest.type,
-      Number(new Date(clock.timestamp)),
-      cursor
-    )
-  );
+  sqliteQueue.add(() => sqlite.insert("", "", clock, manifest, cursor));
 }
 
 async function handleEntityChange(
@@ -168,11 +151,7 @@ async function handleEntityChange(
     // to correctly filter out unwanted data if necessary.
     case "OPERATION_DELETE":
       prometheus.entity_changes_deleted.inc();
-      return insertEntityChange(
-        "deleted_entity_changes",
-        { source: table },
-        { ...metadata, id: change.id }
-      );
+      return insertEntityChange("deleted_entity_changes", { source: table }, { ...metadata, id: change.id });
 
     default:
       prometheus.entity_changes_unsupported.inc();
@@ -195,18 +174,6 @@ function insertEntityChange(
   values["cursor"] = metadata.cursor; // Block cursor for current substreams
 
   sqliteQueue.add(() =>
-    sqlite.insert(
-      JSON.stringify(values),
-      table,
-      metadata.manifest.chain,
-      metadata.clock.id,
-      metadata.clock.number,
-      metadata.manifest.finalBlockOnly,
-      metadata.manifest.moduleHash,
-      metadata.manifest.moduleName,
-      metadata.manifest.type,
-      Number(new Date(metadata.clock.timestamp)),
-      metadata.cursor
-    )
+    sqlite.insert(JSON.stringify(values), table, metadata.clock, metadata.manifest, metadata.cursor)
   );
 }

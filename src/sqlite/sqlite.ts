@@ -2,6 +2,7 @@ import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
 import { config } from "../config.js";
 import { Err, Ok, Result } from "../result.js";
+import { Clock, Manifest } from "../schemas.js";
 import tableSQL from "./table.sql";
 
 const selectSQL = {
@@ -65,11 +66,26 @@ class SQLite {
     this.db.run("BEGIN TRANSACTION;");
   }
 
-  public insert(entityChanges: string, source: string, chain: string, blockId: string, blockNumber: number, isFinal: boolean, moduleHash: string, moduleName: string, type: string, timestamp: number, cursor: string) {
-    this.insertStatement.run(this.batchNumber, entityChanges, source, chain, blockId, blockNumber, isFinal ? 1 : 0, moduleHash, moduleName, type, timestamp, cursor);
+  public insert(entityChanges: string, source: string, clock: Clock, manifest: Manifest, cursor: string) {
+    const { chain, finalBlockOnly, moduleHash, moduleName, type } = manifest;
+    const { id: blockId, number: blockNumber, timestamp: timestampStr } = clock;
+
+    const isFinal = finalBlockOnly ? 1 : 0;
+    const timestamp = Number(new Date(timestampStr));
+
+    const args = [source, chain, blockId, blockNumber, isFinal, moduleHash, moduleName, type, timestamp, cursor];
+    this.insertStatement.run(this.batchNumber, entityChanges, ...args);
   }
 
-  public async commitBuffer(onData: (blocks: unknown[], cursors: unknown[], finalBlocks: unknown[], moduleHashes: unknown[], entityChanges: Record<string, unknown[]>) => Promise<void>): Promise<Result> {
+  public async commitBuffer(
+    onData: (
+      blocks: unknown[],
+      cursors: unknown[],
+      finalBlocks: unknown[],
+      moduleHashes: unknown[],
+      entityChanges: Record<string, unknown[]>
+    ) => Promise<void>
+  ): Promise<Result> {
     try {
       this.batchNumber++;
 
@@ -82,7 +98,9 @@ class SQLite {
       const sources = this.selectSourcesStatement.all(this.batchNumber);
       for (const { source } of sources) {
         if (source.length > 0) {
-          entityChanges[source] = this.selecEntityChangesStatement.all(this.batchNumber, source).map((response) => JSON.parse(response.entity_changes));
+          entityChanges[source] = this.selecEntityChangesStatement
+            .all(this.batchNumber, source)
+            .map((response) => JSON.parse(response.entity_changes));
         }
       }
 
@@ -103,16 +121,14 @@ class SQLite {
 
   private get initialBatchNumber() {
     try {
-      const response = this.db
-        .query<{ batch_number: number }, any>(
-          `SELECT MAX(batch_number) AS batch_number
+      const sql = `SELECT MAX(batch_number) AS batch_number
         FROM (
             SELECT batch_number FROM data_buffer
             UNION ALL
             SELECT 0 AS batch_number
-        )`
-        )
-        .get();
+        )`;
+
+      const response = this.db.query<{ batch_number: number }, any>(sql).get();
       return response!.batch_number + 1;
     } catch {
       return 0;
