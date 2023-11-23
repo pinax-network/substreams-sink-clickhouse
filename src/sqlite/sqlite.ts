@@ -1,7 +1,7 @@
 import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
 import { config } from "../config.js";
-import { Err, Ok, Result } from "../result.js";
+import { Ok, Result, UnknownErr } from "../result.js";
 import tableSQL from "./table.sql";
 
 const selectSQL = {
@@ -89,13 +89,7 @@ class SQLite {
       await onData(blocks, cursors, finalBlocks, moduleHashes, entityChanges);
       this.deleteStatement.run(this.batchNumber);
     } catch (err) {
-      if (err instanceof Error) {
-        return Err(err);
-      } else if (typeof err === "string") {
-        return Err(new Error(err));
-      } else {
-        return Err(new Error(JSON.stringify(err)));
-      }
+      return UnknownErr(err);
     }
 
     return Ok();

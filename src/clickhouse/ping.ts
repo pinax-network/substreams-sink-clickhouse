@@ -1,4 +1,4 @@
-import { Err, Ok, Result } from "../result.js";
+import { Ok, Result, UnknownErr } from "../result.js";
 import client from "./createClient.js";
 
 export async function ping(): Promise<Result> {
@@ -6,7 +6,6 @@ export async function ping(): Promise<Result> {
     await client.exec({ query: "SELECT 1" });
     return Ok();
   } catch (err) {
-    const message = typeof err === "string" ? err : JSON.stringify(err);
-    return Err(new Error(message));
+    return UnknownErr(err);
   }
 }
