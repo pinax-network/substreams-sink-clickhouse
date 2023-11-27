@@ -96,9 +96,7 @@ export function saveKnownEntityChanges() {
         if (await store.existsTable(table)) {
           await client.insert({ table, values, format: "JSONEachRow" });
         } else {
-          logger.info(
-            `Skipped (${values.length}) records assigned to table '${table}' because it does not exist.`
-          );
+          logger.info(`Skipped (${values.length}) records assigned to table '${table}' because it does not exist.`);
         }
       }
     }
@@ -111,22 +109,7 @@ function batchSizeLimitReached() {
 
 function handleNoEntityChange(metadata: { clock: Clock; manifest: Manifest; cursor: string }) {
   const { clock, manifest, cursor } = metadata;
-
-  sqliteQueue.add(() =>
-    sqlite.insert(
-      "",
-      "",
-      manifest.chain,
-      clock.id,
-      clock.number,
-      manifest.finalBlockOnly,
-      manifest.moduleHash,
-      manifest.moduleName,
-      manifest.type,
-      Number(new Date(clock.timestamp)),
-      cursor
-    )
-  );
+  sqliteQueue.add(() => sqlite.insert("", "", clock, manifest, cursor));
 }
 
 async function handleEntityChange(
@@ -140,6 +123,7 @@ async function handleEntityChange(
   const jsonData = JSON.stringify(values);
   const clock = JSON.stringify(metadata.clock);
   const manifest = JSON.stringify(metadata.manifest);
+  const environment = { chain: metadata.manifest.chain, module_hash: metadata.manifest.moduleHash };
 
   if (!tableExists) {
     if (!config.allowUnparsed) {
@@ -155,13 +139,23 @@ async function handleEntityChange(
 
   switch (change.operation) {
     case "OPERATION_CREATE":
+      prometheus.entity_changes_inserted.inc(environment);
       return insertEntityChange(table, values, { ...metadata, id: change.id });
 
+    // Updates are inserted as new rows in ClickHouse. This allows for the full history.
+    // If the user wants to override old data, they can specify it in their schema
+    // by using a ReplacingMergeTree.
     case "OPERATION_UPDATE":
-      return updateEntityChange();
+      prometheus.entity_changes_updated.inc(environment);
+      return insertEntityChange(table, values, { ...metadata, id: change.id });
 
+    // Deleted entity changes are not actually removed from the database.
+    // They are stored in the 'deleted_entity_changes' table with their timestamp.
+    // Again, this allows to keep the full history while also providing the required information
+    // to correctly filter out unwanted data if necessary.
     case "OPERATION_DELETE":
-      return deleteEntityChange();
+      prometheus.entity_changes_deleted.inc(environment);
+      return insertEntityChange("deleted_entity_changes", { source: table }, { ...metadata, id: change.id });
 
     default:
       prometheus.entity_changes_unsupported.inc();
@@ -184,39 +178,6 @@ function insertEntityChange(
   values["cursor"] = metadata.cursor; // Block cursor for current substreams
 
   sqliteQueue.add(() =>
-    sqlite.insert(
-      JSON.stringify(values),
-      table,
-      metadata.manifest.chain,
-      metadata.clock.id,
-      metadata.clock.number,
-      metadata.manifest.finalBlockOnly,
-      metadata.manifest.moduleHash,
-      metadata.manifest.moduleName,
-      metadata.manifest.type,
-      Number(new Date(metadata.clock.timestamp)),
-      metadata.cursor
-    )
+    sqlite.insert(JSON.stringify(values), table, metadata.clock, metadata.manifest, metadata.cursor)
   );
-
-  prometheus.entity_changes_inserted.inc({
-    chain: metadata.manifest.chain,
-    module_hash: metadata.manifest.moduleHash,
-  });
-}
-
-// TODO: implement function
-function updateEntityChange(): Promise<void> {
-  prometheus.entity_changes_updated.inc();
-  return Promise.resolve();
-
-  // return client.update();
-}
-
-// TODO: implement function
-function deleteEntityChange(): Promise<void> {
-  prometheus.entity_changes_deleted.inc();
-  return Promise.resolve();
-
-  // return client.delete({ values, table: change.entity });
 }
