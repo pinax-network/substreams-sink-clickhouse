@@ -32,7 +32,7 @@ describe("ConfigSchema", () => {
   test("database", () => expect(config.database).toBe("default"));
   test("username", () => expect(config.username).toBe("default"));
   test("publicKey", () =>
-    expect(config.publicKey).toBe("a3cb7366ee8ca77225b4d41772e270e4e831d171d1de71d91707c42e7ba82cc9"));
+    expect(config.publicKey).toEqual(["a3cb7366ee8ca77225b4d41772e270e4e831d171d1de71d91707c42e7ba82cc9"]));
   test("waitForAsyncInsert", () => expect(config.waitForAsyncInsert).toBe(0));
   test("asyncInsert", () => expect(config.asyncInsert).toBe(1));
   test("allowUnparsed", () => expect(config.allowUnparsed).toBeTrue());
