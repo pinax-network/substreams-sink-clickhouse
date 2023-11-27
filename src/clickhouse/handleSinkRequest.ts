@@ -12,13 +12,8 @@ import { store } from "./stores.js";
 let bufferedItems = 0;
 let timeLimitReached = true;
 const clickhouseQueue = new PQueue({ concurrency: 2 });
-const sqliteQueue = new PQueue({ concurrency: 1 });
 
 export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
-  if (bufferedItems % config.transactionSize === 0) {
-    sqlite.triggerTransaction();
-  }
-
   prometheus.sink_requests.inc({
     chain: metadata.manifest.chain,
     module_hash: metadata.manifest.moduleHash,
@@ -109,7 +104,7 @@ function batchSizeLimitReached() {
 
 function handleNoEntityChange(metadata: { clock: Clock; manifest: Manifest; cursor: string }) {
   const { clock, manifest, cursor } = metadata;
-  sqliteQueue.add(() => sqlite.insert("", "", clock, manifest, cursor));
+  sqlite.insert("", "", clock, manifest, cursor);
 }
 
 async function handleEntityChange(
@@ -177,7 +172,5 @@ function insertEntityChange(
   values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
   values["cursor"] = metadata.cursor; // Block cursor for current substreams
 
-  sqliteQueue.add(() =>
-    sqlite.insert(JSON.stringify(values), table, metadata.clock, metadata.manifest, metadata.cursor)
-  );
+  sqlite.insert(JSON.stringify(values), table, metadata.clock, metadata.manifest, metadata.cursor);
 }

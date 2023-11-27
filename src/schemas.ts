@@ -23,7 +23,6 @@ export const ConfigSchema = z.object({
   maxBufferSize: positiveNumber,
   insertionDelay: positiveNumber,
   allowUnparsed: boolean,
-  transactionSize: positiveNumber,
   resume: boolean,
   buffer: z.string(),
 });

@@ -21,7 +21,6 @@ const config = ConfigSchema.parse({
   maxBufferSize: "10000",
   insertionDelay: "2000",
   allowUnparsed: true,
-  transactionSize: 50,
   resume: true,
   buffer: "buffer.sqlite",
 });
@@ -33,13 +32,10 @@ describe("ConfigSchema", () => {
   test("database", () => expect(config.database).toBe("default"));
   test("username", () => expect(config.username).toBe("default"));
   test("publicKey", () =>
-    expect(config.publicKey).toBe(
-      "a3cb7366ee8ca77225b4d41772e270e4e831d171d1de71d91707c42e7ba82cc9"
-    ));
+    expect(config.publicKey).toBe("a3cb7366ee8ca77225b4d41772e270e4e831d171d1de71d91707c42e7ba82cc9"));
   test("waitForAsyncInsert", () => expect(config.waitForAsyncInsert).toBe(0));
   test("asyncInsert", () => expect(config.asyncInsert).toBe(1));
   test("allowUnparsed", () => expect(config.allowUnparsed).toBeTrue());
-  test("transactionSize", () => expect(config.transactionSize).toBe(50));
   test("resume", () => expect(config.resume).toBeTrue());
   test("buffer", () => expect(config.buffer).toBe("buffer.sqlite"));
 });
