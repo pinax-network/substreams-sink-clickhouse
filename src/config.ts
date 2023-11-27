@@ -29,7 +29,7 @@ export const opts = program
   .addOption(new Option("-p, --port <number>", "HTTP port on which to attach the sink").env("PORT").default(DEFAULT_PORT))
   .addOption(new Option("-v, --verbose <boolean>", "Enable verbose logging").choices(["true", "false"]).env("VERBOSE").default(DEFAULT_VERBOSE))
   .addOption(new Option("--hostname <string>", "Server listen on HTTP hostname").env("HOSTNAME").default(DEFAULT_HOSTNAME))
-  .addOption(new Option("--public-key <string>", "Public key to validate messages").env("PUBLIC_KEY"))
+  .addOption(new Option("--public-key <string>", "Comma separated list of public keys to validate messages").env("PUBLIC_KEY"))
   .addOption(new Option("--auth-key <string>", "Auth key to validate requests").env("AUTH_KEY"))
   .addOption(new Option("--host <string>", "Database HTTP hostname").env("HOST").default(DEFAULT_HOST))
   .addOption(new Option("--username <string>", "Database user").env("USERNAME").default(DEFAULT_USERNAME))

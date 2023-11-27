@@ -11,7 +11,7 @@ export default async function (req: Request, text: string): Promise<Result<undef
   if (!signature) return Err(toText("missing required signature in headers", 400));
   if (!text) return Err(toText("missing body", 400));
 
-  verifier ??= new CachedVerifier([config.publicKey]);
+  verifier ??= new CachedVerifier(config.publicKey);
   const isVerified = verifier.verify(signature);
 
   if (!isVerified) return Err(toText("invalid request signature", 401));

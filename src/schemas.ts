@@ -9,7 +9,10 @@ export const positiveNumber = z.coerce.number().pipe(z.number().positive());
 export const oneOrZero = z.coerce.number().pipe(z.literal(0).or(z.literal(1)));
 
 export const ConfigSchema = z.object({
-  publicKey: z.string(),
+  publicKey: z
+    .string()
+    .transform((str) => str.split(","))
+    .refine((publicKeys) => publicKeys.filter((key) => key.length > 0).length > 0, "No primary key has been set"),
   authKey: z.optional(z.string().transform((str) => str.replaceAll("\\$", "$"))),
   port: positiveNumber,
   verbose: boolean,
