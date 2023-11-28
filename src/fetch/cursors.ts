@@ -58,10 +58,3 @@ async function verifyParameters(req: Request): Promise<Result<{ chain: string; m
 
   return Ok({ chain, moduleHash });
 }
-
-async function getModuleHash(table: string, chain: string): Promise<string | null> {
-  const query = `SELECT module_hash FROM ${table} WHERE chain = '${chain}'`;
-  const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
-  const data = await response.json<Array<{ module_hash: string }>>();
-  return data[0]?.module_hash ?? null;
-}
