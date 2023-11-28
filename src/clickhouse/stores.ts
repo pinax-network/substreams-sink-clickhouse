@@ -1,13 +1,11 @@
 import { logger } from "../logger.js";
 import { readOnlyClient } from "./createClient.js";
 
-const hiddenTables = ["blocks", "module_hashes", "cursors", "final_blocks", "unparsed_json", "deleted_entity_changes"];
-
 class ClickhouseStore {
   public paused = false;
 
   private chainsPromise: Promise<string[]> | null = null;
-  private publicTablesPromise: Promise<string[]> | null = null;
+  private moduleHashesPromises: Promise<string[]> | null = null;
 
   private knownTables = new Map<string, boolean>();
 
@@ -23,17 +21,16 @@ class ClickhouseStore {
     return this.chainsPromise;
   }
 
-  public get publicTables() {
-    if (!this.publicTablesPromise) {
-      this.publicTablesPromise = readOnlyClient
-        .query({ query: "SHOW TABLES", format: "JSONEachRow" })
-        .then((response) => response.json<Array<{ name: string }>>())
-        .then((names) => names.map(({ name }) => name))
-        .then((names) => names.filter((table) => !hiddenTables.includes(table)))
+  public get moduleHashes() {
+    if (!this.moduleHashesPromises) {
+      this.moduleHashesPromises = readOnlyClient
+        .query({ query: "SELECT DISTINCT module_hash from module_hashes", format: "JSONEachRow" })
+        .then((response) => response.json<Array<{ module_hash: string }>>())
+        .then((moduleHashes) => moduleHashes.map(({ module_hash }) => module_hash))
         .catch(() => []);
     }
 
-    return this.publicTablesPromise;
+    return this.moduleHashesPromises;
   }
 
   // in memory TABLE name cache
@@ -63,7 +60,7 @@ class ClickhouseStore {
 
   public reset() {
     this.chainsPromise = null;
-    this.publicTablesPromise = null;
+    this.moduleHashesPromises = null;
     this.knownTables.clear();
     logger.info("Cache has been cleared");
   }

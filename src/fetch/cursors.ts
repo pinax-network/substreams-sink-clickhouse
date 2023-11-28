@@ -11,13 +11,12 @@ export async function findLatestCursor(req: Request): Promise<Response> {
   }
 
   try {
-    const { table, chain } = parametersResult.payload;
+    const { moduleHash, chain } = parametersResult.payload;
 
     const query = `
-    SELECT cursor, timestamp 
-    FROM ${table} 
-    WHERE chain = '${chain}'
-    ORDER BY timestamp DESC
+    SELECT latest_cursor, latest_block_number
+    FROM module_hashes
+    WHERE chain = '${chain}' AND module_hash = '${moduleHash}'
     LIMIT 1`;
 
     const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
@@ -27,35 +26,37 @@ export async function findLatestCursor(req: Request): Promise<Response> {
       return toJSON(data[0]);
     }
 
-    return toText(`Bad request: no cursor found for '${table}' on '${chain}'.`, 400);
+    return toText(`Bad request: no cursor found for '${moduleHash}' on '${chain}'.`, 400);
   } catch (err) {
     logger.error(err);
   }
   return BadRequest;
 }
 
-async function verifyParameters(req: Request): Promise<Result<{ chain: string; table: string }, Response>> {
+async function verifyParameters(req: Request): Promise<Result<{ chain: string; moduleHash: string }, Response>> {
   const url = new URL(req.url);
   const chain = url.searchParams.get("chain");
-  const table = url.searchParams.get("table");
+  const moduleHash = url.searchParams.get("module_hash");
 
   if (!chain) {
     return Err(toText("Missing parameter: chain", 400));
   }
 
-  if (!table) {
-    return Err(toText("Missing parameter: table", 400));
+  if (!moduleHash) {
+    return Err(toText("Missing parameter: module_hash", 400));
   }
 
   if (!(await store.chains).includes(chain)) {
+    store.reset();
     return Err(toText("Invalid parameter: chain=" + chain, 400));
   }
 
-  if (!(await store.publicTables).includes(table)) {
-    return Err(toText("Invalid parameter: table=" + table, 400));
+  if (!(await store.moduleHashes).includes(moduleHash)) {
+    store.reset();
+    return Err(toText("Invalid parameter: moduleHash=" + moduleHash, 400));
   }
 
-  return Ok({ chain, table });
+  return Ok({ chain, moduleHash });
 }
 
 async function getModuleHash(table: string, chain: string): Promise<string | null> {

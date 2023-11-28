@@ -193,10 +193,10 @@ export async function openapi() {
         parameters: [
           { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
           {
-            name: "table",
+            name: "module_hash",
             in: "query",
             required: true,
-            schema: { enum: await store.publicTables },
+            schema: { enum: await store.moduleHashes },
           },
         ],
         responses: {
