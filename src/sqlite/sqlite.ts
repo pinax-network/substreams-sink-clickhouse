@@ -8,8 +8,8 @@ import tableSQL from "./table.sql";
 const selectSQL = {
   blocks: "SELECT block_id, block_number, chain, timestamp FROM data_buffer WHERE batch_number <= ?;",
   finalBlocks: "SELECT block_id FROM data_buffer WHERE batch_number <= ? AND is_final = 1;",
-  moduleHashes:
-    "SELECT module_hash, module_name, chain, type, cursor, block_number, block_id FROM data_buffer WHERE batch_number <= ?;",
+  moduleHashes: `SELECT module_hash, module_name, chain, type, cursor AS latest_cursor, block_number AS latest_block_number, block_id AS latest_block_id
+    FROM data_buffer WHERE batch_number <= ?;`,
   sources: "SELECT DISTINCT source FROM data_buffer WHERE batch_number <= ?;",
   entityChanges: "SELECT entity_changes FROM data_buffer WHERE batch_number <= ? AND source = ?",
 };
