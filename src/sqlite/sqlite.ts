@@ -7,9 +7,9 @@ import tableSQL from "./table.sql";
 
 const selectSQL = {
   blocks: "SELECT block_id, block_number, chain, timestamp FROM data_buffer WHERE batch_number <= ?;",
-  cursors: "SELECT cursor, module_hash, block_id, block_number, chain FROM data_buffer WHERE batch_number <= ?;",
   finalBlocks: "SELECT block_id FROM data_buffer WHERE batch_number <= ? AND is_final = 1;",
-  moduleHashes: "SELECT module_hash, module_name, chain, type FROM data_buffer WHERE batch_number <= ?;",
+  moduleHashes:
+    "SELECT module_hash, module_name, chain, type, cursor, block_number, block_id FROM data_buffer WHERE batch_number <= ?;",
   sources: "SELECT DISTINCT source FROM data_buffer WHERE batch_number <= ?;",
   entityChanges: "SELECT entity_changes FROM data_buffer WHERE batch_number <= ? AND source = ?",
 };
@@ -31,7 +31,6 @@ class SQLite {
   private batchNumber;
 
   private selectBlocksStatement: Statement<unknown, [number]>;
-  private selectCursorsStatement: Statement<unknown, [number]>;
   private selectFinalBlocksStatement: Statement<unknown, [number]>;
   private selectModuleHashesStatement: Statement<unknown, [number]>;
   private selectSourcesStatement: Statement<{ source: string }, [number]>;
@@ -49,7 +48,6 @@ class SQLite {
     this.batchNumber = this.initialBatchNumber;
 
     this.selectBlocksStatement = this.db.prepare(selectSQL.blocks);
-    this.selectCursorsStatement = this.db.prepare(selectSQL.cursors);
     this.selectFinalBlocksStatement = this.db.prepare(selectSQL.finalBlocks);
     this.selectModuleHashesStatement = this.db.prepare(selectSQL.moduleHashes);
     this.selectSourcesStatement = this.db.prepare(selectSQL.sources);
@@ -80,7 +78,6 @@ class SQLite {
   public async commitBuffer(
     onData: (
       blocks: unknown[],
-      cursors: unknown[],
       finalBlocks: unknown[],
       moduleHashes: unknown[],
       entityChanges: Record<string, unknown[]>
@@ -90,7 +87,6 @@ class SQLite {
       this.batchNumber++;
 
       const blocks = this.selectBlocksStatement.all(this.batchNumber);
-      const cursors = this.selectCursorsStatement.all(this.batchNumber);
       const finalBlocks = this.selectFinalBlocksStatement.all(this.batchNumber);
       const moduleHashes = this.selectModuleHashesStatement.all(this.batchNumber);
       const entityChanges: Record<string, Array<unknown>> = {};
@@ -104,7 +100,7 @@ class SQLite {
         }
       }
 
-      await onData(blocks, cursors, finalBlocks, moduleHashes, entityChanges);
+      await onData(blocks, finalBlocks, moduleHashes, entityChanges);
       this.deleteStatement.run(this.batchNumber);
     } catch (err) {
       return UnknownErr(err);
