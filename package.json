@@ -34,7 +34,7 @@
     "openapi3-ts": "latest",
     "p-queue": "^7.4.1",
     "prom-client": "latest",
-    "substreams-sink-webhook": "^0.7.0",
+    "substreams-sink-webhook": "^0.7.2",
     "tslog": "latest",
     "tweetnacl": "latest",
     "zod": "latest",
