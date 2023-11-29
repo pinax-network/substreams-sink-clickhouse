@@ -12,9 +12,8 @@ export async function initializeDefaultTables(): Promise<Result> {
     })
   );
 
-  const reasons = (
-    promiseResults.filter((promise) => promise.status === "rejected") as PromiseRejectedResult[]
-  ).map((promise) => promise.reason);
+  const rejectePromises = promiseResults.filter((promise) => promise.status === "rejected") as PromiseRejectedResult[];
+  const reasons = rejectePromises.map((promise) => promise.reason);
 
   if (reasons.length > 0) {
     return Err(new Error(reasons.join(" | ")));
@@ -24,14 +23,18 @@ export async function initializeDefaultTables(): Promise<Result> {
 }
 
 const extraColumns = [
-  "id           String",
   "chain        LowCardinality(String)",
-  "block_id     FixedString(64)",
   "block_number UInt32",
   "module_hash  FixedString(40)",
   "timestamp    DateTime64(3, 'UTC')",
-  "cursor       String",
 ];
+
+const alterations = (tableName: string) => {
+  return [
+    `ALTER TABLE ${tableName} ADD INDEX timestamp_index timestamp TYPE minmax`,
+    `ALTER TABLE ${tableName} ADD INDEX block_number_index block_number TYPE minmax`,
+  ];
+};
 
 export async function initializeTables(tableSchemas: string[]): Promise<Result<Array<string>>> {
   const executedSchemas = [];
@@ -46,6 +49,9 @@ export async function initializeTables(tableSchemas: string[]): Promise<Result<A
       executedSchemas.push(augmentedSchema);
 
       await client.command({ query: augmentedSchema });
+      for (const alteration of alterations(tableName)) {
+        await client.command({ query: alteration });
+      }
     }
   } catch (err) {
     logger.error("Could not initialize the tables", "Request: " + executedSchemas, err);
