@@ -4,7 +4,7 @@ import PQueue from "p-queue";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
-import { Clock, Manifest, PayloadBody } from "../schemas.js";
+import { Clock, Manifest, PayloadBody } from "substreams-sink-webhook/auth";
 import { sqlite } from "../sqlite/sqlite.js";
 import client from "./createClient.js";
 import { store } from "./stores.js";

@@ -5,7 +5,7 @@ import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
 import { store } from "../clickhouse/stores.js";
-import { BodySchema } from "../schemas.js";
+import { BodySchema } from "substreams-sink-webhook/auth";
 import { BlockResponseSchema } from "./blocks.js";
 
 const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
