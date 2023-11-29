@@ -33,6 +33,7 @@ const alterations = (tableName: string) => {
   return [
     `ALTER TABLE ${tableName} ADD INDEX timestamp_index timestamp TYPE minmax`,
     `ALTER TABLE ${tableName} ADD INDEX block_number_index block_number TYPE minmax`,
+    `ALTER TABLE ${tableName} ADD INDEX chain_index chain TYPE minmax`,
   ];
 };
 
