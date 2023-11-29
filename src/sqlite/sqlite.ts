@@ -2,7 +2,7 @@ import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
 import { config } from "../config.js";
 import { Ok, Result, UnknownErr } from "../result.js";
-import { Clock, Manifest } from "../schemas.js";
+import { Clock, Manifest } from "substreams-sink-webhook/auth";
 import tableSQL from "./table.sql";
 
 const selectSQL = {
