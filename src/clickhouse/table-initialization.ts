@@ -29,6 +29,13 @@ const extraColumns = [
   "timestamp    DateTime64(3, 'UTC')",
 ];
 
+const alterations = (tableName: string) => {
+  return [
+    `ALTER TABLE ${tableName} ADD INDEX timestamp_index timestamp TYPE minmax`,
+    `ALTER TABLE ${tableName} ADD INDEX block_number_index block_number TYPE minmax`,
+  ];
+};
+
 export async function initializeTables(tableSchemas: string[]): Promise<Result<Array<string>>> {
   const executedSchemas = [];
   logger.info(`Executing ${tableSchemas.length} schema(s)`);
@@ -42,6 +49,9 @@ export async function initializeTables(tableSchemas: string[]): Promise<Result<A
       executedSchemas.push(augmentedSchema);
 
       await client.command({ query: augmentedSchema });
+      for (const alteration of alterations(tableName)) {
+        await client.command({ query: alteration });
+      }
     }
   } catch (err) {
     logger.error("Could not initialize the tables", "Request: " + executedSchemas, err);
