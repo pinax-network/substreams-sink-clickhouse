@@ -20,8 +20,8 @@ export default async function (req: Request) {
 
   // validate Ed25519 signature
   const text = await req.text();
-  const signatureError = await signatureEd25519(req, text);
-  if (signatureError) return signatureError;
+  const signatureResult = await signatureEd25519(req, text);
+  if (!signatureResult.success) return signatureResult.error;
 
   // parse POST body payload
   try {

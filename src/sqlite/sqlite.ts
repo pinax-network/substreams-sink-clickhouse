@@ -57,13 +57,6 @@ class SQLite {
     this.insertStatement = this.db.prepare(insertSQL);
   }
 
-  public triggerTransaction() {
-    if (this.db.inTransaction) {
-      this.db.run("END TRANSACTION;");
-    }
-    this.db.run("BEGIN TRANSACTION;");
-  }
-
   public insert(entityChanges: string, source: string, clock: Clock, manifest: Manifest, cursor: string) {
     const { chain, finalBlockOnly, moduleHash, moduleName, type } = manifest;
     const { id: blockId, number: blockNumber, timestamp: timestampStr } = clock;

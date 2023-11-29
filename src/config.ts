@@ -17,7 +17,6 @@ export const DEFAULT_WAIT_FOR_ASYNC_INSERT = 0;
 export const DEFAULT_MAX_BUFFER_SIZE = 10_000;
 export const DEFAULT_INSERTION_DELAY = 2000;
 export const DEFAULT_ALLOW_UNPARSED = false;
-export const DEFAULT_TRANSACTION_SIZE = 50;
 export const DEFAULT_RESUME = true;
 export const DEFAULT_BUFFER = "buffer.db";
 export const APP_NAME = name;
@@ -30,7 +29,7 @@ export const opts = program
   .addOption(new Option("-p, --port <number>", "HTTP port on which to attach the sink").env("PORT").default(DEFAULT_PORT))
   .addOption(new Option("-v, --verbose <boolean>", "Enable verbose logging").choices(["true", "false"]).env("VERBOSE").default(DEFAULT_VERBOSE))
   .addOption(new Option("--hostname <string>", "Server listen on HTTP hostname").env("HOSTNAME").default(DEFAULT_HOSTNAME))
-  .addOption(new Option("--public-key <string>", "Public key to validate messages").env("PUBLIC_KEY"))
+  .addOption(new Option("--public-key <string>", "Comma separated list of public keys to validate messages").env("PUBLIC_KEY"))
   .addOption(new Option("--auth-key <string>", "Auth key to validate requests").env("AUTH_KEY"))
   .addOption(new Option("--host <string>", "Database HTTP hostname").env("HOST").default(DEFAULT_HOST))
   .addOption(new Option("--username <string>", "Database user").env("USERNAME").default(DEFAULT_USERNAME))
@@ -41,7 +40,6 @@ export const opts = program
   .addOption(new Option("--max-buffer-size <number>", "Maximum insertion batch size").env("MAX_BUFFER_SIZE").default(DEFAULT_MAX_BUFFER_SIZE))
   .addOption(new Option("--insertion-delay <number>", "Delay between batch insertions (in ms)").env("INSERTION_DELAY").default(DEFAULT_INSERTION_DELAY))
   .addOption(new Option("--allow-unparsed <boolean>", "Enable storage in 'unparsed_json' table").choices(["true", "false"]).env("ALLOW_UNPARSED").default(DEFAULT_ALLOW_UNPARSED))
-  .addOption(new Option("--transaction-size <number>", "Number of insert statements in a SQLite transaction").env("TRANSACTION_SIZE").default(DEFAULT_TRANSACTION_SIZE))
   .addOption(new Option("--resume <boolean>", "Save the cached data from the previous process into ClickHouse").choices(["true", "false"]).env("RESUME").default(DEFAULT_RESUME))
   .addOption(new Option("--buffer <string>", "SQLite database to use as an insertion buffer. Use ':memory:' to make it volatile.").env("BUFFER").default(DEFAULT_BUFFER))
   .parse()
