@@ -1,7 +1,7 @@
 import { config } from "../config.js";
 import { toText } from "../fetch/cors.js";
 import { Err, Ok, Result } from "../result.js";
-import { cachedVerify } from "./temp.js";
+import { cachedVerify } from "substreams-sink-webhook";
 
 export default async function (req: Request, text: string): Promise<Result<undefined, Response>> {
   const signature = req.headers.get("x-signature-ed25519");
