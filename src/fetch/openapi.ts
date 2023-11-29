@@ -62,12 +62,9 @@ export async function openapi() {
       put: {
         tags: [TAGS.USAGE],
         summary: "Initialize the sink according to a SQL schema",
-        description:
-          "Supports `CREATE TABLE` statements<br/>If an url is passed in, the body will not be executed.",
+        description: "Supports `CREATE TABLE` statements<br/>If an url is passed in, the body will not be executed.",
         security: [{ "auth-key": [] }],
-        parameters: [
-          { required: false, in: "query", name: "schema-url", schema: { type: "string" } },
-        ],
+        parameters: [{ required: false, in: "query", name: "schema-url", schema: { type: "string" } }],
         requestBody: {
           content: {
             "text/plain": {
@@ -99,9 +96,7 @@ export async function openapi() {
           url: "https://thegraph.com/docs/en/developing/creating-a-subgraph/#built-in-scalar-types",
         },
         security: [{ "auth-key": [] }],
-        parameters: [
-          { required: false, in: "query", name: "schema-url", schema: { type: "string" } },
-        ],
+        parameters: [{ required: false, in: "query", name: "schema-url", schema: { type: "string" } }],
         requestBody: {
           content: {
             "text/plain": {
@@ -198,10 +193,10 @@ export async function openapi() {
         parameters: [
           { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
           {
-            name: "table",
+            name: "module_hash",
             in: "query",
             required: true,
-            schema: { enum: await store.publicTables },
+            schema: { enum: await store.moduleHashes },
           },
         ],
         responses: {
@@ -210,39 +205,6 @@ export async function openapi() {
             content: {
               "application/json": {
                 schema: zodToJsonSchema(z.object({ cursor: z.string(), timestamp: z.string() })),
-              },
-            },
-          },
-          400: PUT_RESPONSES[400],
-        },
-      },
-    })
-    .addPath("/cursors/missing", {
-      get: {
-        tags: [TAGS.QUERIES],
-        summary: "Finds the missing blocks and returns the start and end cursors",
-        parameters: [
-          { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
-          {
-            name: "table",
-            in: "query",
-            required: true,
-            schema: { enum: await store.publicTables },
-          },
-        ],
-        responses: {
-          200: {
-            description: "Success",
-            content: {
-              "application/json": {
-                schema: zodToJsonSchema(
-                  z.array(
-                    z.object({
-                      from: z.object({ block: z.number(), cursor: z.string() }),
-                      to: z.object({ block: z.number(), cursor: z.string() }),
-                    })
-                  )
-                ),
               },
             },
           },

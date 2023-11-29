@@ -60,33 +60,17 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
 }
 
 export function saveKnownEntityChanges() {
-  return sqlite.commitBuffer(async (blocks, cursors, finalBlocks, moduleHashes, entityChanges) => {
+  return sqlite.commitBuffer(async (blocks, finalBlocks, moduleHashes, entityChanges) => {
     if (moduleHashes.length > 0) {
-      await client.insert({
-        values: moduleHashes,
-        table: "module_hashes",
-        format: "JSONEachRow",
-      });
+      await client.insert({ values: moduleHashes, table: "module_hashes", format: "JSONEachRow" });
     }
 
     if (finalBlocks.length > 0) {
-      await client.insert({
-        values: finalBlocks,
-        table: "final_blocks",
-        format: "JSONEachRow",
-      });
+      await client.insert({ values: finalBlocks, table: "final_blocks", format: "JSONEachRow" });
     }
 
     if (blocks.length > 0) {
       await client.insert({ values: blocks, table: "blocks", format: "JSONEachRow" });
-    }
-
-    if (cursors.length > 0) {
-      await client.insert({
-        values: cursors,
-        table: "cursors",
-        format: "JSONEachRow",
-      });
     }
 
     for (const [table, values] of Object.entries(entityChanges)) {
