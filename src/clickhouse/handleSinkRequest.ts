@@ -1,10 +1,10 @@
 import { getValuesInEntityChange } from "@substreams/sink-entity-changes";
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
+import { Clock, Manifest, PayloadBody } from "substreams-sink-webhook/auth";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
-import { Clock, Manifest, PayloadBody } from "substreams-sink-webhook/auth";
 import { sqlite } from "../sqlite/sqlite.js";
 import client from "./createClient.js";
 import { store } from "./stores.js";
@@ -148,13 +148,10 @@ function insertEntityChange(
   values: Record<string, unknown>,
   metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string }
 ) {
-  values["id"] = metadata.id; // Entity ID
-  values["block_id"] = metadata.clock.id; // Block Index
-  values["block_number"] = metadata.clock.number; // Block number
-  values["module_hash"] = metadata.manifest.moduleHash; // ModuleHash Index
-  values["chain"] = metadata.manifest.chain; // Chain Index
+  values["chain"] = metadata.manifest.chain;
+  values["block_number"] = metadata.clock.number;
+  values["module_hash"] = metadata.manifest.moduleHash;
   values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
-  values["cursor"] = metadata.cursor; // Block cursor for current substreams
 
   sqlite.insert(JSON.stringify(values), table, metadata.clock, metadata.manifest, metadata.cursor);
 }

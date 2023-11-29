@@ -12,9 +12,8 @@ export async function initializeDefaultTables(): Promise<Result> {
     })
   );
 
-  const reasons = (
-    promiseResults.filter((promise) => promise.status === "rejected") as PromiseRejectedResult[]
-  ).map((promise) => promise.reason);
+  const rejectePromises = promiseResults.filter((promise) => promise.status === "rejected") as PromiseRejectedResult[];
+  const reasons = rejectePromises.map((promise) => promise.reason);
 
   if (reasons.length > 0) {
     return Err(new Error(reasons.join(" | ")));
@@ -24,13 +23,10 @@ export async function initializeDefaultTables(): Promise<Result> {
 }
 
 const extraColumns = [
-  "id           String",
   "chain        LowCardinality(String)",
-  "block_id     FixedString(64)",
   "block_number UInt32",
   "module_hash  FixedString(40)",
   "timestamp    DateTime64(3, 'UTC')",
-  "cursor       String",
 ];
 
 export async function initializeTables(tableSchemas: string[]): Promise<Result<Array<string>>> {
