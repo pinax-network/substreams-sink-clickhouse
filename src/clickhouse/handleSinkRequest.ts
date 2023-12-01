@@ -148,8 +148,10 @@ function insertEntityChange(
   values: Record<string, unknown>,
   metadata: { id: string; clock: Clock; manifest: Manifest; cursor: string }
 ) {
+  values["id"] = metadata.id; // Entity ID
+  values["block_id"] = metadata.clock.id; // Block Index
   values["chain"] = metadata.manifest.chain;
-  values["block_number"] = metadata.clock.number;
+  values["block_number"] = metadata.clock.number; // Block Number
   values["module_hash"] = metadata.manifest.moduleHash;
   values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
 

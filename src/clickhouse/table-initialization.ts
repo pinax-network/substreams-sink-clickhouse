@@ -23,8 +23,10 @@ export async function initializeDefaultTables(): Promise<Result> {
 }
 
 const extraColumns = [
+  "id           String",
   "chain        LowCardinality(String)",
   "block_number UInt32",
+  "block_id     FixedString(64)",
   "module_hash  FixedString(40)",
   "timestamp    DateTime64(3, 'UTC')",
 ];
