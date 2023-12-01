@@ -12,7 +12,7 @@ class ClickhouseStore {
   public get chains() {
     if (!this.chainsPromise) {
       this.chainsPromise = readOnlyClient
-        .query({ query: "SELECT DISTINCT chain FROM blocks", format: "JSONEachRow" })
+        .query({ query: "SELECT DISTINCT chain FROM module_hashes", format: "JSONEachRow" })
         .then((response) => response.json<Array<{ chain: string }>>())
         .then((chains) => chains.map(({ chain }) => chain))
         .catch(() => []);
