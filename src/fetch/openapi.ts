@@ -186,7 +186,7 @@ export async function openapi() {
         responses: { 200: { description: "Success" } },
       },
     })
-    .addPath("/cursors/latest", {
+    .addPath("/cursor/latest", {
       get: {
         tags: [TAGS.QUERIES],
         summary: "Finds the latest cursor for a given chain and table",
@@ -203,8 +203,8 @@ export async function openapi() {
           200: {
             description: "Success",
             content: {
-              "application/json": {
-                schema: zodToJsonSchema(z.object({ cursor: z.string(), timestamp: z.string() })),
+              "text/plain": {
+                schema: { type: "string", examples: ["cdbcz7nSDJ1nkgEH_iHLCKWwLpcyB1JpXQPsKBFL0IPy9nHE1J2lBzJxbx3QlP-ljBPpHQ_63tiYEioopMAD6tG7w-0w5XM-RHJ5m43u_bfmfPT6Pw1PcL5iDerfYNLaUzrfagL-e7sBtYG0PqWMNUUyY5IkL2TlimkEooIHcaQY7HAzlTmoJ53Tha3C-IRCruZ3F-GjlCqiUTJ6fhlbO82KbvKX7TR2"] },
               },
             },
           },

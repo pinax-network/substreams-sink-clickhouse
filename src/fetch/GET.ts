@@ -4,7 +4,7 @@ import swaggerHtml from "../../swagger/index.html";
 import { metrics } from "../prometheus.js";
 import { blocks } from "./blocks.js";
 import { NotFound, toFile, toJSON } from "./cors.js";
-import { findLatestCursor } from "./cursors.js";
+import { findLatestCursor } from "./cursor.js";
 import health from "./health.js";
 import { openapi } from "./openapi.js";
 
@@ -17,7 +17,7 @@ export default async function (req: Request) {
   if (pathname === "/metrics") return metrics();
   if (pathname === "/openapi") return toJSON(await openapi());
   if (pathname === "/blocks") return blocks();
-  if (pathname === "/cursors/latest") return findLatestCursor(req);
+  if (pathname === "/cursor/latest") return findLatestCursor(req);
 
   return NotFound;
 }
