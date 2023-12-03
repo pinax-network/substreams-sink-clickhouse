@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS module_hashes (
     latest_block_id     FixedString(64),
 )
 ENGINE = ReplacingMergeTree
-ORDER BY (module_hash, chain);
+ORDER BY (chain, module_hash);
