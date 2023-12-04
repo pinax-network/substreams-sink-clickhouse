@@ -10,9 +10,11 @@ Support for these entity change operations:
 
 - `OPERATION_DELETE`: Entity changes are not actually deleted from the database. Again, this allows to build an history of every transaction. The deleted fields are inserted into `deleted_entity_changes`. This table can then be used to filter out deleted data if required.
 
-## ~~Support for [database changes](https://crates.io/crates/substreams-database-change)~~ (WIP)
+## Support for [database changes](https://crates.io/crates/substreams-database-change)
 
-This feature has not been implemented yet.
+The sink accepts [database changes](https://crates.io/crates/substreams-database-change) payloads. The sink only takes into account the `newValue` for every column.<br/>These operations are supported: `OPERATION_CREATE`, `OPERATION_UPDATE` and `OPERATION_DELETE`.
+
+The behavior is the same as for [entity changes](https://crates.io/crates/substreams-entity-change/). Read more [here](#support-for-entity-changes).
 
 ## Table initialization
 

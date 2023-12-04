@@ -21,7 +21,7 @@ See [releases](https://github.com/pinax-network/substreams-sink-clickhouse/relea
 See detailed [list of features](/docs/features.md).
 
 - Support for [entity changes](https://crates.io/crates/substreams-entity-change/)
-- ~~Support for [database changes](https://crates.io/crates/substreams-database-change)~~ (WIP)
+- Support for [database changes](https://crates.io/crates/substreams-database-change)
 - Table initialization
   - SQL schemas
   - GraphQL schemas
