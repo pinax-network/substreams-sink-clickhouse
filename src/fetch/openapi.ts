@@ -2,10 +2,10 @@ import pkg from "../../package.json" assert { type: "json" };
 
 import { LicenseObject } from "openapi3-ts/oas30";
 import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
+import { BodySchema } from "substreams-sink-webhook/auth";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
 import { store } from "../clickhouse/stores.js";
-import { BodySchema } from "substreams-sink-webhook/auth";
 import { BlockResponseSchema } from "./blocks.js";
 
 const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
@@ -167,7 +167,14 @@ export async function openapi() {
         tags: [TAGS.MAINTENANCE],
         security: [{ "auth-key": [] }],
         summary: "Blocks all incoming requests to `/webhook` until unpaused",
-        responses: { 200: { description: "Success" } },
+        responses: {
+          200: {
+            description: "Success",
+            content: {
+              "text/plain": { schema: { type: "string" } },
+            },
+          },
+        },
       },
     })
     .addPath("/unpause", {
@@ -175,7 +182,14 @@ export async function openapi() {
         tags: [TAGS.MAINTENANCE],
         security: [{ "auth-key": [] }],
         summary: "Resumes listening to requests on `/webhook`",
-        responses: { 200: { description: "Success" } },
+        responses: {
+          200: {
+            description: "Success",
+            content: {
+              "text/plain": { schema: { type: "string" } },
+            },
+          },
+        },
       },
     })
     .addPath("/caches", {
@@ -204,7 +218,12 @@ export async function openapi() {
             description: "Success",
             content: {
               "text/plain": {
-                schema: { type: "string", examples: ["cdbcz7nSDJ1nkgEH_iHLCKWwLpcyB1JpXQPsKBFL0IPy9nHE1J2lBzJxbx3QlP-ljBPpHQ_63tiYEioopMAD6tG7w-0w5XM-RHJ5m43u_bfmfPT6Pw1PcL5iDerfYNLaUzrfagL-e7sBtYG0PqWMNUUyY5IkL2TlimkEooIHcaQY7HAzlTmoJ53Tha3C-IRCruZ3F-GjlCqiUTJ6fhlbO82KbvKX7TR2"] },
+                schema: {
+                  type: "string",
+                  examples: [
+                    "cdbcz7nSDJ1nkgEH_iHLCKWwLpcyB1JpXQPsKBFL0IPy9nHE1J2lBzJxbx3QlP-ljBPpHQ_63tiYEioopMAD6tG7w-0w5XM-RHJ5m43u_bfmfPT6Pw1PcL5iDerfYNLaUzrfagL-e7sBtYG0PqWMNUUyY5IkL2TlimkEooIHcaQY7HAzlTmoJ53Tha3C-IRCruZ3F-GjlCqiUTJ6fhlbO82KbvKX7TR2",
+                  ],
+                },
               },
             },
           },
