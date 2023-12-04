@@ -1,8 +1,9 @@
 import { getValuesInEntityChange } from "@substreams/sink-entity-changes";
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
-import { Clock, Manifest, PayloadBody } from "substreams-sink-webhook/auth";
+import { Clock, Manifest } from "substreams-sink-webhook/auth";
 import { config } from "../config.js";
+import { PayloadBody, TableChange, getvaluesInTableChange } from "../fetch/tmp.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { sqlite } from "../sqlite/sqlite.js";
@@ -20,13 +21,18 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   });
   bufferedItems++;
 
-  // EntityChanges
-  if (data.entityChanges.length > 0) {
+  if ("entityChanges" in data && data.entityChanges.length > 0) {
+    logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length}`);
     for (const change of data.entityChanges) {
       handleEntityChange(change, metadata);
     }
+  } else if ("tableChanges" in data && data.tableChanges.length > 0) {
+    logger.info(`handleSinkRequest | tableChanges=${data.tableChanges.length}`);
+    for (const change of data.tableChanges) {
+      handleDatabaseChange(change, metadata);
+    }
   } else {
-    handleNoEntityChange(metadata);
+    handleNoChange(metadata);
   }
 
   if (batchSizeLimitReached()) {
@@ -50,7 +56,6 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
     clickhouseQueue.add(saveKnownEntityChanges);
   }
 
-  logger.info(`handleSinkRequest | entityChanges=${data.entityChanges.length}`);
   return new Response("OK");
 }
 
@@ -86,7 +91,7 @@ function batchSizeLimitReached() {
   return bufferedItems >= config.maxBufferSize;
 }
 
-function handleNoEntityChange(metadata: { clock: Clock; manifest: Manifest; cursor: string }) {
+function handleNoChange(metadata: { clock: Clock; manifest: Manifest; cursor: string }) {
   const { clock, manifest, cursor } = metadata;
   sqlite.insert("", "", clock, manifest, cursor);
 }
@@ -135,6 +140,58 @@ async function handleEntityChange(
     case "OPERATION_DELETE":
       prometheus.entity_changes_deleted.inc(environment);
       return insertEntityChange("deleted_entity_changes", { source: table }, { ...metadata, id: change.id });
+
+    default:
+      prometheus.entity_changes_unsupported.inc();
+      logger.error("unsupported operation found in entityChanges: " + change.operation.toString());
+      return Promise.resolve();
+  }
+}
+
+async function handleDatabaseChange(
+  change: TableChange,
+  metadata: { clock: Clock; manifest: Manifest; cursor: string }
+) {
+  let table = change.table;
+  let values = getvaluesInTableChange(change);
+  const tableExists = await store.existsTable(table);
+
+  const jsonData = JSON.stringify(values);
+  const clock = JSON.stringify(metadata.clock);
+  const manifest = JSON.stringify(metadata.manifest);
+  const environment = { chain: metadata.manifest.chain, module_hash: metadata.manifest.moduleHash };
+
+  const log = ["handleDatabaseChange", table, change.operation, clock, manifest, jsonData];
+  logger.info(log.join(" | "));
+
+  if (!tableExists) {
+    if (!config.allowUnparsed) {
+      throw new Error(`could not find table '${table}'. Did you mean to store unparsed data?`);
+    }
+
+    values = { raw_data: jsonData, source: table };
+    table = "unparsed_json";
+  }
+
+  switch (change.operation) {
+    case "OPERATION_CREATE":
+      prometheus.entity_changes_inserted.inc(environment);
+      return insertEntityChange(table, values, { ...metadata, id: "" });
+
+    // Updates are inserted as new rows in ClickHouse. This allows for the full history.
+    // If the user wants to override old data, they can specify it in their schema
+    // by using a ReplacingMergeTree.
+    case "OPERATION_UPDATE":
+      prometheus.entity_changes_updated.inc(environment);
+      return insertEntityChange(table, values, { ...metadata, id: "" });
+
+    // Deleted entity changes are not actually removed from the database.
+    // They are stored in the 'deleted_entity_changes' table with their timestamp.
+    // Again, this allows to keep the full history while also providing the required information
+    // to correctly filter out unwanted data if necessary.
+    case "OPERATION_DELETE":
+      prometheus.entity_changes_deleted.inc(environment);
+      return insertEntityChange("deleted_entity_changes", { source: table }, { ...metadata, id: "" });
 
     default:
       prometheus.entity_changes_unsupported.inc();

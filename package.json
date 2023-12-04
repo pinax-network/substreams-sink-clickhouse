@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@clickhouse/client-web": "latest",
+    "@substreams/sink-database-changes": "^0.3.0",
     "@substreams/sink-entity-changes": "v0.3.4",
     "commander": "latest",
     "dotenv": "latest",
