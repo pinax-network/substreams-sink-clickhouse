@@ -1,14 +1,14 @@
 import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
+import { Clock, Manifest } from "substreams-sink-webhook/auth";
 import { config } from "../config.js";
 import { Ok, Result, UnknownErr } from "../result.js";
-import { Clock, Manifest } from "substreams-sink-webhook/auth";
 import tableSQL from "./table.sql";
 
 const selectSQL = {
   blocks: "SELECT block_id, block_number, chain, timestamp FROM data_buffer WHERE batch_number <= ?;",
   finalBlocks: "SELECT block_id FROM data_buffer WHERE batch_number <= ? AND is_final = 1;",
-  moduleHashes: `SELECT module_hash, module_name, chain, type, cursor AS latest_cursor, block_number AS latest_block_number, block_id AS latest_block_id
+  moduleHashes: `SELECT module_hash, module_name, chain, type, cursor AS latest_cursor, block_number AS latest_block_number, block_id AS latest_block_id, timestamp AS latest_timestamp
     FROM data_buffer WHERE batch_number <= ?;`,
   sources: "SELECT DISTINCT source FROM data_buffer WHERE batch_number <= ?;",
   entityChanges: "SELECT entity_changes FROM data_buffer WHERE batch_number <= ? AND source = ?",
