@@ -39,6 +39,7 @@ const alterations = (tableName: string) => {
   ];
 };
 
+// TODO: Manage non-table create statements
 export async function initializeTables(tableSchemas: string[]): Promise<Result<Array<string>>> {
   const executedSchemas = [];
   logger.info(`Executing ${tableSchemas.length} schema(s)`);

@@ -1,4 +1,5 @@
-export function splitSchemaByTableCreation(file: string): Array<string> {
+// TODO: Update to fit larger statements
+export function splitCreateStatement(file: string): Array<string> {
   return file
     .split(/(CREATE TABLE)/gi)
     .filter(
