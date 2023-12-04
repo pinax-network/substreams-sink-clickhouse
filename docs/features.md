@@ -16,11 +16,113 @@ This feature has not been implemented yet.
 
 ## Table initialization
 
+The sink offers many ways to setup a database to store substreams data.<br/>[SQL schemas](#sql-schemas) are the default option, [GraphQL entities](#graphql-schemas) offer the fastest setup and [materialized views](#materialized-view) are more hands on but allow full control on ClickHouse's behavior.
+
 ### SQL schemas
+
+_This option is the default way to create a table._
+
+Execute SQL against the database to setup a table.<br/>The sink allows for a remote file as a query parameter. If so, the body is ignored.
+
+```bash
+$ curl --location --request PUT "localhost:3000/schema/sql" \
+    --header "Content-Type: text/plain" \
+    --header "Authorization: Bearer <password>" \
+    --data "CREATE TABLE foo () ENGINE=MergeTree ORDER BY();"
+$ # OR
+$ curl --location --request PUT 'localhost:3000/schema/sql?schema-url=<url>' --header 'Authorization: Bearer <password>'
+```
+
+Here is a valid SQL schema. Notice that the sorting key contains an undefined column: `chain`.
+
+```sql
+CREATE TABLE IF NOT EXISTS example (
+    foo UInt32
+)
+ENGINE = MergeTree
+ORDER BY (chain, foo)
+```
+
+This is allowed because the sink injects columns automatically when creating a table.<br/>These are the columns. These names cannot be used in the original schemas.
+
+| Column         | Type                   |
+| -------------- | ---------------------- |
+| `block_number` | UInt32                 |
+| `module_hash`  | FixedString(40)        |
+| `timestamp`    | DateTime64(3, 'UTC')   |
+| `chain`        | LowCardinality(String) |
 
 ### GraphQL schemas
 
+_This option is the fastest option to create a table but allows for less control._
+
+A [GraphQL entity schema](https://thegraph.com/docs/en/developing/creating-a-subgraph/#defining-entities) can be executed against the sink. It is translated into a SQL schema beforehand. The types are converted according to the following rules.
+
+_The available data types are defined [here](https://thegraph.com/docs/en/developing/creating-a-subgraph/#graphql-supported-scalars)._
+
+| GraphQL data type | ClickHouse equivalent |
+| ----------------- | --------------------- |
+| `Bytes`           | `String`              |
+| `String`          | `String`              |
+| `Boolean`         | `boolean`             |
+| `Int`             | `Int32`               |
+| `BigInt`          | `String`              |
+| `BigDecimal`      | `String`              |
+| `Float`           | `Float64`             |
+| `ID`              | `String`              |
+
+The schema is executred as follows.
+
+```bash
+$ curl --location --request PUT "localhost:3000/schema/graphql" \
+    --header "Content-Type: text/plain" \
+    --header "Authorization: Bearer <password>" \
+    --data "type foo { id: ID! }"
+$ # OR
+$ curl --location --request PUT 'localhost:3000/schema/graphql?schema-url=<url>' --header 'Authorization: Bearer <password>'
+```
+
+Here is a valid entity schema.
+
+```graphql
+type example @entity {
+  id: ID!
+  foo: Int!
+}
+```
+
+The **sorting key** is auto-generated. It contains every `ID` field.<br/>The **table engine** cannot be changed.<br/>If more control is required, it is suggested to use [SQL schemas](#sql-schemas).
+
 ### Materialized View
+
+_This option is fully hands on. Everything can be configured._
+
+No schema is required to store data in ClickHouse. Everything can be stored in `unparsed_json` (see [database structure](./database.md)).
+
+The user **must** build custom [views](https://clickhouse.com/docs/en/guides/developer/cascading-materialized-views) to transform the data according to their needs. Further details are available in [ClickHouse's documentation](https://clickhouse.com/docs/en/integrations/data-formats/json#using-materialized-views).
+
+The following code will store every key found in the substreams provided data in the `substreams_keys` table.
+
+```sql
+CREATE TABLE substreams_keys (
+	source String,
+	keys   Array(String),
+)
+ENGINE MergeTree
+ORDER BY (source)
+```
+
+```sql
+CREATE MATERIALIZED VIEW substreams_keys_mv
+TO substreams_keys
+AS
+SELECT source, JSONExtractKeys(raw_data) AS keys
+FROM unparsed_json
+```
+
+```bash
+substreams-sink-clickhouse --allow-unparsed true
+```
 
 ## Automatic block metadata
 

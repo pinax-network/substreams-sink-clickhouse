@@ -16,7 +16,7 @@
 
 See [releases](https://github.com/pinax-network/substreams-sink-clickhouse/releases)
 
-## Features
+## [Features](/docs/features.md)
 
 See detailed [list of features](/docs/features.md).
 

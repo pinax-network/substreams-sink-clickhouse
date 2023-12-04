@@ -2,12 +2,12 @@
 
 ## Table of contents
 
-- [Complete structure](#structure)
-- [Indexes](#indexes)
+- [Complete structure](#complete-structure)
+- [Sorting keys](#sorting-keys)
 - [Default structure](#default-structure)
 - [No schema structure](#no-schema-structure)
 
-## Structure
+## Complete structure
 
 ```mermaid
 erDiagram
