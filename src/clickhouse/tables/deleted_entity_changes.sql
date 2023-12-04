@@ -8,5 +8,4 @@ CREATE TABLE IF NOT EXISTS deleted_entity_changes (
   timestamp    DateTime64(3, 'UTC'),
 )
 ENGINE = ReplacingMergeTree
-PRIMARY KEY (source, block_id)
 ORDER BY (source, chain, block_number, timestamp, block_id);
