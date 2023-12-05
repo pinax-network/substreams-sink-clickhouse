@@ -1,11 +1,13 @@
+import { getValuesInTableChange } from "@substreams/sink-database-changes";
+import { TableChange } from "@substreams/sink-database-changes/zod";
 import { getValuesInEntityChange } from "@substreams/sink-entity-changes";
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
 import { Clock, Manifest } from "substreams-sink-webhook/auth";
 import { config } from "../config.js";
-import { PayloadBody, TableChange, getvaluesInTableChange } from "../fetch/tmp.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
+import { PayloadBody } from "../schemas.js";
 import { sqlite } from "../sqlite/sqlite.js";
 import client from "./createClient.js";
 import { store } from "./stores.js";
@@ -100,7 +102,7 @@ function handleEntityChanges(entityChanges: EntityChange[], metadata: Metadata) 
 function handleDatabaseChanges(tableChanges: TableChange[], metadata: Metadata) {
   logger.info(`handleSinkRequest | tableChanges=${tableChanges.length}`);
   for (const change of tableChanges) {
-    const values = getvaluesInTableChange(change);
+    const values = getValuesInTableChange(change);
     handleChange(change.table, values, change.operation, { ...metadata, id: "" });
   }
 }
