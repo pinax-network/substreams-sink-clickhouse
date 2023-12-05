@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS blocks (
 )
 ENGINE = ReplacingMergeTree
 PRIMARY KEY (block_id)
-ORDER BY (block_id, block_number, chain, timestamp);
+ORDER BY (block_id, chain, block_number, timestamp);
