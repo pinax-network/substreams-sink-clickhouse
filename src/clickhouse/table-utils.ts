@@ -1,15 +1,23 @@
-// TODO: Update to fit larger statements
 export function splitCreateStatement(file: string): Array<string> {
+  const prefixes = ["CREATE TABLE", "CREATE MATERIALIZED VIEW", "ALTER TABLE"];
+  const prefixRegex = new RegExp(prefixes.map((prefix) => `(${prefix})`).join("|"), "gi");
+  const foundPrefixes = (file.match(prefixRegex) ?? []).map((prefix) => prefix.trim());
+
   return file
-    .split(/(CREATE TABLE)/gi)
+    .split(prefixRegex)
     .filter(
-      (query, index) =>
-        typeof query === "string" &&
-        query.trim().length > 0 &&
-        query.trim().toUpperCase() !== "CREATE TABLE" &&
-        index !== 0 // The first index will always be either 'CREATE TABLE' or useless sql (eg: a comment)
+      (statement, index) =>
+        typeof statement === "string" &&
+        statement.trim().length > 0 &&
+        !prefixRegex.test(statement) &&
+        // The first index will always be either a prefix or useless sql (eg: a comment)
+        index !== 0
     )
-    .map((query) => `CREATE TABLE ${query}`);
+    .map((statement, index) => foundPrefixes[index] + " " + statement.trim());
+}
+
+export function isCreateTableStatement(statement: string): boolean {
+  return /CREATE TABLE/gi.test(statement);
 }
 
 export function getTableName(schema: string) {

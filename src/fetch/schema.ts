@@ -1,5 +1,5 @@
 import { store } from "../clickhouse/stores.js";
-import { initializeTables } from "../clickhouse/table-initialization.js";
+import { executeCreateStatements } from "../clickhouse/table-initialization.js";
 import { splitCreateStatement } from "../clickhouse/table-utils.js";
 import { ClickhouseTableBuilder } from "../graphql/builders/clickhouse-table-builder.js";
 import { TableTranslator } from "../graphql/table-translator.js";
@@ -25,10 +25,9 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 
   logger.info(`Found ${statements.length} statement(s)`);
 
-  // TODO: Manage non-table create statements
-  const executedSchemas = await initializeTables(statements);
+  const executedSchemas = await executeCreateStatements(statements);
   if (!executedSchemas.success) {
-    return toText("Could not create the tables", 500);
+    return toText("Could not execute the statements", 500);
   }
 
   store.reset();
