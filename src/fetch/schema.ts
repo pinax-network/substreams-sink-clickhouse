@@ -1,6 +1,6 @@
 import { store } from "../clickhouse/stores.js";
-import { initializeTables } from "../clickhouse/table-initialization.js";
-import { splitSchemaByTableCreation } from "../clickhouse/table-utils.js";
+import { executeCreateStatements } from "../clickhouse/table-initialization.js";
+import { splitCreateStatement } from "../clickhouse/table-utils.js";
 import { ClickhouseTableBuilder } from "../graphql/builders/clickhouse-table-builder.js";
 import { TableTranslator } from "../graphql/table-translator.js";
 import { logger } from "../logger.js";
@@ -16,18 +16,18 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
     return schemaResult.error;
   }
 
-  let tableSchemas: string[] = [];
+  let statements: string[] = [];
   if (type === "sql") {
-    tableSchemas = splitSchemaByTableCreation(schemaResult.payload);
+    statements = splitCreateStatement(schemaResult.payload);
   } else if (type === "graphql") {
-    tableSchemas = TableTranslator.translate(schemaResult.payload, clickhouseBuilder);
+    statements = TableTranslator.translate(schemaResult.payload, clickhouseBuilder);
   }
 
-  logger.info(`Found ${tableSchemas.length} table(s)`);
+  logger.info(`Found ${statements.length} statement(s)`);
 
-  const executedSchemas = await initializeTables(tableSchemas);
+  const executedSchemas = await executeCreateStatements(statements);
   if (!executedSchemas.success) {
-    return toText("Could not create the tables", 500);
+    return toText("Could not execute the statements", 500);
   }
 
   store.reset();
