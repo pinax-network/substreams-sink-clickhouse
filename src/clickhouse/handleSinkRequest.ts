@@ -3,7 +3,7 @@ import { TableChange } from "@substreams/sink-database-changes/zod";
 import { getValuesInEntityChange } from "@substreams/sink-entity-changes";
 import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import PQueue from "p-queue";
-import { Clock, Manifest } from "substreams-sink-webhook/auth";
+import { Clock, Manifest } from "substreams-sink-webhook";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";

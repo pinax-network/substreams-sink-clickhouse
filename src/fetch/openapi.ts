@@ -2,10 +2,10 @@ import pkg from "../../package.json" assert { type: "json" };
 
 import { LicenseObject } from "openapi3-ts/oas30";
 import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
-import { BodySchema } from "substreams-sink-webhook/auth";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
 import { store } from "../clickhouse/stores.js";
+import { BodySchema } from "../schemas.js";
 import { BlockResponseSchema } from "./blocks.js";
 
 const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
