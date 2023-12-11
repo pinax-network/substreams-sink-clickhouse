@@ -1,11 +1,7 @@
 import { expect, test } from "bun:test";
-import {
-  augmentCreateTableStatement,
-  getTableName,
-  splitSchemaByTableCreation,
-} from "./table-utils.js";
+import { augmentCreateTableStatement, getTableName, splitCreateStatement } from "./table-utils.js";
 
-test("splitSchemaByTableCreation", () => {
+test("splitCreateStatement", () => {
   const schema = `
     --a comment
     CREATE TABLE foo (num UInt64)
@@ -20,16 +16,48 @@ test("splitSchemaByTableCreation", () => {
     ENGINE MergeTree
     ORDER BY (str)`;
 
-  const tables = splitSchemaByTableCreation(schema);
+  const tables = splitCreateStatement(schema);
 
-  expect(tables.length).toBe(3);
+  expect(tables).toHaveLength(3);
 
-  expect(tables[0].includes("CREATE TABLE  foo")).toBeTrue();
+  expect(tables[0].includes("CREATE TABLE foo")).toBeTrue();
   expect(tables[0].includes("ORDER BY (num)")).toBeTrue();
-  expect(tables[1].includes("CREATE TABLE  foo")).toBeTrue();
+  expect(tables[1].includes("CREATE TABLE foo")).toBeTrue();
   expect(tables[1].includes("ORDER BY (num)")).toBeTrue();
-  expect(tables[2].includes("CREATE TABLE  IF NOT EXISTS bar")).toBeTrue();
+  expect(tables[2].includes("CREATE TABLE IF NOT EXISTS bar")).toBeTrue();
   expect(tables[2].includes("ORDER BY (str)")).toBeTrue();
+});
+
+test("splitCreateStatement - different operations", () => {
+  const schema = `
+CREATE TABLE IF NOT EXISTS test_table (foo String)
+ENGINE = MergeTree
+ORDER BY (foo);
+
+ALTER TABLE test_table ADD INDEX foo_index foo TYPE minmax;
+
+CREATE MATERIALIZED VIEW mv_test_table
+ENGINE = MergeTree
+ORDER BY ()
+POPULATE
+AS SELECT * FROM test_table;`;
+
+  const statements = splitCreateStatement(schema);
+
+  expect(statements).toHaveLength(3);
+
+  expect(statements[0].includes("CREATE TABLE IF NOT EXISTS test_table")).toBeTrue(); // Start of statement
+  expect(statements[0].includes("ORDER BY (foo);")).toBeTrue(); // End of statement
+  expect(statements[0].includes("ALTER TABLE test_table")).toBeFalse(); // Start of NEXT statement
+
+  expect(statements[1].includes("ORDER BY (foo);")).toBeFalse(); // End of PREVIOUS statement
+  expect(statements[1].includes("ALTER TABLE test_table")).toBeTrue(); // Start of statement
+  expect(statements[1].includes("foo TYPE minmax;")).toBeTrue(); // End of statement
+  expect(statements[1].includes("CREATE MATERIALIZED")).toBeFalse(); // Start of NEXT statement
+
+  expect(statements[2].includes("TYPE minmax;")).toBeFalse(); // End of PREVIOUS statement
+  expect(statements[2].includes("CREATE MATERIALIZED VIEW mv_test_table")).toBeTrue(); // Start of statment
+  expect(statements[2].includes("AS SELECT * FROM test_table;")).toBeTrue(); // End of statement
 });
 
 test("getTableName", () => {
@@ -56,8 +84,7 @@ test("getTableName", () => {
     expect(tableName).toBe("foo");
   }
 
-  const differentName =
-    "create table finishes_with_on (num UInt32) ENGINE MergeTree ORDER BY (num)";
+  const differentName = "create table finishes_with_on (num UInt32) ENGINE MergeTree ORDER BY (num)";
 
   const tableName = getTableName(differentName);
   expect(tableName).toBe("finishes_with_on");

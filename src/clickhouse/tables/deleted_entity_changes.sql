@@ -6,8 +6,6 @@ CREATE TABLE IF NOT EXISTS deleted_entity_changes (
   block_number UInt32,
   module_hash  FixedString(40),
   timestamp    DateTime64(3, 'UTC'),
-  cursor       String,
 )
 ENGINE = ReplacingMergeTree
-PRIMARY KEY (source, block_id)
-ORDER BY (source, block_id, block_number, chain, timestamp);
+ORDER BY (source, chain, block_number, timestamp, block_id);

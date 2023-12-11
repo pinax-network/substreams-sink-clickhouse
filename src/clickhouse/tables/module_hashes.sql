@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS module_hashes (
     latest_timestamp    DateTime64(3, 'UTC'),
 )
 ENGINE = ReplacingMergeTree
-ORDER BY (module_hash, chain);
+ORDER BY (chain, module_hash);

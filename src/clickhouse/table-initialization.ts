@@ -1,7 +1,7 @@
 import { logger } from "../logger.js";
 import { Err, Ok, Result } from "../result.js";
 import client from "./createClient.js";
-import { augmentCreateTableStatement, getTableName } from "./table-utils.js";
+import { augmentCreateTableStatement, getTableName, isCreateTableStatement } from "./table-utils.js";
 import tables from "./tables/index.js";
 
 export async function initializeDefaultTables(): Promise<Result> {
@@ -39,28 +39,34 @@ const alterations = (tableName: string) => {
   ];
 };
 
-export async function initializeTables(tableSchemas: string[]): Promise<Result<Array<string>>> {
-  const executedSchemas = [];
-  logger.info(`Executing ${tableSchemas.length} schema(s)`);
+export async function executeCreateStatements(statements: string[]): Promise<Result<Array<string>>> {
+  const executedStatements = [];
+  logger.info(`Executing ${statements.length} statement(s)`);
 
   try {
-    for (const schema of tableSchemas) {
-      const tableName = getTableName(schema);
+    for (const statement of statements) {
+      const tableName = getTableName(statement);
       logger.info(`Executing '${tableName}'`);
 
-      const augmentedSchema = augmentCreateTableStatement(schema, extraColumns);
-      executedSchemas.push(augmentedSchema);
+      if (!isCreateTableStatement(statement)) {
+        executedStatements.push(statement);
+        await client.command({ query: statement });
+        continue;
+      }
 
-      await client.command({ query: augmentedSchema });
+      const augmentedStatement = augmentCreateTableStatement(statement, extraColumns);
+      executedStatements.push(augmentedStatement);
+
+      await client.command({ query: augmentedStatement });
       for (const alteration of alterations(tableName)) {
         await client.command({ query: alteration });
       }
     }
   } catch (err) {
-    logger.error("Could not initialize the tables", "Request: " + executedSchemas, err);
+    logger.error("Could not execute the statements", "Request: " + executedStatements, err);
     return Err(new Error(JSON.stringify(err)));
   }
 
   logger.info("Complete.");
-  return Ok(executedSchemas);
+  return Ok(executedStatements);
 }
