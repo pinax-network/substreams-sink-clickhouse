@@ -2,7 +2,7 @@ import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
 import { store } from "../clickhouse/stores.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
-import { BodySchema } from "substreams-sink-webhook/auth";
+import { BodySchema } from "../schemas.js";
 import signatureEd25519 from "../webhook/signatureEd25519.js";
 import { toText } from "./cors.js";
 import hash from "./hash.js";

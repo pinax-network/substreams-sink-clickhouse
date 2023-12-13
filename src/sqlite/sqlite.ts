@@ -1,6 +1,6 @@
 import { file } from "bun";
 import Database, { Statement } from "bun:sqlite";
-import { Clock, Manifest } from "substreams-sink-webhook/auth";
+import { Clock, Manifest } from "substreams-sink-webhook";
 import { config } from "../config.js";
 import { Ok, Result, UnknownErr } from "../result.js";
 import tableSQL from "./table.sql";

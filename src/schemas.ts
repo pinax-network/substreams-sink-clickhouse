@@ -1,3 +1,6 @@
+import { DatabaseChanges } from "@substreams/sink-database-changes/zod";
+import { EntityChanges } from "@substreams/sink-entity-changes/zod";
+import { makeBodySchema, makePayloadBody } from "substreams-sink-webhook";
 import z from "zod";
 
 export const boolean = z
@@ -31,3 +34,8 @@ export const ConfigSchema = z.object({
 export type ConfigSchema = z.infer<typeof ConfigSchema>;
 export const TableInitSchema = z.string();
 export type TableInitSchema = z.infer<typeof TableInitSchema>;
+
+export const PayloadBody = makePayloadBody(z.union([EntityChanges, DatabaseChanges]));
+export type PayloadBody = z.infer<typeof PayloadBody>;
+export const BodySchema = makeBodySchema(PayloadBody);
+export type BodySchema = z.infer<typeof BodySchema>;
