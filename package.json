@@ -1,6 +1,6 @@
 {
   "name": "substreams-sink-clickhouse",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Substreams Clickhouse sink module",
   "type": "module",
   "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse",
@@ -31,19 +31,18 @@
     "@substreams/sink-entity-changes": "v0.3.4",
     "commander": "latest",
     "dotenv": "latest",
-    "graphql": "^16.8.1",
+    "graphql": "latest",
     "openapi3-ts": "latest",
-    "p-queue": "^7.4.1",
+    "p-queue": "latest",
     "prom-client": "latest",
-    "substreams-sink-webhook": "^0.7.5",
+    "substreams-sink-webhook": "^0.8",
     "tslog": "latest",
-    "tweetnacl": "latest",
     "zod": "latest",
-    "zod-to-json-schema": "^3.21.4"
+    "zod-to-json-schema": "latest"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "mitata": "^0.1.6",
+    "mitata": "latest",
     "typescript": "latest"
   }
 }

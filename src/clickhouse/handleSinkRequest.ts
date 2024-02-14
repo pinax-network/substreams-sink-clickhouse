@@ -125,7 +125,7 @@ async function handleChange(
   const environment = { chain: metadata.manifest.chain, module_hash: metadata.manifest.moduleHash };
 
   if (!tableExists) {
-    if (config.allowUnparsed) {
+    if (!config.allowUnparsed) {
       throw new Error(`could not find table '${table}'. Did you mean to store unparsed data?`);
     }
 

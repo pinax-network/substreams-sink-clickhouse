@@ -3,7 +3,7 @@ import { store } from "../clickhouse/stores.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
-import signatureEd25519 from "../webhook/signatureEd25519.js";
+import { signatureEd25519 } from "../webhook/signatureEd25519.js";
 import { toText } from "./cors.js";
 import hash from "./hash.js";
 import { query } from "./query.js";
