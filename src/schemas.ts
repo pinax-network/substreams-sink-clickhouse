@@ -1,6 +1,6 @@
 import { DatabaseChanges } from "@substreams/sink-database-changes/zod";
 import { EntityChanges } from "@substreams/sink-entity-changes/zod";
-import { makeBodySchema, makePayloadBody } from "substreams-sink-webhook";
+import { makeBodySchema, makePayloadBody } from "substreams-sink-webhook/schemas";
 import z from "zod";
 
 export const boolean = z

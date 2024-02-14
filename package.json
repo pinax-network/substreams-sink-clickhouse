@@ -31,17 +31,17 @@
     "@substreams/sink-entity-changes": "v0.3.4",
     "commander": "latest",
     "dotenv": "latest",
-    "graphql": "^16.8.1",
+    "graphql": "latest",
     "openapi3-ts": "latest",
-    "p-queue": "^7.4.1",
+    "p-queue": "latest",
     "prom-client": "latest",
-    "substreams-sink-webhook": "^0.8",
+    "substreams-sink-webhook": "^0.8.5",
     "tslog": "latest",
     "zod": "latest",
-    "zod-to-json-schema": "^3.21.4"
+    "zod-to-json-schema": "latest"
   },
   "devDependencies": {
-    "bun-types": "latest",
+    "@types/bun": "latest",
     "mitata": "latest",
     "typescript": "latest"
   }

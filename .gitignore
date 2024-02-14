@@ -4,7 +4,7 @@ dist/
 substreams-sink-clickhouse
 .env
 replay.log
-package-lock.json
+bun.lockdb
 .DS_Store
 *.sqlite
 *.db
