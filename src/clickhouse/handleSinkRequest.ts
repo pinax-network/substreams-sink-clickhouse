@@ -80,7 +80,7 @@ export function saveKnownEntityChanges() {
         if (await store.existsTable(table)) {
           await client.insert({ table, values, format: "JSONEachRow" });
         } else {
-          logger.info(`Skipped (${values.length}) records assigned to table '${table}' because it does not exist.`);
+          logger.info('[saveKnownEntityChanges]', `Skipped (${values.length}) records assigned to table '${table}' because it does not exist.`);
         }
       }
     }
@@ -92,7 +92,7 @@ function batchSizeLimitReached() {
 }
 
 function handleEntityChanges(entityChanges: EntityChange[], metadata: Metadata) {
-  logger.info(`handleSinkRequest | entityChanges=${entityChanges.length}`);
+  logger.info('[handleEntityChanges]', `entityChanges=${entityChanges.length}`);
   for (const change of entityChanges) {
     const values = getValuesInEntityChange(change);
     handleChange(change.entity, values, change.operation, { ...metadata, id: change.id });
@@ -100,7 +100,7 @@ function handleEntityChanges(entityChanges: EntityChange[], metadata: Metadata) 
 }
 
 function handleDatabaseChanges(tableChanges: TableChange[], metadata: Metadata) {
-  logger.info(`handleSinkRequest | tableChanges=${tableChanges.length}`);
+  logger.info('[handleDatabaseChanges]', `tableChanges=${tableChanges.length}`);
   for (const change of tableChanges) {
     const values = getValuesInTableChange(change);
     handleChange(change.table, values, change.operation, { ...metadata, id: "" });
@@ -133,7 +133,7 @@ async function handleChange(
     table = "unparsed_json";
   }
 
-  logger.info(["handleChange", table, operation, metadata.id, clock, manifest, data].join(" | "));
+  logger.info('[handleChange]', [table, operation, metadata.id, clock, manifest, data].join(" | "));
 
   switch (operation) {
     case "OPERATION_CREATE":
@@ -157,7 +157,7 @@ async function handleChange(
 
     default:
       prometheus.entity_changes_unsupported.inc();
-      logger.error("unsupported operation found in entityChanges: " + operation.toString());
+      logger.error('[handleChange]', "unsupported operation found in entityChanges: " + operation.toString());
       return Promise.resolve();
   }
 }

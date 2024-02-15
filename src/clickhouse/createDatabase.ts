@@ -8,7 +8,7 @@ export async function createDatabase(database: string): Promise<Result> {
   }
 
   await client.exec({ query: `CREATE DATABASE IF NOT EXISTS "${database}"` });
-  logger.info(`CREATE DATABASE [${database}]`);
+  logger.info('[createDatabase]', `CREATE DATABASE [${database}]`);
 
   return Ok();
 }

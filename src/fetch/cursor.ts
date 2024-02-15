@@ -28,7 +28,7 @@ export async function findLatestCursor(req: Request): Promise<Response> {
 
     return toText(`Bad request: no cursor found for '${moduleHash}' on '${chain}'.`, 400);
   } catch (err) {
-    logger.error(err);
+    logger.error('[findLatestCursor]', err);
   }
   return BadRequest;
 }

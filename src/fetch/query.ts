@@ -10,7 +10,7 @@ export async function query(req: Request): Promise<Response> {
 
     return toJSON(data);
   } catch (err) {
-    logger.error(err);
+    logger.error('[query]', err);
     return BadRequest;
   }
 }

@@ -119,26 +119,28 @@ $ cp .env.example .env
 ```
 
 ```bash
-# Authentication
-PUBLIC_KEY=... # ed25519 public key provided by https://github.com/pinax-network/substreams-sink-webhook
-AUTH_KEY=...   # PUT endpoints are protected (uses HTTP Basic authentication)
-
-# HTTP Server
-PORT=3000
-HOSTNAME=0.0.0.0
-
 # ClickHouse Database
 HOST=http://127.0.0.1:8123
 USERNAME=default
 DATABASE=default
 PASSWORD=
 
-# Sink
+# Webhook Authentication (Optional)
+PUBLIC_KEY=... # ed25519 public key provided by https://github.com/pinax-network/substreams-sink-webhook
+
+# HTTP Server (Optional)
+PORT=3000
+HOSTNAME=0.0.0.0
+
+# Clickhouse Sink Authentication (Optional)
+# PUT endpoints are protected (uses HTTP Basic authentication)
+AUTH_KEY=...
+
+# Clickhouse Sink (Optional)
 MAX_BUFFER_SIZE=1000
 INSERTION_DELAY=2000
 WAIT_FOR_INSERT=0
 ASYNC_INSERT=1
-
 BUFFER=buffer.db
 ALLOW_UNPARSED=false
 VERBOSE=true

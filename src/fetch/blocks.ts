@@ -45,7 +45,7 @@ export async function blocks(): Promise<Response> {
 
     return toJSON(dto);
   } catch (err) {
-    logger.error(err);
+    logger.error('[blocks]', err);
     return InternalServerError;
   }
 }

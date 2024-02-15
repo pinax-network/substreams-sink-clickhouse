@@ -23,7 +23,7 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
     statements = TableTranslator.translate(schemaResult.payload, clickhouseBuilder);
   }
 
-  logger.info(`Found ${statements.length} statement(s)`);
+  logger.info('[handleSchemaRequest]', `Found ${statements.length} statement(s)`);
 
   const executedSchemas = await executeCreateStatements(statements);
   if (!executedSchemas.success) {
@@ -62,7 +62,7 @@ async function getSchemaFromRequest(req: Request): Promise<Result<string, Respon
 
     return Ok(TableInitSchema.parse(body));
   } catch (e) {
-    logger.error(e);
+    logger.error('[getSchemaFromRequest]', e);
   }
 
   return Err(BadRequest);
