@@ -7,7 +7,7 @@ import tables from "./tables/index.js";
 export async function initializeDefaultTables(): Promise<Result> {
   const promiseResults = await Promise.allSettled(
     tables.map(([table, query]) => {
-      logger.info(`CREATE TABLE [${table}]`);
+      logger.info('[initializeDefaultTables]', `CREATE TABLE [${table}]`);
       return client.command({ query });
     })
   );
@@ -41,12 +41,12 @@ const alterations = (tableName: string) => {
 
 export async function executeCreateStatements(statements: string[]): Promise<Result<Array<string>>> {
   const executedStatements = [];
-  logger.info(`Executing ${statements.length} statement(s)`);
+  logger.info('[executeCreateStatements]', `Executing ${statements.length} statement(s)`);
 
   try {
     for (const statement of statements) {
       const tableName = getTableName(statement);
-      logger.info(`Executing '${tableName}'`);
+      logger.info('[executeCreateStatements]', `Executing '${tableName}'`);
 
       if (!isCreateTableStatement(statement)) {
         executedStatements.push(statement);
@@ -63,10 +63,10 @@ export async function executeCreateStatements(statements: string[]): Promise<Res
       }
     }
   } catch (err) {
-    logger.error("Could not execute the statements", "Request: " + executedStatements, err);
+    logger.error('[executeCreateStatements]', "Could not execute the statements", "Request: " + executedStatements, err);
     return Err(new Error(JSON.stringify(err)));
   }
 
-  logger.info("Complete.");
+  logger.info('[executeCreateStatements]', "Complete.");
   return Ok(executedStatements);
 }

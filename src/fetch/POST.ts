@@ -1,5 +1,6 @@
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
 import { store } from "../clickhouse/stores.js";
+import { config } from "../config.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
@@ -20,8 +21,10 @@ export default async function (req: Request) {
 
   // validate Ed25519 signature
   const text = await req.text();
-  const signatureResult = await signatureEd25519(req, text);
-  if (!signatureResult.success) return signatureResult.error;
+  if ( config.publicKey ) {
+    const signatureResult = await signatureEd25519(req, text);
+    if (!signatureResult.success) return signatureResult.error;
+  }
 
   // parse POST body payload
   try {
@@ -29,13 +32,14 @@ export default async function (req: Request) {
     const body = BodySchema.parse(JSON.parse(text));
 
     if ("message" in body) {
+      logger.info('[POST]', text);
       if (body.message === "PING") return toText("OK");
       return toText("invalid body", 400);
     }
 
     return handleSinkRequest(body);
   } catch (err) {
-    logger.error(err);
+    logger.error('[POST]', err);
     prometheus.request_errors?.inc();
     return toText("invalid request", 400);
   }

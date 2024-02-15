@@ -54,7 +54,7 @@ class ClickhouseStore {
     const exists = data[0]?.result === 1;
     this.knownTables.set(table, exists);
 
-    logger.info(`EXISTS [${table}=${exists}]`);
+    logger.info('[existsTable]', `EXISTS [${table}=${exists}]`);
     return exists;
   }
 
@@ -62,7 +62,7 @@ class ClickhouseStore {
     this.chainsPromise = null;
     this.moduleHashesPromises = null;
     this.knownTables.clear();
-    logger.info("Cache has been cleared");
+    logger.info('[reset]', "Cache has been cleared");
   }
 }
 

@@ -4,6 +4,7 @@ import { Err, Ok, Result } from "../result.js";
 import { verify } from "substreams-sink-webhook/auth";
 
 export async function signatureEd25519(req: Request, body: string): Promise<Result<undefined, Response>> {
+  if ( !config.publicKey) return Ok();
   const signature = req.headers.get("x-signature-ed25519");
   const timestamp = Number(req.headers.get("x-signature-timestamp"));
 

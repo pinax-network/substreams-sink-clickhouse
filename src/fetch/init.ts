@@ -16,7 +16,7 @@ export default async function () {
     const result = await step();
 
     if (!result.success) {
-      logger.error(`/init | ${failureMessage} | ${result.error}`);
+      logger.error('[init]', `${failureMessage} | ${result.error}`);
       return BadRequest;
     }
   }
