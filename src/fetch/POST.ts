@@ -12,6 +12,7 @@ import { query } from "./query.js";
 export default async function (req: Request) {
   const { pathname } = new URL(req.url);
 
+  // queries
   if (pathname === "/query") return query(req);
   if (pathname === "/hash") return hash(req);
 
