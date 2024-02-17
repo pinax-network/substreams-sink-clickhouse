@@ -1,3 +1,4 @@
+-- blocks --
 CREATE TABLE IF NOT EXISTS blocks (
   block_id      FixedString(64),
   block_number  UInt32(),

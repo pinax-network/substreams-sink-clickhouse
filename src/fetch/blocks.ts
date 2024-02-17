@@ -1,16 +1,8 @@
 import { z } from "zod";
 import client from "../clickhouse/createClient.js";
-import { logger } from "../logger.js";
-import { InternalServerError, toJSON } from "./cors.js";
-
-type BlockViewType = Array<{
-  count: string;
-  count_distinct: string;
-  max: number;
-  min: number;
-}>;
 
 export const BlockResponseSchema = z.object({
+  chain: z.string(),
   count: z.number(),
   distinctCount: z.number(),
   min: z.number(),
@@ -20,32 +12,21 @@ export const BlockResponseSchema = z.object({
 });
 export type BlockResponseSchema = z.infer<typeof BlockResponseSchema>;
 
-export async function blocks(): Promise<Response> {
-  const query = `
-    SELECT
-        COUNT() AS count,
-        COUNTDISTINCT(block_number) AS count_distinct,
-        MAX(block_number) AS max,
-        MIN(block_number) AS min
-    FROM blocks
-    `;
+export function getChain(req: Request, required = true) {
+  const url = new URL(req.url);
+  const chain = url.searchParams.get("chain");
 
-  try {
-    const response = await client.query({ query, format: "JSONEachRow" });
-    const data = await response.json<BlockViewType>();
-
-    const distinctCount = parseInt(data[0].count_distinct);
-    const max = data[0].max;
-    const min = data[0].min;
-    const delta = max - min;
-    const missing = max - min - distinctCount;
-    const count = parseInt(data[0].count);
-
-    const dto: BlockResponseSchema = { max, min, distinctCount, delta, missing, count };
-
-    return toJSON(dto);
-  } catch (err) {
-    logger.error('[blocks]', err);
-    return InternalServerError;
+  if (required && !chain) {
+    throw Error("Missing parameter: chain");
   }
+  return chain;
+}
+
+export async function blocks(req: Request) {
+  const query = await Bun.file(import.meta.dirname + "/blocks.sql").text()
+  const chain = getChain(req, false);
+  const response = await client.query({ query, format: "JSONEachRow" });
+  let data = await response.json() as BlockResponseSchema[];
+  if ( chain ) data = data.filter((row) => row.chain === chain);
+  return data;
 }

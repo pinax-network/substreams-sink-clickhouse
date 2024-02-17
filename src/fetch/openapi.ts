@@ -1,20 +1,21 @@
 import pkg from "../../package.json" assert { type: "json" };
 
 import { LicenseObject } from "openapi3-ts/oas30";
-import { OpenApiBuilder, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
+import { OpenApiBuilder, ParameterObject, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
 import { store } from "../clickhouse/stores.js";
 import { BodySchema } from "../schemas.js";
 import { BlockResponseSchema } from "./blocks.js";
+import { ClusterSchema } from "./cluster.js";
 
 const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
   ztjs.zodToJsonSchema(...params) as SchemaObject;
 
 const TAGS = {
+  QUERIES: "Queries",
   USAGE: "Usage",
   MAINTENANCE: "Maintenance",
-  QUERIES: "Queries",
   HEALTH: "Health",
   DOCS: "Documentation",
 } as const;
@@ -35,6 +36,24 @@ const PUT_RESPONSES: ResponsesObject = {
 };
 
 const ExecuteSchemaResponse = z.object({ success: z.literal("OK"), schema: z.string() });
+
+async function paramChain(required = true): Promise<ParameterObject> {
+  return {
+    name: "chain",
+    in: "query",
+    required,
+    schema: { enum: await store.chains },
+  };
+}
+
+async function paramModuleHash(required = true): Promise<ParameterObject> {
+  return {
+    name: "module_hash",
+    in: "query",
+    required: true,
+    schema: { enum: await store.moduleHashes },
+  };
+}
 
 export async function openapi() {
   return new OpenApiBuilder()
@@ -205,13 +224,8 @@ export async function openapi() {
         tags: [TAGS.QUERIES],
         summary: "Finds the latest cursor for a given chain and table",
         parameters: [
-          { name: "chain", in: "query", required: true, schema: { enum: await store.chains } },
-          {
-            name: "module_hash",
-            in: "query",
-            required: true,
-            schema: { enum: await store.moduleHashes },
-          },
+          await paramChain(true),
+          await paramModuleHash(true)
         ],
         responses: {
           200: {
@@ -233,14 +247,34 @@ export async function openapi() {
     })
     .addPath("/blocks", {
       get: {
-        tags: [TAGS.QUERIES],
+        tags: [TAGS.HEALTH],
         summary: "Gives a summary of known blocks, including min, max and unique block numbers",
+        parameters: [
+          await paramChain(false)
+        ],
         responses: {
           200: {
             description: "Block number summary",
             content: {
               "application/json": {
                 schema: zodToJsonSchema(BlockResponseSchema),
+              },
+            },
+          },
+          500: { description: "Internal server errror" },
+        },
+      },
+    })
+    .addPath("/cluster", {
+      get: {
+        tags: [TAGS.HEALTH],
+        summary: "Global overview of your cluster",
+        responses: {
+          200: {
+            description: "Global overview of your cluster",
+            content: {
+              "application/json": {
+                schema: zodToJsonSchema(ClusterSchema),
               },
             },
           },
