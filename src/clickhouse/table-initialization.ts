@@ -2,7 +2,7 @@ import { logger } from "../logger.js";
 import { Err, Ok, Result } from "../result.js";
 import client from "./createClient.js";
 import { augmentCreateTableStatement, getTableName, isCreateTableStatement } from "./table-utils.js";
-import tables from "./tables/index.js";
+import tables from "./tables/tables.js";
 
 export async function initializeDefaultTables(): Promise<Result> {
   const promiseResults = await Promise.allSettled(
