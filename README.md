@@ -54,11 +54,13 @@ Every request can also be executed via the [online UI](http://localhost:3000).
 1. Create TABLE for your EntityChanges Substreams (more details on [table initialization](/docs/features.md#table-initialization))
 
    ```bash
+   $ curl --location --request PUT 'localhost:3000/schema/sql?schema-url=<url>'
+   ```
+   **OR**
+   ```bash
    $ curl --location --request PUT "localhost:3000/schema/sql" \
        --header "Content-Type: text/plain" \
        --data "CREATE TABLE foo () ENGINE=MergeTree ORDER BY();"
-   $ # OR
-   $ curl --location --request PUT 'localhost:3000/schema/sql?schema-url=<url>'
    ```
 
 ## Environment
