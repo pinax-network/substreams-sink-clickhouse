@@ -1,9 +1,0 @@
-import * as store from "../clickhouse/stores.js";
-import { logger } from "../logger.js";
-import { toText } from "./cors.js";
-
-export function handlePause(targetValue: boolean): Response {
-  store.pause(targetValue)
-  logger.info('[handlePause]', "Sink is now paused: " + store.paused);
-  return toText("OK");
-}

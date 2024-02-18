@@ -1,6 +1,6 @@
 import { handleSinkRequest } from "../clickhouse/handleSinkRequest.js";
 import * as store from "../clickhouse/stores.js";
-import { config } from "../config.js";
+import { publicKeys } from "../config.js";
 import { logger } from "../logger.js";
 import * as prometheus from "../prometheus.js";
 import { BodySchema } from "../schemas.js";
@@ -9,13 +9,16 @@ import { toText } from "./cors.js";
 
 export default async function (req: Request) {
   if (store.paused) {
-    return toText("sink is paused", 400);
+    return toText("sink is paused", 500);
   }
 
-  // validate Ed25519 signature
+  // POST body messagefrom Webhook
   const text = await req.text();
-  if ( config.publicKey ) {
-    const signatureResult = await signatureEd25519(req, text);
+
+  // validate Ed25519 signature
+  // if no public keys are set, skip signature verification
+  if ( publicKeys.length ) {
+    const signatureResult = await signatureEd25519(req, text, publicKeys);
     if (!signatureResult.success) return signatureResult.error;
   }
 

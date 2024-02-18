@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { config } from "./src/config.js";
+import { config, publicKeys } from "./src/config.js";
 import { name, version } from "./package.json" assert { type: "json" };
 import DELETE from "./src/fetch/DELETE.js";
 import GET from "./src/fetch/GET.js";
@@ -29,8 +29,10 @@ const app = Bun.serve({
 });
 
 logger.info('[app]\t', `${name} v${version}`);
-logger.info('[app]\t', `Server listening on http://${app.hostname}:${app.port}`);
-logger.info('[app]\t', `Clickhouse Server ${config.host} (${config.database})`);
-if (config.publicKey) logger.info('[app]\t', `Webhook Ed25519 Public Key: ${config.publicKey}`);
+logger.info('[app]\t', `Sink Server listening on http://${app.hostname}:${app.port}`);
+logger.info('[app]\t', `Clickhouse DB ${config.host} (${config.database})`);
+for ( const publicKey of publicKeys ) {
+  logger.info('[app]\t', `Webhook Ed25519 public key (${publicKey})`);
+}
 await init();
 await show_tables();

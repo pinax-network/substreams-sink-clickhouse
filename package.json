@@ -1,7 +1,7 @@
 {
   "name": "substreams-sink-clickhouse",
   "version": "0.3.0",
-  "description": "Substreams Clickhouse sink module",
+  "description": "Substreams Clickhouse Sink",
   "type": "module",
   "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse",
   "license": "MIT",

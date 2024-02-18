@@ -8,7 +8,8 @@ export let paused = false;
 
 export function pause(value: boolean) {
   paused = value;
-  logger.info('[store::pause]', `\tPaused=${paused}`);
+  logger.info('[store::pause]', `\tpaused=${paused}`);
+  return value;
 }
 
 export async function query_chains() {

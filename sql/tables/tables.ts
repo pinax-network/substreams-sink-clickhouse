@@ -1,14 +1,7 @@
-import { join, parse } from "path";
-import * as glob from "glob";
-import { logger } from "../../src/logger.js";
+import blocks from "./blocks.sql";
+import module_hashes from "./module_hashes.sql";
 
-const pattern = join(import.meta.dirname, "*.sql");
-
-export async function getTables() {
-  const tables: [string, string][] = [];
-  for (const path of glob.sync(pattern)) {
-    tables.push([parse(path).name, await Bun.file(path).text()])
-  }
-  logger.info("[sql::tables]\t", `Loading ${tables.length} tables from ${pattern}`);
-  return tables;
-}
+export const tables = [
+  ["blocks", await Bun.file(blocks).text()],
+  ["module_hashes", await Bun.file(module_hashes).text()]
+];
