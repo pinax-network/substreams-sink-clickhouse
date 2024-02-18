@@ -10,7 +10,6 @@ export const splitString = (separator: string ) => z.optional(z.string().transfo
 
 export const ConfigSchema = z.object({
   publicKey: splitString(","),
-  publicKeys: splitString(","),
   port: positiveNumber,
   verbose: boolean,
   host: z.string(),

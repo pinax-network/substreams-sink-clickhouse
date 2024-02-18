@@ -40,7 +40,7 @@ Every request can also be executed via the [online UI](http://localhost:3000).
 1. Associate Webhook Ed25519 public keys from [substreams-sink-webhook](https://github.com/pinax-network/substreams-sink-webhook).
 
    ```bash
-   $ echo "PUBLIC_KEYS=<PK1>,<PK2>,..." >> .env
+   $ echo "PUBLIC_KEY=<PK1>,<PK2>,..." >> .env
    ```
 
 1. Initialize the database (_set database credentials in [environment](#environment)_)
@@ -78,10 +78,11 @@ USERNAME=default
 DATABASE=default
 PASSWORD=
 
-# Webhook Ed25519 signature (Optional)
-PUBLIC_KEYS=... # ed25519 public key provided by https://github.com/pinax-network/substreams-sink-webhook
+# Webhook Ed25519 public key (comma separated for multiple) (optional)
+# https://github.com/pinax-network/substreams-sink-webhook
+PUBLIC_KEY=
 
-# Sink HTTP server (Optional)
+# Sink HTTP server (optional)
 PORT=3000
 HOSTNAME=0.0.0.0
 VERBOSE=true
@@ -103,7 +104,7 @@ Options:
   -v, --verbose <boolean>  Enable verbose logging (choices: "true", "false", default: "true", env: VERBOSE)
   -p, --port <number>      Sink HTTP server port (default: "3000", env: PORT)
   --hostname <string>      Sink HTTP server hostname (default: "0.0.0.0", env: HOSTNAME)
-  --public-keys <string>   Webhook Ed25519 public keys (comma separated) (env: PUBLIC_KEYS)
+  --public-key <string>   Webhook Ed25519 public key (comma separated for multiple) (env: PUBLIC_KEY)
   --host <string>          Clickhouse DB hostname (default: "http://localhost:8123", env: HOST)
   --username <string>      Clickhouse DB username (default: "default", env: USERNAME)
   --password <string>      Clickhouse DB password (default: "", env: PASSWORD)
