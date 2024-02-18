@@ -6,7 +6,8 @@ SELECT
     MIN(block_number) AS min,
     MAX(block_number) AS max,
     max - min + 1 AS delta,
-    delta - count_distinct AS missing
+    delta - count_distinct AS missing,
+    count - count_distinct AS optimize
 FROM blocks
 WHERE chain = {chain: String}
 GROUP BY (chain, module_hash)

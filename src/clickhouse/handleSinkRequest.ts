@@ -18,7 +18,9 @@ function now() {
   return Math.floor(new Date().getTime() / 1000);
 }
 
-let success = 0;
+let entities = 0;
+let blocks = 0;
+let inserts = 0;
 let start = now();
 let lastUpdate = now();
 
@@ -33,10 +35,12 @@ function bufferCount() {
 // TO-DO - use Prometheus metrics as input to this function
 function logProgress() {
   const delta = now() - start
-  const rate = Math.round(success / delta);
+  const blockRate = Math.round(blocks / delta);
+  const entitiesRate = Math.round(entities / delta);
+  const insertsRate = Math.round(inserts / delta);
   const count = bufferCount();
-  success++;
-  logUpdate('[clickhouse::handleSinkRequest]', `\t${success} total [${rate} b/s] buffer size: ${count}`);
+  blocks++;
+  logUpdate(`[clickhouse::handleSinkRequest] blocks=${blocks} [${blockRate}/s] entities=${entities} [${entitiesRate}/s] inserts=${inserts} [${insertsRate}/s] buffer=${count}`);
 }
 
 export async function flushBuffer(verbose = false) {
@@ -46,6 +50,7 @@ export async function flushBuffer(verbose = false) {
       await client.insert({table, values, format: "JSONEachRow"})
       if ( verbose ) logger.info('[handleSinkRequest]', `\tinserted ${values.length} rows into ${table}`);
       buffer.delete(table);
+      inserts++;
     }
     lastUpdate = now();
   }
@@ -147,6 +152,7 @@ function insertEntityChange(
   values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
   values["operation"] = operation;
   insertToBuffer(table, values);
+  entities++;
 
   // log
   prometheus.entity_changes.inc({

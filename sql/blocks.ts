@@ -2,15 +2,17 @@ import { z } from "zod";
 import { readOnlyClient } from "../src/clickhouse/createClient.js";
 
 export const BlockResponseSchema = z.object({
-  chain: z.string(),
-  module_hash: z.string(),
+  chain: z.string().default("wax"),
+  module_hash: z.string().default("0670acd8592c0e2aec694a1dafd065218b26360f"),
   count: z.number(),
   distinctCount: z.number(),
   min: z.number(),
   max: z.number(),
   delta: z.number(),
   missing: z.number(),
+  optimize: z.number(),
 });
+
 export type BlockResponseSchema = z.infer<typeof BlockResponseSchema>;
 
 export function getChain(req: Request, required = true) {
