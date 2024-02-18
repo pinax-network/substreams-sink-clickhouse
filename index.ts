@@ -9,10 +9,9 @@ import POST from "./src/fetch/POST.js";
 import PUT from "./src/fetch/PUT.js";
 import { NotFound } from "./src/fetch/cors.js";
 import { logger } from "./src/logger.js";
-import { resume } from "./src/resume.js";
+import init from "./src/fetch/init.js";
 
 if (config.verbose) logger.enable();
-if (config.resume) resume();
 
 const app = Bun.serve({
   hostname: config.hostname,
@@ -30,5 +29,5 @@ const app = Bun.serve({
 logger.info('[app]', `${name} v${version}`);
 logger.info('[app]', `Server listening on http://${app.hostname}:${app.port}`);
 logger.info('[app]', `Clickhouse Server ${config.host} (${config.database})`);
-if (config.authKey) logger.info('[app]', `HTTP Auth Key: ${config.authKey}`);
 if (config.publicKey) logger.info('[app]', `Webhook Ed25519 Public Key: ${config.publicKey}`);
+init();
