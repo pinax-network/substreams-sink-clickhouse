@@ -26,12 +26,11 @@
     "build": "bun build --compile ./index.ts --outfile substreams-sink-clickhouse"
   },
   "dependencies": {
-    "@clickhouse/client-web": "^0.2.9",
+    "@clickhouse/client-web": "latest",
     "@substreams/sink-database-changes": "^0.3.5",
     "@substreams/sink-entity-changes": "^0.3.5",
     "commander": "latest",
     "dotenv": "latest",
-    "glob": "latest",
     "graphql": "latest",
     "log-update": "latest",
     "openapi3-ts": "latest",
