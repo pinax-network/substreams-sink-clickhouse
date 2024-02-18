@@ -16,13 +16,6 @@ const config = ConfigSchema.parse({
   username: "default",
   password: "",
   verbose: "true",
-  waitForAsyncInsert: "0",
-  asyncInsert: "1",
-  maxBufferSize: "10000",
-  insertionDelay: "2000",
-  allowUnparsed: true,
-  resume: true,
-  buffer: "buffer.sqlite",
 });
 
 describe("ConfigSchema", () => {
@@ -33,9 +26,4 @@ describe("ConfigSchema", () => {
   test("username", () => expect(config.username).toBe("default"));
   test("publicKey", () =>
     expect(config.publicKey).toEqual(["a3cb7366ee8ca77225b4d41772e270e4e831d171d1de71d91707c42e7ba82cc9"]));
-  test("waitForAsyncInsert", () => expect(config.waitForAsyncInsert).toBe(0));
-  test("asyncInsert", () => expect(config.asyncInsert).toBe(1));
-  test("allowUnparsed", () => expect(config.allowUnparsed).toBeTrue());
-  test("resume", () => expect(config.resume).toBeTrue());
-  test("buffer", () => expect(config.buffer).toBe("buffer.sqlite"));
 });

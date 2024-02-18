@@ -1,14 +1,11 @@
 import { logger } from "../logger.js";
-import { Err, Ok, Result } from "../result.js";
-import client from "./createClient.js";
+import { client } from "./createClient.js";
 
-export async function createDatabase(database: string): Promise<Result> {
+export async function createDatabase(database: string) {
   if (!database) {
-    return Err(new Error("[database] is required"));
+    throw new Error("[database] is required")
   }
-
-  await client.exec({ query: `CREATE DATABASE IF NOT EXISTS "${database}"` });
-  logger.info('[createDatabase]', `CREATE DATABASE [${database}]`);
-
-  return Ok();
+  logger.info('[createDatabase]\t', `CREATE DATABASE [${database}]`);
+  const query = `CREATE DATABASE IF NOT EXISTS "${database}"`;
+  return {query, ...await client.exec({ query })};
 }

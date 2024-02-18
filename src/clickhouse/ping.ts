@@ -1,11 +1,6 @@
-import { Ok, Result, UnknownErr } from "../result.js";
-import client from "./createClient.js";
+import { readOnlyClient } from "./createClient.js";
 
-export async function ping(): Promise<Result> {
-  try {
-    await client.exec({ query: "SELECT 1" });
-    return Ok();
-  } catch (err) {
-    return UnknownErr(err);
-  }
+export async function ping() {
+  const query = "SELECT 1";
+  return {query, ... await readOnlyClient.exec({ query })};
 }

@@ -10,6 +10,7 @@ import PUT from "./src/fetch/PUT.js";
 import { NotFound } from "./src/fetch/cors.js";
 import { logger } from "./src/logger.js";
 import init from "./src/fetch/init.js";
+import { show_tables } from "./src/clickhouse/stores.js";
 
 if (config.verbose) logger.enable();
 
@@ -26,8 +27,9 @@ const app = Bun.serve({
   },
 });
 
-logger.info('[app]', `${name} v${version}`);
-logger.info('[app]', `Server listening on http://${app.hostname}:${app.port}`);
-logger.info('[app]', `Clickhouse Server ${config.host} (${config.database})`);
-if (config.publicKey) logger.info('[app]', `Webhook Ed25519 Public Key: ${config.publicKey}`);
-init();
+logger.info('[app]\t', `${name} v${version}`);
+logger.info('[app]\t', `Server listening on http://${app.hostname}:${app.port}`);
+logger.info('[app]\t', `Clickhouse Server ${config.host} (${config.database})`);
+if (config.publicKey) logger.info('[app]\t', `Webhook Ed25519 Public Key: ${config.publicKey}`);
+await init();
+await show_tables();

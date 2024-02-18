@@ -1,5 +1,4 @@
-import * as argon2 from "../auth/argon2.js";
-import { NotFound } from "./cors.js";
+import { NotFound, toText } from "./cors.js";
 import init from "./init.js";
 import { handlePause } from "./pause.js";
 import { handleSchemaRequest } from "./schema.js";
@@ -7,16 +6,16 @@ import { handleSchemaRequest } from "./schema.js";
 export default async function (req: Request): Promise<Response> {
   const { pathname } = new URL(req.url);
 
-  const authResult = argon2.beforeHandle(req);
-  if (!authResult.success) {
-    return authResult.error;
+  try {
+    if (pathname === "/init") return await init();
+    if (pathname === "/schema/sql") return handleSchemaRequest(req, "sql");
+    if (pathname === "/schema/graphql") return handleSchemaRequest(req, "graphql");
+    if (pathname === "/pause") return handlePause(true);
+    if (pathname === "/unpause") return handlePause(false);
+  } catch (e) {
+    console.error(e);
+    return toText(String(e), 500);
   }
-
-  if (pathname === "/init") return init();
-  if (pathname === "/schema/sql") return handleSchemaRequest(req, "sql");
-  if (pathname === "/schema/graphql") return handleSchemaRequest(req, "graphql");
-  if (pathname === "/pause") return handlePause(true);
-  if (pathname === "/unpause") return handlePause(false);
 
   return NotFound;
 }

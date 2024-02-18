@@ -26,7 +26,4 @@ export const requests = registerCounter("requests", "Total requests")!;
 export const request_errors = registerCounter("request_errors", "Total failed requests")!;
 export const sink_requests = registerCounter("sink_requests", "Total sink requests", ["chain", "module_hash"])!;
 
-export const entity_changes_inserted = registerCounter("entity_changes_inserted", "Total inserted entity changes", ["chain", "module_hash"])!;
-export const entity_changes_updated = registerCounter("entity_changes_updated", "Total updated entity changes", ["chain", "module_hash"])!;
-export const entity_changes_deleted = registerCounter("entity_changes_deleted", "Total deleted entity changes", ["chain", "module_hash"])!;
-export const entity_changes_unsupported = registerCounter("entity_changes_unsupported", "Total unsupported entity changes", ["chain", "module_hash"])!;
+export const entity_changes = registerCounter("entity_changes", "Total Entity Changes", ["chain", "module_hash", "operation"])!;

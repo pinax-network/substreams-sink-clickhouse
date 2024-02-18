@@ -91,24 +91,13 @@ Options:
   -p, --port <number>                HTTP port on which to attach the sink (default: "3000", env: PORT)
   -v, --verbose <boolean>            Enable verbose logging (choices: "true", "false", default: "true", env: VERBOSE)
   --hostname <string>                Server listen on HTTP hostname (default: "0.0.0.0", env: HOSTNAME)
-  --public-key <string>              Comma separated list of public keys to validate messages (env: PUBLIC_KEY)
-  --auth-key <string>                Auth key to validate requests (env: AUTH_KEY)
+  --public-keys <string>             Comma separated list of public keys to validate messages (env: PUBLIC_KEYS)
   --host <string>                    Database HTTP hostname (default: "http://localhost:8123", env: HOST)
   --username <string>                Database user (default: "default", env: USERNAME)
   --password <string>                Password associated with the specified username (default: "", env: PASSWORD)
   --database <string>                The database to use inside ClickHouse (default: "default", env: DATABASE)
-  --async-insert <number>            https://clickhouse.com/docs/en/operations/settings/settings#async-insert (choices:
-                                     "0", "1", default: 1, env: ASYNC_INSERT)
-  --wait-for-async-insert <boolean>  https://clickhouse.com/docs/en/operations/settings/settings#wait-for-async-insert
-                                     (choices: "0", "1", default: 0, env: WAIT_FOR_INSERT)
-  --max-buffer-size <number>         Maximum insertion batch size (default: 10000, env: MAX_BUFFER_SIZE)
-  --insertion-delay <number>         Delay between batch insertions (in ms) (default: 2000, env: INSERTION_DELAY)
   --allow-unparsed <boolean>         Enable storage in 'unparsed_json' table (choices: "true", "false", default: false,
                                      env: ALLOW_UNPARSED)
-  --resume <boolean>                 Save the cached data from the previous process into ClickHouse (choices: "true",
-                                     "false", default: true, env: RESUME)
-  --buffer <string>                  SQLite database to use as an insertion buffer. Use ':memory:' to make it volatile.
-                                     (default: "buffer.db", env: BUFFER)
   -h, --help                         display help for command
 ```
 

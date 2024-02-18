@@ -1,5 +1,5 @@
 import { z } from "zod";
-import client from "../clickhouse/createClient.js";
+import { readOnlyClient } from "../src/clickhouse/createClient.js";
 
 export const BlockResponseSchema = z.object({
   chain: z.string(),
@@ -25,7 +25,7 @@ export function getChain(req: Request, required = true) {
 export async function blocks(req: Request) {
   const query = await Bun.file(import.meta.dirname + "/blocks.sql").text()
   const chain = getChain(req, false);
-  const response = await client.query({ query, format: "JSONEachRow" });
+  const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
   let data = await response.json() as BlockResponseSchema[];
   if ( chain ) data = data.filter((row) => row.chain === chain);
   return data;

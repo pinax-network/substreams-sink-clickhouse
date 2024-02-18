@@ -4,10 +4,10 @@ import { LicenseObject } from "openapi3-ts/oas30";
 import { OpenApiBuilder, ParameterObject, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
-import { store } from "../clickhouse/stores.js";
+import * as store from "../clickhouse/stores.js";
 import { BodySchema } from "../schemas.js";
-import { BlockResponseSchema } from "./blocks.js";
-import { ClusterSchema } from "./cluster.js";
+import { BlockResponseSchema } from "../../sql/blocks.js";
+import { ClusterSchema } from "../../sql/cluster.js";
 
 const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
   ztjs.zodToJsonSchema(...params) as SchemaObject;
@@ -42,7 +42,7 @@ async function paramChain(required = true): Promise<ParameterObject> {
     name: "chain",
     in: "query",
     required,
-    schema: { enum: await store.chains },
+    schema: { enum: await store.query_chains() },
   };
 }
 
@@ -51,7 +51,7 @@ async function paramModuleHash(required = true): Promise<ParameterObject> {
     name: "module_hash",
     in: "query",
     required: true,
-    schema: { enum: await store.moduleHashes },
+    schema: { enum: await store.query_module_hashes() },
   };
 }
 
