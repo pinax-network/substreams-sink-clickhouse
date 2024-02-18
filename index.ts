@@ -11,6 +11,7 @@ import { NotFound } from "./src/fetch/cors.js";
 import { logger } from "./src/logger.js";
 import init from "./src/fetch/init.js";
 import { show_tables } from "./src/clickhouse/stores.js";
+import "./src/exitHandler.js"
 
 if (config.verbose) logger.enable();
 

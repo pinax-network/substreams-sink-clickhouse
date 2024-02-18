@@ -1,10 +1,12 @@
 SELECT
     chain,
+    module_hash,
     COUNT() AS count,
     COUNTDISTINCT(block_number) AS count_distinct,
-    MAX(block_number) AS max,
     MIN(block_number) AS min,
+    MAX(block_number) AS max,
     max - min + 1 AS delta,
     delta - count_distinct AS missing
 FROM blocks
-GROUP BY chain
+WHERE chain = {chain: String}
+GROUP BY (chain, module_hash)

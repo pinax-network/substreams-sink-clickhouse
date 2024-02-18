@@ -50,7 +50,7 @@ async function paramModuleHash(required = true): Promise<ParameterObject> {
   return {
     name: "module_hash",
     in: "query",
-    required: true,
+    required,
     schema: { enum: await store.query_module_hashes() },
   };
 }
@@ -164,23 +164,6 @@ export async function openapi() {
         responses: PUT_RESPONSES,
       },
     })
-    .addPath("/hash", {
-      post: {
-        tags: [TAGS.USAGE],
-        summary: "Generate a hash for a specified password",
-        requestBody: {
-          required: true,
-          description: "The password to hash",
-          content: { "text/plain": { schema: { type: "string" } } },
-        },
-        responses: {
-          200: {
-            description: "Success",
-            content: { "text/plain": { schema: { type: "string" } } },
-          },
-        },
-      },
-    })
     .addPath("/pause", {
       put: {
         tags: [TAGS.MAINTENANCE],
@@ -221,7 +204,7 @@ export async function openapi() {
     })
     .addPath("/cursor/latest", {
       get: {
-        tags: [TAGS.QUERIES],
+        tags: [TAGS.USAGE],
         summary: "Finds the latest cursor for a given chain and table",
         parameters: [
           await paramChain(true),
@@ -248,13 +231,14 @@ export async function openapi() {
     .addPath("/blocks", {
       get: {
         tags: [TAGS.HEALTH],
-        summary: "Gives a summary of known blocks, including min, max and unique block numbers",
+        summary: "Gives a summary of known blocks for particular module hashes",
         parameters: [
-          await paramChain(false)
+          await paramChain(true),
+          await paramModuleHash(false),
         ],
         responses: {
           200: {
-            description: "Block number summary",
+            description: "Module hash block summary",
             content: {
               "application/json": {
                 schema: zodToJsonSchema(BlockResponseSchema),
@@ -280,20 +264,6 @@ export async function openapi() {
           },
           500: { description: "Internal server errror" },
         },
-      },
-    })
-    .addPath("/query", {
-      post: {
-        tags: [TAGS.QUERIES],
-        summary: "Execute queries against the database in read-only mode",
-        requestBody: {
-          content: {
-            "text/plain": {
-              schema: { type: "string", examples: ["SELECT COUNT() FROM blocks"] },
-            },
-          },
-        },
-        responses: { 200: { description: "query result", content: { "application/json": {} } } },
       },
     })
     .addPath("/health", {

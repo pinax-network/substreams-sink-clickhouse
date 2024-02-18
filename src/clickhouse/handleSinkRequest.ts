@@ -8,6 +8,7 @@ import { PayloadBody } from "../schemas.js";
 import { client } from "./createClient.js";
 import * as store from "./stores.js";
 import logUpdate from 'log-update';
+import { logger } from "../logger.js";
 
 type Metadata = { clock: Clock; manifest: Manifest; cursor: string };
 
@@ -35,14 +36,15 @@ function logProgress() {
   const rate = Math.round(success / delta);
   const count = bufferCount();
   success++;
-  logUpdate(`[handleSinkRequest]: ${success} total [${rate} b/s] buffer size: ${count}`);
+  logUpdate('[handleSinkRequest]', `\t${success} total [${rate} b/s] buffer size: ${count}`);
 }
 
-async function flushBuffer() {
+export async function flushBuffer(verbose = false) {
   // clear buffer every 1 second
   if ( lastUpdate != now() ) {
     for ( const [table, values] of buffer.entries() ) {
       await client.insert({table, values, format: "JSONEachRow"})
+      if ( verbose ) logger.info('[handleSinkRequest]', `\tinserted ${values.length} rows into ${table}`);
       buffer.delete(table);
     }
     lastUpdate = now();

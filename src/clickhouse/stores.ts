@@ -8,7 +8,7 @@ export let paused = false;
 
 export function pause(value: boolean) {
   paused = value;
-  logger.info('[pause]', `Paused=${paused}`);
+  logger.info('[store::pause]', `\tPaused=${paused}`);
 }
 
 export async function query_chains() {
@@ -18,6 +18,7 @@ export async function query_chains() {
     .then((response) => response.json<Array<{ chain: string }>>())
     .then((chains) => chains.map(({ chain }) => chain))
     .catch(() => []);
+  logger.info('[store:query_chains]', `Total chains: ${chains.length} (${chains.join(", ")})`);
 
   return chains;
 }
@@ -29,6 +30,7 @@ export async function query_module_hashes() {
     .then((response) => response.json<Array<{ module_hash: string }>>())
     .then((moduleHashes) => moduleHashes.map(({ module_hash }) => module_hash))
     .catch(() => []);
+  logger.info('[store:query_module_hashes]', `Total module_hashes: ${module_hashes.length}`);
 
   return module_hashes;
 }
@@ -47,6 +49,7 @@ export async function show_tables() {
   });
   const data = await response.json<{name: string}[]>();
   tables = new Set(data.map(({ name }) => name));
-  logger.info('[show_tables]', `Loaded ${tables.size} tables (${[...tables].join(", ")})`);
+  logger.info('[store::show_tables]', `Loaded ${tables.size} tables (${[...tables].join(", ")})`);
+
   return tables;
 }
