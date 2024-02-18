@@ -14,6 +14,10 @@
 
 See [releases](https://github.com/pinax-network/substreams-sink-clickhouse/releases)
 
+```bash
+$ ./substreams-sink-clickhouse
+```
+
 ## [Features](/docs/features.md)
 
 See detailed [list of features](/docs/features.md).
@@ -39,12 +43,6 @@ Every request can also be executed via the [online UI](http://localhost:3000).
    $ echo "PUBLIC_KEYS=<PK1>,<PK2>,..." >> .env
    ```
 
-1. Start the sink
-
-   ```bash
-   $ ./substreams-sink-clickhouse
-   ```
-
 1. Initialize the database (_set database credentials in [environment](#environment)_)
 
    ```bash
@@ -65,11 +63,13 @@ Every request can also be executed via the [online UI](http://localhost:3000).
 
 ## Environment
 
+Create a `.env` file in the root of the project.
+
 ```bash
 $ cp .env.example .env
 ```
 
-```bash
+```env
 # ClickHouse DB (optional)
 HOST=http://127.0.0.1:8123
 USERNAME=default
@@ -93,7 +93,7 @@ Each field in [environment](#environment) can be overriden when starting the sin
 $ ./substreams-sink-clickhouse --help
 ```
 
-```
+```bash
 Substreams Clickhouse Sink
 
 Options:

@@ -4,6 +4,7 @@ import { readOnlyClient } from "./createClient.js";
 export let chains: string[] | null = null;
 export let module_hashes: string[] | null = null;
 export let tables: Set<string> | null = null;
+export let databases: Set<string> | null = null;
 export let paused = false;
 
 export function pause(value: boolean) {
@@ -53,4 +54,16 @@ export async function show_tables() {
   logger.info('[store::show_tables]', `Loaded ${tables.size} tables (${[...tables].join(", ")})`);
 
   return tables;
+}
+
+export async function show_databases() {
+  const response = await readOnlyClient.query({
+    query: "SHOW DATABASES",
+    format: "JSONEachRow",
+  });
+  const data = await response.json<{name: string}[]>();
+  databases = new Set(data.map(({ name }) => name));
+  logger.info('[store::show_databases]', `Loaded ${databases.size} databases (${[...databases].join(", ")})`);
+
+  return databases;
 }

@@ -1,11 +1,13 @@
 import { logger } from "../logger.js";
 import { client } from "./createClient.js";
 import { augmentCreateTableStatement, getTableName, isCreateTableStatement } from "./table-utils.js";
-import { tables } from "../../sql/tables/tables.js";
+import { sqlTables } from "../../sql/tables/tables.js";
+import { tables } from "./stores.js";
 
 export async function initializeDefaultTables() {
   const results = [];
-  for ( const [ table, query ] of tables ) {
+  for ( const [ table, query ] of sqlTables ) {
+    if ( tables?.has(table) ) continue;
     logger.info('[clickhouse::initializeDefaultTables]\t', `CREATE TABLE [${table}]`);
     results.push({table, query, ...await client.exec({ query })});
   }

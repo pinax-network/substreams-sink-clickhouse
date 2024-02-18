@@ -10,7 +10,7 @@ import PUT from "./src/fetch/PUT.js";
 import { NotFound } from "./src/fetch/cors.js";
 import { logger } from "./src/logger.js";
 import init from "./src/fetch/init.js";
-import { show_tables } from "./src/clickhouse/stores.js";
+import { show_databases, show_tables } from "./src/clickhouse/stores.js";
 import "./src/exitHandler.js"
 
 if (config.verbose) logger.enable();
@@ -34,5 +34,6 @@ logger.info('[app]\t', `Clickhouse DB ${config.host} (${config.database})`);
 for ( const publicKey of publicKeys ) {
   logger.info('[app]\t', `Webhook Ed25519 public key (${publicKey})`);
 }
-await init();
 await show_tables();
+await show_databases();
+await init();
