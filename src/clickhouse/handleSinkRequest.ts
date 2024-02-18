@@ -36,7 +36,7 @@ function logProgress() {
   const rate = Math.round(success / delta);
   const count = bufferCount();
   success++;
-  logUpdate('[handleSinkRequest]', `\t${success} total [${rate} b/s] buffer size: ${count}`);
+  logUpdate('[clickhouse::handleSinkRequest]', `\t${success} total [${rate} b/s] buffer size: ${count}`);
 }
 
 export async function flushBuffer(verbose = false) {

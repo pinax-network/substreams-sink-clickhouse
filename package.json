@@ -1,6 +1,6 @@
 {
   "name": "substreams-sink-clickhouse",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Substreams Clickhouse sink module",
   "type": "module",
   "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse",
@@ -31,8 +31,9 @@
     "@substreams/sink-entity-changes": "^0.3.5",
     "commander": "latest",
     "dotenv": "latest",
+    "glob": "latest",
     "graphql": "latest",
-    "log-update": "^6.0.0",
+    "log-update": "latest",
     "openapi3-ts": "latest",
     "p-queue": "latest",
     "prom-client": "latest",

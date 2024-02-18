@@ -1,14 +1,14 @@
-import { join } from "path";
+import { join, parse } from "path";
+import * as glob from "glob";
+import { logger } from "../../src/logger.js";
 
-function file(path: string) {
-  return Bun.file(join(import.meta.dirname, path)).text();
+const pattern = join(import.meta.dirname, "*.sql");
+
+export async function getTables() {
+  const tables: [string, string][] = [];
+  for (const path of glob.sync(pattern)) {
+    tables.push([parse(path).name, await Bun.file(path).text()])
+  }
+  logger.info("[sql::tables]\t", `Loading ${tables.length} tables from ${pattern}`);
+  return tables;
 }
-
-const glob = new Bun.Glob("**/*.sql");
-const tables: [string, string][] = [];
-
-for (const path of glob.scanSync(import.meta.dirname)) {
-  tables.push([path.replace(".sql", ""), await file(path)])
-}
-
-export default tables;

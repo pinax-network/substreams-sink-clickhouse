@@ -1,13 +1,12 @@
 import { logger } from "../logger.js";
-import { Err, Ok, Result } from "../result.js";
 import { client } from "./createClient.js";
 import { augmentCreateTableStatement, getTableName, isCreateTableStatement } from "./table-utils.js";
-import tables from "../../sql/tables/tables.js";
+import { getTables } from "../../sql/tables/tables.js";
 
 export async function initializeDefaultTables() {
   const results = [];
-  for ( const [ table, query ]  of tables ) {
-    logger.info('[initializeDefaultTables]\t', `CREATE TABLE [${table}]`);
+  for ( const [ table, query ] of await getTables() ) {
+    logger.info('[clickhouse::initializeDefaultTables]\t', `CREATE TABLE [${table}]`);
     results.push({table, query, ...await client.exec({ query })});
   }
   return results;
@@ -33,11 +32,11 @@ const add_indexes = (tableName: string) => {
 
 export async function executeCreateStatements(statements: string[]) {
   const executedStatements = [];
-  logger.info('[executeCreateStatements]', `Executing ${statements.length} statement(s)`);
+  logger.info('[clickhouse::executeCreateStatements]', `Executing ${statements.length} statement(s)`);
 
   for (const statement of statements) {
     const tableName = getTableName(statement);
-    logger.info('[executeCreateStatements]', `Executing '${tableName}'`);
+    logger.info('[clickhouse::executeCreateStatements]', `Executing '${tableName}'`);
 
     // ignore non-create statements
     if (!isCreateTableStatement(statement)) {
@@ -58,6 +57,6 @@ export async function executeCreateStatements(statements: string[]) {
     }
   }
   if ( executedStatements.length == 0 ) throw new Error("No statements executed");
-  logger.info('[executeCreateStatements]', "Complete.");
+  logger.info('[clickhouse::executeCreateStatements]', "Complete.");
   return executedStatements;
 }
