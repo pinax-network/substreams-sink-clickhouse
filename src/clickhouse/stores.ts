@@ -7,6 +7,13 @@ export let tables: Set<string> | null = null;
 export let databases: Set<string> | null = null;
 export let paused = false;
 
+export function check_table(table: string) {
+  if (!tables) throw new Error("no tables are loaded");
+  if (!tables.has(table)) {
+    throw new Error(`table ${table} does not exist (call HTTP PUT "/sql/schema" to create table schemas)`);
+  }
+}
+
 export function pause(value: boolean) {
   paused = value;
   logger.info('[store::pause]', `\tpaused=${paused}`);

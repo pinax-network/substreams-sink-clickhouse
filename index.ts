@@ -12,8 +12,15 @@ import { logger } from "./src/logger.js";
 import init from "./src/fetch/init.js";
 import { show_databases, show_tables } from "./src/clickhouse/stores.js";
 import "./src/exitHandler.js"
+import * as buffer from "./src/buffer.js"
 
 if (config.verbose) logger.enable();
+
+// initizalize before starting the server
+await show_tables();
+await show_databases();
+await init();
+await buffer.flush(true);
 
 const app = Bun.serve({
   hostname: config.hostname,
@@ -28,12 +35,10 @@ const app = Bun.serve({
   },
 });
 
+// logging
 logger.info('[app]\t', `${name} v${version}`);
 logger.info('[app]\t', `Sink Server listening on http://${app.hostname}:${app.port}`);
 logger.info('[app]\t', `Clickhouse DB ${config.host} (${config.database})`);
 for ( const publicKey of publicKeys ) {
   logger.info('[app]\t', `Webhook Ed25519 public key (${publicKey})`);
 }
-await show_tables();
-await show_databases();
-await init();

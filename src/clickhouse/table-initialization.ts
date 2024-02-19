@@ -2,15 +2,16 @@ import { logger } from "../logger.js";
 import { client } from "./createClient.js";
 import { augmentCreateTableStatement, getTableName, isCreateTableStatement } from "./table-utils.js";
 import { sqlTables } from "../../sql/tables/tables.js";
-import { tables } from "./stores.js";
+import { show_tables, tables } from "./stores.js";
 
 export async function initializeDefaultTables() {
   const results = [];
   for ( const [ table, query ] of sqlTables ) {
-    if ( tables?.has(table) ) continue;
+    // if ( tables?.has(table) ) continue;
     logger.info('[clickhouse::initializeDefaultTables]\t', `CREATE TABLE [${table}]`);
     results.push({table, query, ...await client.exec({ query })});
   }
+  await show_tables()
   return results;
 }
 
@@ -60,5 +61,6 @@ export async function executeCreateStatements(statements: string[]) {
   }
   if ( executedStatements.length == 0 ) throw new Error("No statements executed");
   logger.info('[clickhouse::executeCreateStatements]', "Complete.");
+  await show_tables();
   return executedStatements;
 }

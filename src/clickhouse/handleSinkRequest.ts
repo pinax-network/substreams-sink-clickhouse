@@ -5,55 +5,25 @@ import { EntityChange } from "@substreams/sink-entity-changes/zod";
 import { Clock, Manifest } from "substreams-sink-webhook/schemas";
 import * as prometheus from "../prometheus.js";
 import { PayloadBody } from "../schemas.js";
-import { client } from "./createClient.js";
-import * as store from "./stores.js";
 import logUpdate from 'log-update';
-import { logger } from "../logger.js";
+import { now } from "../utils.js";
+import * as buffer from "../buffer.js"
 
 type Metadata = { clock: Clock; manifest: Manifest; cursor: string };
 
-const buffer = new Map<string, Record<string, unknown>[]>()
-
-function now() {
-  return Math.floor(new Date().getTime() / 1000);
-}
-
 let entities = 0;
 let blocks = 0;
-let inserts = 0;
 let start = now();
 let lastUpdate = now();
-
-function bufferCount() {
-  let count = 0
-  for ( const value of buffer.values() ) {
-    count += value.length;
-  };
-  return count;
-}
 
 // TO-DO - use Prometheus metrics as input to this function
 function logProgress() {
   const delta = now() - start
   const blockRate = Math.round(blocks / delta);
   const entitiesRate = Math.round(entities / delta);
-  const insertsRate = Math.round(inserts / delta);
-  const count = bufferCount();
+  const insertsRate = Math.round(buffer.inserts / delta);
   blocks++;
-  logUpdate(`[clickhouse::handleSinkRequest] blocks=${blocks} [${blockRate}/s] entities=${entities} [${entitiesRate}/s] inserts=${inserts} [${insertsRate}/s] buffer=${count}`);
-}
-
-export async function flushBuffer(verbose = false) {
-  // clear buffer every 1 second
-  if ( lastUpdate != now() ) {
-    for ( const [table, values] of buffer.entries() ) {
-      await client.insert({table, values, format: "JSONEachRow"})
-      if ( verbose ) logger.info('[handleSinkRequest]', `\tinserted ${values.length} rows into ${table}`);
-      buffer.delete(table);
-      inserts++;
-    }
-    lastUpdate = now();
-  }
+  logUpdate(`[clickhouse::handleSinkRequest] blocks=${blocks} [${blockRate}/s] entities=${entities} [${entitiesRate}/s] inserts=${buffer.inserts} [${insertsRate}/s]`);
 }
 
 // ~200-500 blocks per second
@@ -70,7 +40,11 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   insertModuleHashes(metadata);
   insertBlocks(metadata);
 
-  await flushBuffer();
+  // clear buffer every 1 second
+  if ( lastUpdate != now() ) {
+    await buffer.flush();
+    lastUpdate = now();
+  }
 
   // logging
   prometheus.sink_requests.inc({
@@ -93,7 +67,7 @@ function insertModuleHashes(metadata: Metadata) {
     latest_block_id: metadata.clock.id,
     latest_timestamp: Number(new Date(metadata.clock.timestamp)),
   };
-  insertToBuffer("module_hashes", values);
+  buffer.insert("module_hashes", values);
 }
 
 function insertBlocks(metadata: Metadata) {
@@ -104,38 +78,29 @@ function insertBlocks(metadata: Metadata) {
     timestamp: Number(new Date(metadata.clock.timestamp)),
     block_id: metadata.clock.id,
   };
-  insertToBuffer("blocks", values);
-}
-
-function insertToBuffer(table: string, values: Record<string, unknown>) {
-  // throw error if tables are not loaded
-  if (!store.tables) throw new Error("no tables are loaded");
-  if (!store.tables.has(table)) {
-    throw new Error(`table ${table} does not exist (call HTTP PUT "/sql/schema" to create table schemas)`);
-  }
-
-  // append values to buffer (used for in-memory Clickhouse DB batching)
-  if ( !buffer.has(table) ) {
-    buffer.set(table, [values]);
-  } else {
-    buffer.get(table)?.push(values);
-  }
+  buffer.insert("blocks", values);
 }
 
 function handleEntityChanges(entityChanges: EntityChange[], metadata: Metadata) {
+  const rows = [];
   for (const change of entityChanges) {
     const values = getValuesInEntityChange(change);
     const id = change.id; // primary key
-    insertEntityChange(change.entity, values, change.operation, { ...metadata, id });
+    const row = insertEntityChange(change.entity, values, change.operation, { ...metadata, id });
+    rows.push(row);
   }
+  buffer.bulkInsert(rows);
 }
 
 function handleDatabaseChanges(tableChanges: TableChange[], metadata: Metadata) {
+  const rows = [];
   for (const change of tableChanges) {
     const values = getValuesInTableChange(change);
     const id = ""; // database changes do not have a primary key
-    insertEntityChange(change.table, values, change.operation, { ...metadata, id });
+    const row = insertEntityChange(change.table, values, change.operation, { ...metadata, id });
+    rows.push(row);
   }
+  buffer.bulkInsert(rows);
 }
 
 function insertEntityChange(
@@ -151,7 +116,6 @@ function insertEntityChange(
   values["module_hash"] = metadata.manifest.moduleHash;
   values["timestamp"] = Number(new Date(metadata.clock.timestamp)); // Block timestamp
   values["operation"] = operation;
-  insertToBuffer(table, values);
   entities++;
 
   // log
@@ -160,8 +124,5 @@ function insertEntityChange(
     module_hash: metadata.manifest.moduleHash,
     operation,
   });
-}
-
-function timeout(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return { table, values };
 }

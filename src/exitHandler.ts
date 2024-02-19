@@ -1,11 +1,12 @@
-import { flushBuffer } from "./clickhouse/handleSinkRequest.js";
+// import { flushBuffer } from "./clickhouse/handleSinkRequest.js";
 import { pause } from "./clickhouse/stores.js";
 import { logger } from "./logger.js";
+import * as buffer from "./buffer.js";
 
-export function exitHandler() {
+export async function exitHandler() {
     logger.info('[app]\t', `Server shutting down...`);
     pause(true);
-    flushBuffer();
+    await buffer.flush(true);
     process.exit();
 }
 
