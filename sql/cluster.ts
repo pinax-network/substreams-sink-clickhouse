@@ -1,5 +1,5 @@
 import { z } from "zod";
-import client from "../clickhouse/createClient.js";
+import { readOnlyClient } from "../src/clickhouse/createClient.js";
 
 export const ClusterSchema = z.object({
   count: z.number(),
@@ -13,6 +13,6 @@ export type ClusterSchema = z.infer<typeof ClusterSchema>;
 
 export async function cluster() {
   const query = await Bun.file(import.meta.dirname + "/cluster.sql").text()
-  const response = await client.query({ query, format: "JSONEachRow" });
+  const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
   return response.json();
 }

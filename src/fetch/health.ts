@@ -9,19 +9,21 @@ function now() {
 let timestamp = now();
 let cachedHealthValue = true;
 
-export default async function (): Promise<Response> {
+export default async function health(): Promise<Response> {
   if (now() - timestamp < 1) {
     return cachedHealthValue ? toText("OK") : BadRequest;
   }
 
-  const pingResult = await ping();
-  timestamp = now();
+  // success
+  try {
+    await ping();
+    timestamp = now();
+    cachedHealthValue = true;
+    return toText("OK");
 
-  if (!pingResult.success) {
+  // failure
+  } catch (e) {
     cachedHealthValue = false;
     return BadRequest;
   }
-
-  cachedHealthValue = true;
-  return toText("OK");
 }

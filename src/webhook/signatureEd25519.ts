@@ -1,10 +1,9 @@
-import { config } from "../config.js";
 import { toText } from "../fetch/cors.js";
-import { Err, Ok, Result } from "../result.js";
+import { Err, Ok } from "../result.js";
 import { verify } from "substreams-sink-webhook/auth";
 
-export async function signatureEd25519(req: Request, body: string): Promise<Result<undefined, Response>> {
-  if ( !config.publicKey) return Ok();
+export async function signatureEd25519(req: Request, body: string, publicKeys: string[]) {
+  if ( !publicKeys.length) return Err(toText("missing public keys", 500));
   const signature = req.headers.get("x-signature-ed25519");
   const timestamp = Number(req.headers.get("x-signature-timestamp"));
 
@@ -13,7 +12,7 @@ export async function signatureEd25519(req: Request, body: string): Promise<Resu
   if (!body) return Err(toText("missing body", 400));
 
   let isVerified = false;
-  for ( const publicKey of config.publicKey) {
+  for ( const publicKey of publicKeys) {
     if (verify(timestamp, body, signature, publicKey)) {
       isVerified = true;
       break;

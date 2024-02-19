@@ -4,10 +4,10 @@ import { LicenseObject } from "openapi3-ts/oas30";
 import { OpenApiBuilder, ParameterObject, ResponsesObject, SchemaObject } from "openapi3-ts/oas31";
 import { z } from "zod";
 import * as ztjs from "zod-to-json-schema";
-import { store } from "../clickhouse/stores.js";
+import * as store from "../clickhouse/stores.js";
 import { BodySchema } from "../schemas.js";
-import { BlockResponseSchema } from "./blocks.js";
-import { ClusterSchema } from "./cluster.js";
+import { BlockResponseSchema } from "../../sql/blocks.js";
+import { ClusterSchema } from "../../sql/cluster.js";
 
 const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
   ztjs.zodToJsonSchema(...params) as SchemaObject;
@@ -42,7 +42,7 @@ async function paramChain(required = true): Promise<ParameterObject> {
     name: "chain",
     in: "query",
     required,
-    schema: { enum: await store.chains },
+    schema: { enum: await store.query_chains() },
   };
 }
 
@@ -50,8 +50,8 @@ async function paramModuleHash(required = true): Promise<ParameterObject> {
   return {
     name: "module_hash",
     in: "query",
-    required: true,
-    schema: { enum: await store.moduleHashes },
+    required,
+    schema: { enum: await store.query_module_hashes() },
   };
 }
 
@@ -164,23 +164,6 @@ export async function openapi() {
         responses: PUT_RESPONSES,
       },
     })
-    .addPath("/hash", {
-      post: {
-        tags: [TAGS.USAGE],
-        summary: "Generate a hash for a specified password",
-        requestBody: {
-          required: true,
-          description: "The password to hash",
-          content: { "text/plain": { schema: { type: "string" } } },
-        },
-        responses: {
-          200: {
-            description: "Success",
-            content: { "text/plain": { schema: { type: "string" } } },
-          },
-        },
-      },
-    })
     .addPath("/pause", {
       put: {
         tags: [TAGS.MAINTENANCE],
@@ -221,7 +204,7 @@ export async function openapi() {
     })
     .addPath("/cursor/latest", {
       get: {
-        tags: [TAGS.QUERIES],
+        tags: [TAGS.USAGE],
         summary: "Finds the latest cursor for a given chain and table",
         parameters: [
           await paramChain(true),
@@ -248,13 +231,14 @@ export async function openapi() {
     .addPath("/blocks", {
       get: {
         tags: [TAGS.HEALTH],
-        summary: "Gives a summary of known blocks, including min, max and unique block numbers",
+        summary: "Gives a summary of known blocks for particular module hashes",
         parameters: [
-          await paramChain(false)
+          await paramChain(true),
+          await paramModuleHash(false),
         ],
         responses: {
           200: {
-            description: "Block number summary",
+            description: "Module hash block summary",
             content: {
               "application/json": {
                 schema: zodToJsonSchema(BlockResponseSchema),
@@ -280,20 +264,6 @@ export async function openapi() {
           },
           500: { description: "Internal server errror" },
         },
-      },
-    })
-    .addPath("/query", {
-      post: {
-        tags: [TAGS.QUERIES],
-        summary: "Execute queries against the database in read-only mode",
-        requestBody: {
-          content: {
-            "text/plain": {
-              schema: { type: "string", examples: ["SELECT COUNT() FROM blocks"] },
-            },
-          },
-        },
-        responses: { 200: { description: "query result", content: { "application/json": {} } } },
       },
     })
     .addPath("/health", {

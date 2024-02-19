@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { config } from "./src/config.js";
+import { config, publicKeys } from "./src/config.js";
 import { name, version } from "./package.json" assert { type: "json" };
 import DELETE from "./src/fetch/DELETE.js";
 import GET from "./src/fetch/GET.js";
@@ -9,10 +9,18 @@ import POST from "./src/fetch/POST.js";
 import PUT from "./src/fetch/PUT.js";
 import { NotFound } from "./src/fetch/cors.js";
 import { logger } from "./src/logger.js";
-import { resume } from "./src/resume.js";
+import init from "./src/fetch/init.js";
+import { show_databases, show_tables } from "./src/clickhouse/stores.js";
+import "./src/exitHandler.js"
+import * as buffer from "./src/buffer.js"
 
 if (config.verbose) logger.enable();
-if (config.resume) resume();
+
+// initizalize before starting the server
+await show_tables();
+await show_databases();
+await init();
+await buffer.flush(true);
 
 const app = Bun.serve({
   hostname: config.hostname,
@@ -27,8 +35,10 @@ const app = Bun.serve({
   },
 });
 
-logger.info('[app]', `${name} v${version}`);
-logger.info('[app]', `Server listening on http://${app.hostname}:${app.port}`);
-logger.info('[app]', `Clickhouse Server ${config.host} (${config.database})`);
-if (config.authKey) logger.info('[app]', `HTTP Auth Key: ${config.authKey}`);
-if (config.publicKey) logger.info('[app]', `Webhook Ed25519 Public Key: ${config.publicKey}`);
+// logging
+logger.info('[app]\t', `${name} v${version}`);
+logger.info('[app]\t', `Sink Server listening on http://${app.hostname}:${app.port}`);
+logger.info('[app]\t', `Clickhouse DB ${config.host} (${config.database})`);
+for ( const publicKey of publicKeys ) {
+  logger.info('[app]\t', `Webhook Ed25519 public key (${publicKey})`);
+}

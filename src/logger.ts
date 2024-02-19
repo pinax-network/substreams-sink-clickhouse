@@ -3,7 +3,9 @@ import { name } from "../package.json" assert { type: "json" };
 
 class SinkLogger extends Logger<ILogObj> {
   constructor() {
-    super();
+    super({
+      prettyLogTemplate: "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}\t{{logLevelName}}\t{{name}}\t"
+    });
     this.disable();
     this.settings.name = name;
   }
@@ -30,3 +32,5 @@ class SinkLogger extends Logger<ILogObj> {
 }
 
 export const logger = new SinkLogger();
+
+logger.settings

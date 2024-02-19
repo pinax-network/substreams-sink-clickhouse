@@ -2,14 +2,14 @@ import { file } from "bun";
 import swaggerFavicon from "../../swagger/favicon.png";
 import swaggerHtml from "../../swagger/index.html";
 import { metrics } from "../prometheus.js";
-import { blocks } from "./blocks.js";
+import { blocks } from "../../sql/blocks.js";
 import { NotFound, toFile, toJSON, toText } from "./cors.js";
-import { findLatestCursor } from "./cursor.js";
+import { findLatestCursor } from "../../sql/cursor.js";
 import health from "./health.js";
 import { openapi } from "./openapi.js";
-import { cluster } from "./cluster.js";
+import { cluster } from "../../sql/cluster.js";
 
-export default async function (req: Request) {
+export default async function (req: Request): Promise<Response> {
   const { pathname } = new URL(req.url);
 
   try {
@@ -17,7 +17,7 @@ export default async function (req: Request) {
     if (pathname === "/favicon.png") return toFile(file(swaggerFavicon));
 
     // queries
-    if (pathname === "/cursor/latest") return findLatestCursor(req);
+    if (pathname === "/cursor/latest") return toText(await findLatestCursor(req));
 
     // health
     if (pathname === "/blocks") return toJSON(await blocks(req));

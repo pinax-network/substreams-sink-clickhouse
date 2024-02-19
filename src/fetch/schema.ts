@@ -1,4 +1,4 @@
-import { store } from "../clickhouse/stores.js";
+import * as store from "../clickhouse/stores.js";
 import { executeCreateStatements } from "../clickhouse/table-initialization.js";
 import { splitCreateStatement } from "../clickhouse/table-utils.js";
 import { ClickhouseTableBuilder } from "../graphql/builders/clickhouse-table-builder.js";
@@ -25,13 +25,14 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 
   logger.info('[handleSchemaRequest]', `Found ${statements.length} statement(s)`);
 
-  const executedSchemas = await executeCreateStatements(statements);
-  if (!executedSchemas.success) {
-    return toText("Could not execute the statements", 500);
+  try {
+    const executedSchemas = await executeCreateStatements(statements);
+    store.reset();
+    return toText(executedSchemas.join("\n"));
+  } catch (e) {
+    logger.error('[handleSchemaRequest]', e);
+    return toText(String(e), 500);
   }
-
-  store.reset();
-  return toJSON({ status: "OK", schema: executedSchemas.payload.join("\n") });
 }
 
 // This looks for a table schema in the request object.

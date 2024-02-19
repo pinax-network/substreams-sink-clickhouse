@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS module_hashes (
+    chain               LowCardinality(String),
     module_hash         FixedString(40),
     module_name         String,
-    chain               LowCardinality(String),
     type                String,
     latest_cursor       String,
     latest_block_number UInt32,
