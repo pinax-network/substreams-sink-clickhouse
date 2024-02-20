@@ -23,7 +23,7 @@ function logProgress() {
   const entitiesRate = Math.round(entities / delta);
   const insertsRate = Math.round(buffer.inserts / delta);
   blocks++;
-  logUpdate(`[clickhouse::handleSinkRequest] blocks=${blocks} [${blockRate}/s] entities=${entities} [${entitiesRate}/s] inserts=${buffer.inserts} [${insertsRate}/s]`);
+  logUpdate(`[app] blocks=${blocks} [${blockRate}/s] entities=${entities} [${entitiesRate}/s] inserts=${buffer.inserts} [${insertsRate}/s]`);
 }
 
 // ~200-500 blocks per second

@@ -1,8 +1,10 @@
 import { readOnlyClient } from "../src/clickhouse/createClient.js";
 import * as store from "../src/clickhouse/stores.js";
+import { logger } from "../src/logger.js";
 
 export async function findLatestCursor(req: Request) {
   const { module_hash, chain} = await paramsLatestCursor(req);
+  logger.info("[sql::findLatestCursor]", { module_hash, chain });
   const query = await Bun.file(import.meta.dirname + "/cursor.sql").text()
   const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
   const data = await response.json<Array<{latest_cursor: string}>>();
