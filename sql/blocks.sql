@@ -9,5 +9,3 @@ SELECT
     delta - count_distinct AS missing,
     count - count_distinct AS optimize
 FROM blocks
-WHERE chain = {chain: String}
-GROUP BY (chain, module_hash)

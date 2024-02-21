@@ -1,6 +1,6 @@
 {
   "name": "substreams-sink-clickhouse",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Substreams Clickhouse Sink",
   "type": "module",
   "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse",
@@ -36,7 +36,7 @@
     "openapi3-ts": "latest",
     "p-queue": "latest",
     "prom-client": "latest",
-    "substreams-sink-webhook": "^0.8.5",
+    "substreams-sink-webhook": "^0.9.2",
     "tslog": "latest",
     "zod": "latest",
     "zod-to-json-schema": "latest"

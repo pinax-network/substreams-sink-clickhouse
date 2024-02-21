@@ -8,6 +8,7 @@ import * as store from "../clickhouse/stores.js";
 import { BodySchema } from "../schemas.js";
 import { BlockResponseSchema } from "../../sql/blocks.js";
 import { ClusterSchema } from "../../sql/cluster.js";
+import { MissingResponseSchema } from "../../sql/missing.js";
 
 const zodToJsonSchema = (...params: Parameters<(typeof ztjs)["zodToJsonSchema"]>) =>
   ztjs.zodToJsonSchema(...params) as SchemaObject;
@@ -233,7 +234,7 @@ export async function openapi() {
         tags: [TAGS.HEALTH],
         summary: "Gives a summary of known blocks for particular module hashes",
         parameters: [
-          await paramChain(true),
+          await paramChain(false),
           await paramModuleHash(false),
         ],
         responses: {
@@ -242,6 +243,27 @@ export async function openapi() {
             content: {
               "application/json": {
                 schema: zodToJsonSchema(BlockResponseSchema),
+              },
+            },
+          },
+          500: { description: "Internal server errror" },
+        },
+      },
+    })
+    .addPath("/missing", {
+      get: {
+        tags: [TAGS.HEALTH],
+        summary: "Gives a summary of missing blocks ranges for a particular module hash",
+        parameters: [
+          await paramChain(true),
+          await paramModuleHash(true),
+        ],
+        responses: {
+          200: {
+            description: "Module hash missing blocks summary",
+            content: {
+              "application/json": {
+                schema: zodToJsonSchema(MissingResponseSchema),
               },
             },
           },

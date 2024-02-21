@@ -8,6 +8,7 @@ import { findLatestCursor } from "../../sql/cursor.js";
 import health from "./health.js";
 import { openapi } from "./openapi.js";
 import { cluster } from "../../sql/cluster.js";
+import { missing } from "../../sql/missing.js";
 
 export default async function (req: Request): Promise<Response> {
   const { pathname } = new URL(req.url);
@@ -21,6 +22,7 @@ export default async function (req: Request): Promise<Response> {
 
     // health
     if (pathname === "/blocks") return toJSON(await blocks(req));
+    if (pathname === "/missing") return toJSON(await missing(req));
     if (pathname === "/cluster") return toJSON(await cluster());
     if (pathname === "/health") return health();
     if (pathname === "/metrics") return metrics();
