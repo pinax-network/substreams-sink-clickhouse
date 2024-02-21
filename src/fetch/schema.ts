@@ -27,7 +27,7 @@ export async function handleSchemaRequest(req: Request, type: "sql" | "graphql")
 
   try {
     const executedSchemas = await executeCreateStatements(statements);
-    store.reset();
+    await store.reset("tables");
     return toText(executedSchemas.join("\n"));
   } catch (e) {
     logger.error('[handleSchemaRequest]', e);

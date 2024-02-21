@@ -27,7 +27,7 @@ export async function query_chains() {
     .then((response) => response.json<Array<{ chain: string }>>())
     .then((chains) => chains.map(({ chain }) => chain))
     .catch(() => []);
-  logger.info('[store:query_chains]', `Total chains: ${chains.length} (${chains.join(", ")})`);
+  logger.info('[store::query_chains]', `Total chains: ${chains.length} (${chains.join(", ")})`);
 
   return chains;
 }
@@ -39,16 +39,41 @@ export async function query_module_hashes() {
     .then((response) => response.json<Array<{ module_hash: string }>>())
     .then((moduleHashes) => moduleHashes.map(({ module_hash }) => module_hash))
     .catch(() => []);
-  logger.info('[store:query_module_hashes]', `Total module_hashes: ${module_hashes.length}`);
+  logger.info('[store::query_module_hashes]', `Total module_hashes: ${module_hashes.length}`);
 
   return module_hashes;
 }
 
-export function reset() {
-  chains = null;
-  module_hashes = null;
-  tables = null;
-  logger.info('[reset]', "Cache has been cleared");
+export async function reset(type: "chains"| "module_hashes" | "tables" | "databases" | "all" = "all") {
+  logger.info('[reset]', `cache reset for '${type}'`);
+  switch (type) {
+    case "chains":
+      chains = null;
+      await query_chains();
+      break;
+    case "module_hashes":
+      module_hashes = null;
+      await query_module_hashes();
+      break;
+    case "tables":
+      tables = null;
+      await show_tables();
+      break;
+    case "databases":
+      databases = null;
+      await show_databases();
+      break;
+    case "all":
+      chains = null;
+      module_hashes = null;
+      tables = null;
+      databases = null;
+      await query_chains();
+      await query_module_hashes();
+      await show_tables();
+      await show_databases();
+      break;
+  }
 }
 
 export async function show_tables() {
