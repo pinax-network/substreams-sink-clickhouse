@@ -23,12 +23,12 @@ async function paramsLatestCursor(req: Request) {
   if (!module_hash) throw new Error("Missing parameter: module_hash");
 
   if (!(await store.query_chains()).includes(chain)) {
-    store.reset();
+    await store.reset("chains");
     throw new Error("Invalid parameter: chain=" + chain);
   }
 
   if (!(await store.query_module_hashes()).includes(module_hash)) {
-    store.reset();
+    await store.reset("module_hashes");
     throw new Error("Invalid parameter: module_hash=" + module_hash);
   }
 
