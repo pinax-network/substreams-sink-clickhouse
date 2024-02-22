@@ -6,8 +6,8 @@ import { toJSON } from "./cors.js";
 
 export default async function init() {
   return toJSON({
-    ping: await ping(),
     createDatabase: await createDatabase(config.database),
+    ping: await ping(),
     initializeDefaultTables: await initializeDefaultTables(),
   });
 }
