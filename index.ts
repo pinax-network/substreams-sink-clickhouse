@@ -17,9 +17,9 @@ import * as buffer from "./src/buffer.js"
 if (config.verbose) logger.enable();
 
 // initizalize before starting the server
+await init();
 await show_tables();
 await show_databases();
-await init();
 await buffer.flush(true);
 
 const app = Bun.serve({
