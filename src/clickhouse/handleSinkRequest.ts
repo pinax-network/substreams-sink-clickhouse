@@ -31,14 +31,14 @@ export async function handleSinkRequest({ data, ...metadata }: PayloadBody) {
   // Different handler if `graph_out` or `db_out` is emitting data.
   // Handles no incoming data as well.
   if ("entityChanges" in data && data.entityChanges.length > 0) {
-    handleEntityChanges(data.entityChanges, metadata);
+    await handleEntityChanges(data.entityChanges, metadata);
   } else if ("tableChanges" in data && data.tableChanges.length > 0) {
-    handleDatabaseChanges(data.tableChanges, metadata);
+    await handleDatabaseChanges(data.tableChanges, metadata);
   }
 
   // insert metadata
-  insertModuleHashes(metadata);
-  insertBlocks(metadata);
+  await insertModuleHashes(metadata);
+  await insertBlocks(metadata);
 
   // clear buffer every 1 second
   if ( lastUpdate != now() ) {
@@ -67,7 +67,7 @@ function insertModuleHashes(metadata: Metadata) {
     latest_block_id: metadata.clock.id,
     latest_timestamp: Number(new Date(metadata.clock.timestamp)),
   };
-  buffer.insert("module_hashes", values);
+  return buffer.insert("module_hashes", values);
 }
 
 function insertBlocks(metadata: Metadata) {
@@ -78,7 +78,7 @@ function insertBlocks(metadata: Metadata) {
     timestamp: Number(new Date(metadata.clock.timestamp)),
     block_id: metadata.clock.id,
   };
-  buffer.insert("blocks", values);
+  return buffer.insert("blocks", values);
 }
 
 function handleEntityChanges(entityChanges: EntityChange[], metadata: Metadata) {
@@ -89,7 +89,7 @@ function handleEntityChanges(entityChanges: EntityChange[], metadata: Metadata) 
     const row = insertEntityChange(change.entity, values, change.operation, { ...metadata, id });
     rows.push(row);
   }
-  buffer.bulkInsert(rows);
+  return buffer.bulkInsert(rows);
 }
 
 function handleDatabaseChanges(tableChanges: TableChange[], metadata: Metadata) {
@@ -100,7 +100,7 @@ function handleDatabaseChanges(tableChanges: TableChange[], metadata: Metadata) 
     const row = insertEntityChange(change.table, values, change.operation, { ...metadata, id });
     rows.push(row);
   }
-  buffer.bulkInsert(rows);
+  return buffer.bulkInsert(rows);
 }
 
 function insertEntityChange(
