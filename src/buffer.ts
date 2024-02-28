@@ -9,8 +9,9 @@ export type Buffer = Map<string, Values[]>;
 
 const path = "buffer.txt";
 const encoding = "utf-16le";
-const writer = fs.createWriteStream(path, {flags: "a", encoding});
 
+// create a write stream in "append" mode
+let writer = fs.createWriteStream(path, {flags: "a", encoding});
 export let inserts = 0;
 
 export function bulkInsert(rows: {table: string, values: Values}[]) {
@@ -38,6 +39,8 @@ export async function read(): Promise<Buffer> {
       }
     });
     rl.on("close", () => {
+      input.close();
+      rl.close();
       return resolve(buffer);
     });
     rl.on("error", (err) => {
@@ -46,17 +49,30 @@ export async function read(): Promise<Buffer> {
   });
 }
 
-export async function flush(verbose = false) {
+export async function flush(verbose = false): Promise<void> {
   if ( !fs.existsSync(path) ) return;
+  await close();
   const buffer = await read();
   for ( const [table, values] of buffer.entries() ) {
       await client.insert({table, values, format: "JSONEachRow"})
       if ( verbose ) logger.info('[buffer::flush]', `\tinserted ${values.length} rows into ${table}`);
-      buffer.delete(table);
       inserts++;
   }
-  // clear the buffer
-  fs.createWriteStream(path, {encoding});
+  // clear the buffer and overwrite existing writer in "write" mode
+  writer = fs.createWriteStream(path, {flags: "w", encoding});
+}
+
+export function close(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ( !writer ) return resolve();
+    if ( writer.destroyed ) return resolve();
+    if ( writer.closed ) return resolve();
+
+    writer.close((err) => {
+      if (err) return reject(err);
+      return resolve();
+    });
+  });
 }
 
 export function count(buffer: Buffer) {
