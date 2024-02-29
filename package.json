@@ -1,6 +1,6 @@
 {
   "name": "substreams-sink-clickhouse",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Substreams Clickhouse Sink",
   "type": "module",
   "homepage": "https://github.com/pinax-network/substreams-sink-clickhouse",
