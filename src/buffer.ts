@@ -1,4 +1,3 @@
-import readline from "readline";
 import fs from "fs";
 import { client } from "./clickhouse/createClient.js";
 import { logger } from "./logger.js";
@@ -9,23 +8,21 @@ export type Buffer = Map<string, Values[]>;
 
 const path = "buffer.txt";
 const encoding = "utf-8";
+const highWaterMark = 1024 * 1024; // 1MB
 
-// create a write stream in "append" mode
-let writer = fs.createWriteStream(path, {flags: "a", encoding});
+// create a Bun writer to incementally write to the buffer file
+// https://bun.sh/guides/write-file/filesink
+let writer = Bun.file(path).writer({ highWaterMark }); // 1MB
 export let inserts = 0;
 
 export function bulkInsert(rows: {table: string, values: Values}[]) {
   return Promise.all(rows.map(({table, values}) => insert(table, values)));
 }
 
-export function insert(table: string, values: Values): Promise<void> {
+export async function insert(table: string, values: Values): Promise<void> {
   store.check_table(table);
-  return new Promise((resolve, reject) => {
-    writer.write(JSON.stringify({table, values}) + "\n", (err) => {
-      if (err) return reject(err);
-      return resolve();
-    });
-  });
+  writer.write(JSON.stringify({table, values}) + "\n");
+  await writer.flush();
 }
 
 export async function read(): Promise<Buffer> {
@@ -46,18 +43,17 @@ export async function read(): Promise<Buffer> {
 }
 
 export async function flush(verbose = false): Promise<void> {
-  if ( !fs.existsSync(path) ) {
-    writer = fs.createWriteStream(path, {flags: "w", encoding});
-    return;
-  }
+  if ( !fs.existsSync(path) ) return; // nothing to flush
   const buffer = await read();
   for ( const [table, values] of buffer.entries() ) {
       await client.insert({table, values, format: "JSONEachRow"})
       if ( verbose ) logger.info('[buffer::flush]', `\tinserted ${values.length} rows into ${table}`);
       inserts++;
   }
-  // clear the buffer and overwrite existing writer in "write" mode
-  writer = fs.createWriteStream(path, {flags: "w", encoding});
+  // erase the buffer and overwrite existing writer in "write" mode
+  await writer.end();
+  fs.rmSync(path);
+  writer = Bun.file(path).writer({ highWaterMark });
 }
 
 export function count(buffer: Buffer) {
