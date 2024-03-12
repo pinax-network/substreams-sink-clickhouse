@@ -6,7 +6,7 @@ SELECT
     formatReadableSize(sum(primary_key_bytes_in_memory)) AS primary_keys_size,
     any(engine) AS engine,
     sum(bytes) AS bytes_size
-FROM clusterAllReplicas(default, system.parts)
+FROM clusterAllReplicas({database: String}, system.parts)
 WHERE active
 GROUP BY
     database,
