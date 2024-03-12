@@ -6,7 +6,7 @@ export async function findLatestCursor(req: Request) {
   const { module_hash, chain} = await paramsLatestCursor(req);
   logger.info("[sql::findLatestCursor]", { module_hash, chain });
   const query = await Bun.file(import.meta.dirname + "/cursor.sql").text()
-  const response = await readOnlyClient.query({ query, format: "JSONEachRow" });
+  const response = await readOnlyClient.query({ query, query_params: {module_hash, chain}, format: "JSONEachRow" });
   const data = await response.json<Array<{latest_cursor: string}>>();
 
   if (data.length === 1) return data[0].latest_cursor;
