@@ -40,10 +40,11 @@ export async function blocks(req: Request) {
   const chain = getChain(req, false);
   const module_hash = getModuleHash(req, false);
   const WHERE = [];
-  if ( chain ) WHERE.push(`chain = ${chain}`);
-  if ( module_hash ) WHERE.push(`module_hash = ${module_hash}`);
+  if ( chain ) WHERE.push(`chain = '${chain}'`);
+  if ( module_hash ) WHERE.push(`module_hash = '${module_hash}'`);
   if ( WHERE.length ) query += " WHERE " + WHERE.join(" AND ");
-  query += "GROUP BY (chain, module_hash)";
+  query += "\nGROUP BY (chain, module_hash)";
+  console.log(query);
 
   const response = await readOnlyClient.query({ query_params: {chain, module_hash}, query, format: "JSONEachRow" });
   let data = await response.json() as BlockResponseSchema[];
