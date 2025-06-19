@@ -1,3 +1,7 @@
+# ⁉️ DEPRECATED ⁉️
+
+### ⚠️ USE Substreams Sink SQL instead https://github.com/pinax-network/substreams-sink-sql
+
 # Substreams ClickHouse Sink
 
 > `substreams-sink-clickhouse` is a tool to pipe in data from the blockchain into a [ClickHouse](https://clickhouse.com/) database.
